@@ -18,9 +18,24 @@
       box-sizing: border-box;
     }
 
+    /* --- Botón Pantalla Completa Invisible (Toda la franja superior) --- */
+    .fullscreen-btn {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%; /* Ocupa todo el ancho de la pantalla */
+      height: 100px; /* Área táctil de 100px de alto */
+      background: transparent; /* Totalmente invisible */
+      border: none;
+      outline: none;
+      cursor: pointer;
+      z-index: 100; /* Asegura que esté por encima del título */
+    }
+
     h1 {
       color: #ccc;
       letter-spacing: 3px;
+      margin-top: 40px; /* Separado del borde superior para compensar el área del botón */
       margin-bottom: 40px;
       text-align: center;
       text-transform: uppercase;
@@ -90,6 +105,8 @@
 </head>
 <body>
 
+  <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
+
   <h1>Yar-Yur System: Dashboard de Exhibiciones</h1>
 
   <div class="dashboard-container">
@@ -142,6 +159,21 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+
+    // --- LÓGICA DE PANTALLA COMPLETA ---
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    fullscreenBtn.addEventListener('click', () => {
+      const elem = document.documentElement;
+      if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+      }
+    });
 
     // Bucle para configurar los 3 muebles automáticamente
     for (let i = 1; i <= 3; i++) {
