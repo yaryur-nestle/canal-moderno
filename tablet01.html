@@ -5,8 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TABLET 01</title>
   <style>
-    body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
-    .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; }
+    body { 
+  margin: 0; 
+  padding: 0;
+  overflow: hidden; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  width: 100%;
+  height: 100%; /* Usamos 100% en lugar de 100vh para evitar el corte del navegador */
+  background-color: #000; 
+  color: white; 
+  font-family: 'Courier New', Courier, monospace; 
+}
+.scene { 
+  position: relative; 
+  width: 100%; /* Cambiado de 100vw a 100% */
+  height: 100%; /* Cambiado de 100vh a 100% */
+  perspective: 1000px; 
+}
     
     /* --- Botón Pantalla Completa Invisible --- */
     .fullscreen-btn {
@@ -27,7 +44,25 @@
     .card.is-flipped { transform: rotateY(180deg); }
     .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: #000; }
     .face-back { transform: rotateY(180deg); background-image: url('imagen.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
-    .flip-btn { position: absolute; bottom: 20px; right: 20px; z-index: 50; background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.3s ease; }
+    .flip-btn { 
+  position: absolute; 
+  bottom: 5%; /* Separación dinámica desde abajo */
+  right: 5%; /* Separación dinámica desde la derecha */
+  z-index: 50; 
+  background: rgba(0, 255, 255, 0.15); 
+  border: 1px solid #00FFFF; 
+  color: #00FFFF; 
+  width: 50px; 
+  height: 50px; 
+  border-radius: 50%; 
+  cursor: pointer; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  backdrop-filter: blur(5px); 
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); 
+  transition: all 0.3s ease; 
+}
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
     .flip-btn.invisible { opacity: 0 !important; box-shadow: none !important; background: transparent !important; transform: none !important; }
     video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
