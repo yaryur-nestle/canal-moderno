@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor Remoto - Exhibición</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #111;
+      color: white;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    
+    .status-badge {
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+      letter-spacing: 2px;
+    }
+
+    .online { background-color: rgba(0, 255, 0, 0.2); color: #00FF00; border: 1px solid #00FF00; }
+    .offline { background-color: rgba(255, 0, 0, 0.2); color: #FF0000; border: 1px solid #FF0000; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 80%;
+      max-width: 800px;
+    }
+
+    .card {
+      background: #222;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      border: 1px solid #444;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .card h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: #aaa; }
+    .card .value { font-size: 3rem; font-weight: bold; }
+
+    /* Colores temáticos extraídos de tu diseño */
+    #val-actual { color: #00FF00; text-shadow: 0 0 10px rgba(0,255,0,0.5); }
+    #val-historico { color: #00FFFF; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+    #val-tiempo { color: #FFFF00; text-shadow: 0 0 10px rgba(255,255,0,0.5); }
+    #val-promedio { color: #FF00FF; text-shadow: 0 0 10px rgba(255,0,255,0.5); }
+  </style>
+</head>
+<body>
+
+  <div id="status-badge" class="status-badge offline">OFFLINE</div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>PERSONAS ACTUALES</h2>
+      <div id="val-actual" class="value">-</div>
+    </div>
+    <div class="card">
+      <h2>HISTÓRICO TOTAL</h2>
+      <div id="val-historico" class="value">-</div>
+    </div>
+    <div class="card">
+      <h2>TIEMPO ACTUAL</h2>
+      <div id="val-tiempo" class="value">- s</div>
+    </div>
+    <div class="card">
+      <h2>PROMEDIO PERMANENCIA</h2>
+      <div id="val-promedio" class="value">- s</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // IMPORTANTE: Pon la misma configuración exacta que pusiste en el index.html
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "TU_PROYECTO.firebaseapp.com",
+      databaseURL: "TU_DATABASE_URL",
+      projectId: "TU_PROYECTO",
+      storageBucket: "TU_PROYECTO.appspot.com",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Referencias
+    const muebleRef = ref(db, 'muebles/exhibicion_01/metricas');
+    const statusRef = ref(db, 'muebles/exhibicion_01/status');
+
+    // Escuchar estado de conexión
+    onValue(statusRef, (snapshot) => {
+      const status = snapshot.val();
+      const badge = document.getElementById('status-badge');
+      
+      if (status === 'ONLINE') {
+        badge.textContent = 'MUEBLE ONLINE';
+        badge.className = 'status-badge online';
+      } else {
+        badge.textContent = 'MUEBLE OFFLINE';
+        badge.className = 'status-badge offline';
+        // Opcional: podrías poner las variables actuales en 0 o mostrar un guión
+        document.getElementById('val-actual').innerText = "0";
+        document.getElementById('val-tiempo').innerText = "0.0 s";
+      }
+    });
+
+    // Escuchar métricas en tiempo real
+    onValue(muebleRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        document.getElementById('val-actual').innerText = data.actual;
+        document.getElementById('val-historico').innerText = data.historico;
+        document.getElementById('val-tiempo').innerText = data.tiempo + ' s';
+        document.getElementById('val-promedio').innerText = data.promedio + ' s';
+      }
+    });
+  </script>
+</body>
+</html>
