@@ -3,86 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monitor Remoto - Exhibición</title>
+  <title>Monitor Remoto - Yar-Yur System</title>
   <style>
     body {
       margin: 0;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      height: 100vh;
-      background-color: #111;
+      min-height: 100vh;
+      background-color: #0a0a0a;
       color: white;
       font-family: 'Courier New', Courier, monospace;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      color: #ccc;
+      letter-spacing: 3px;
+      margin-bottom: 40px;
+      text-align: center;
+      text-transform: uppercase;
     }
     
+    .dashboard-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+      width: 100%;
+      max-width: 1400px;
+    }
+
+    .mueble-col {
+      background: #141414;
+      padding: 25px;
+      border-radius: 15px;
+      border: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      min-width: 320px;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+
     .status-badge {
       padding: 10px 20px;
       border-radius: 20px;
       font-weight: bold;
-      font-size: 1.5rem;
-      margin-bottom: 30px;
+      font-size: 1.2rem;
+      margin-bottom: 25px;
       letter-spacing: 2px;
+      width: 80%;
+      text-align: center;
     }
 
-    .online { background-color: rgba(0, 255, 0, 0.2); color: #00FF00; border: 1px solid #00FF00; }
-    .offline { background-color: rgba(255, 0, 0, 0.2); color: #FF0000; border: 1px solid #FF0000; }
+    .online { background-color: rgba(0, 255, 0, 0.15); color: #00FF00; border: 1px solid #00FF00; }
+    .offline { background-color: rgba(255, 0, 0, 0.15); color: #FF0000; border: 1px solid #FF0000; }
 
-    .grid {
+    .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      width: 80%;
-      max-width: 800px;
+      gap: 15px;
+      width: 100%;
     }
 
     .card {
-      background: #222;
-      padding: 30px;
+      background: #1f1f1f;
+      padding: 20px 10px;
       border-radius: 10px;
       text-align: center;
-      border: 1px solid #444;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      border: 1px solid #2a2a2a;
     }
 
-    .card h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: #aaa; }
-    .card .value { font-size: 3rem; font-weight: bold; }
+    .card h2 { margin: 0 0 10px 0; font-size: 0.9rem; color: #888; }
+    .card .value { font-size: 2.2rem; font-weight: bold; }
 
-    #val-actual { color: #00FF00; text-shadow: 0 0 10px rgba(0,255,0,0.5); }
-    #val-historico { color: #00FFFF; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
-    #val-tiempo { color: #FFFF00; text-shadow: 0 0 10px rgba(255,255,0,0.5); }
-    #val-promedio { color: #FF00FF; text-shadow: 0 0 10px rgba(255,0,255,0.5); }
+    /* Colores temáticos */
+    .val-actual { color: #00FF00; text-shadow: 0 0 10px rgba(0,255,0,0.4); }
+    .val-historico { color: #00FFFF; text-shadow: 0 0 10px rgba(0,255,255,0.4); }
+    .val-tiempo { color: #FFFF00; text-shadow: 0 0 10px rgba(255,255,0,0.4); }
+    .val-promedio { color: #FF00FF; text-shadow: 0 0 10px rgba(255,0,255,0.4); }
   </style>
 </head>
 <body>
 
-  <div id="status-badge" class="status-badge offline">OFFLINE</div>
+  <h1>Yar-Yur System: Dashboard de Exhibiciones</h1>
 
-  <div class="grid">
-    <div class="card">
-      <h2>PERSONAS ACTUALES</h2>
-      <div id="val-actual" class="value">-</div>
+  <div class="dashboard-container">
+    
+    <div class="mueble-col">
+      <div id="badge-1" class="status-badge offline">MUEBLE 01 OFFLINE</div>
+      <div class="stats-grid">
+        <div class="card"><h2>ACTUALES</h2><div id="val-actual-1" class="value val-actual">-</div></div>
+        <div class="card"><h2>HISTÓRICO</h2><div id="val-historico-1" class="value val-historico">-</div></div>
+        <div class="card"><h2>TIEMPO</h2><div id="val-tiempo-1" class="value val-tiempo">- s</div></div>
+        <div class="card"><h2>PROMEDIO</h2><div id="val-promedio-1" class="value val-promedio">- s</div></div>
+      </div>
     </div>
-    <div class="card">
-      <h2>HISTÓRICO TOTAL</h2>
-      <div id="val-historico" class="value">-</div>
+
+    <div class="mueble-col">
+      <div id="badge-2" class="status-badge offline">MUEBLE 02 OFFLINE</div>
+      <div class="stats-grid">
+        <div class="card"><h2>ACTUALES</h2><div id="val-actual-2" class="value val-actual">-</div></div>
+        <div class="card"><h2>HISTÓRICO</h2><div id="val-historico-2" class="value val-historico">-</div></div>
+        <div class="card"><h2>TIEMPO</h2><div id="val-tiempo-2" class="value val-tiempo">- s</div></div>
+        <div class="card"><h2>PROMEDIO</h2><div id="val-promedio-2" class="value val-promedio">- s</div></div>
+      </div>
     </div>
-    <div class="card">
-      <h2>TIEMPO ACTUAL</h2>
-      <div id="val-tiempo" class="value">- s</div>
+
+    <div class="mueble-col">
+      <div id="badge-3" class="status-badge offline">MUEBLE 03 OFFLINE</div>
+      <div class="stats-grid">
+        <div class="card"><h2>ACTUALES</h2><div id="val-actual-3" class="value val-actual">-</div></div>
+        <div class="card"><h2>HISTÓRICO</h2><div id="val-historico-3" class="value val-historico">-</div></div>
+        <div class="card"><h2>TIEMPO</h2><div id="val-tiempo-3" class="value val-tiempo">- s</div></div>
+        <div class="card"><h2>PROMEDIO</h2><div id="val-promedio-3" class="value val-promedio">- s</div></div>
+      </div>
     </div>
-    <div class="card">
-      <h2>PROMEDIO PERMANENCIA</h2>
-      <div id="val-promedio" class="value">- s</div>
-    </div>
+
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // 1. CONFIGURACIÓN DE FIREBASE (Con tus credenciales reales)
     const firebaseConfig = {
       apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
       authDomain: "canal-moderno-2655e.firebaseapp.com",
@@ -96,37 +143,43 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Referencias
-    const muebleRef = ref(db, 'muebles/exhibicion_01/metricas');
-    const statusRef = ref(db, 'muebles/exhibicion_01/status');
-
-    // Escuchar estado de conexión (ONLINE/OFFLINE)
-    onValue(statusRef, (snapshot) => {
-      const status = snapshot.val();
-      const badge = document.getElementById('status-badge');
+    // Bucle para configurar los 3 muebles automáticamente
+    for (let i = 1; i <= 3; i++) {
+      const muebleId = i;
+      // Formatea el número para que sea 01, 02, 03
+      const numFormat = muebleId.toString().padStart(2, '0'); 
       
-      if (status === 'ONLINE') {
-        badge.textContent = 'MUEBLE ONLINE';
-        badge.className = 'status-badge online';
-      } else {
-        badge.textContent = 'MUEBLE OFFLINE';
-        badge.className = 'status-badge offline';
-        // Reiniciamos los valores visuales a cero para que no se quede congelado con un número viejo
-        document.getElementById('val-actual').innerText = "0";
-        document.getElementById('val-tiempo').innerText = "0.0 s";
-      }
-    });
+      const muebleRef = ref(db, `muebles/exhibicion_${numFormat}/metricas`);
+      const statusRef = ref(db, `muebles/exhibicion_${numFormat}/status`);
 
-    // Escuchar métricas en tiempo real
-    onValue(muebleRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        document.getElementById('val-actual').innerText = data.actual;
-        document.getElementById('val-historico').innerText = data.historico;
-        document.getElementById('val-tiempo').innerText = data.tiempo + ' s';
-        document.getElementById('val-promedio').innerText = data.promedio + ' s';
-      }
-    });
+      // Escuchar estado (ONLINE/OFFLINE)
+      onValue(statusRef, (snapshot) => {
+        const status = snapshot.val();
+        const badge = document.getElementById(`badge-${muebleId}`);
+        
+        if (status === 'ONLINE') {
+          badge.textContent = `MUEBLE ${numFormat} ONLINE`;
+          badge.className = 'status-badge online';
+        } else {
+          badge.textContent = `MUEBLE ${numFormat} OFFLINE`;
+          badge.className = 'status-badge offline';
+          // Reiniciar a 0 si se desconecta
+          document.getElementById(`val-actual-${muebleId}`).innerText = "0";
+          document.getElementById(`val-tiempo-${muebleId}`).innerText = "0.0 s";
+        }
+      });
+
+      // Escuchar métricas
+      onValue(muebleRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          document.getElementById(`val-actual-${muebleId}`).innerText = data.actual;
+          document.getElementById(`val-historico-${muebleId}`).innerText = data.historico;
+          document.getElementById(`val-tiempo-${muebleId}`).innerText = data.tiempo + ' s';
+          document.getElementById(`val-promedio-${muebleId}`).innerText = data.promedio + ' s';
+        }
+      });
+    }
   </script>
 </body>
 </html>
