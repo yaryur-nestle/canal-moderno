@@ -7,7 +7,6 @@
   <style>
     body {
       margin: 0;
-      /* overflow: hidden es crucial para evitar barras de desplazamiento al girar en 3D */
       overflow: hidden; 
       display: flex;
       justify-content: center;
@@ -21,8 +20,8 @@
     /* --- ESCENA A PANTALLA COMPLETA --- */
     .scene {
       position: relative;
-      width: 100vw;  /* 100% del ancho de la ventana */
-      height: 100vh; /* 100% del alto de la ventana */
+      width: 100vw; 
+      height: 100vh; 
       perspective: 1000px; 
     }
 
@@ -43,19 +42,16 @@
       width: 100%;
       height: 100%;
       backface-visibility: hidden; 
-      /* Se eliminó el border-radius para que ocupe todo el borde de la pantalla */
       background-color: #000;
     }
 
-    /* Cara Trasera: La Imagen a pantalla completa */
     .face-back {
       transform: rotateY(180deg); 
       background-image: url('imagen.jpg'); 
-      background-size: cover; /* Asegura que la imagen cubra toda la pantalla */
+      background-size: cover; 
       background-position: center;
       background-repeat: no-repeat;
     }
-    /* ------------------------------------------ */
 
     /* Botón Flotante */
     .flip-btn {
@@ -84,11 +80,8 @@
       box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
     }
 
-    /* CLASE PARA OCULTAR EL BOTÓN VISUALMENTE PERO MANTENERLO ACTIVO */
     .flip-btn.invisible {
       opacity: 0 !important; 
-      /* Quitamos los efectos visuales al estar oculto para que no reaccione al pasar el mouse, 
-         pero sigue recibiendo el 'click' */
       box-shadow: none !important;
       background: transparent !important;
       transform: none !important; 
@@ -112,7 +105,7 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      padding: 20px; /* Un poco más de padding ahora que hay más espacio */
+      padding: 20px; 
     }
     .left { top: 0; left: 0; }
     .right { top: 0; right: 0; align-items: flex-end; }
@@ -121,7 +114,7 @@
       padding: 10px 20px;
       border-radius: 4px;
       font-weight: bold;
-      font-size: 1.1rem; /* Texto ligeramente más grande para pantalla completa */
+      font-size: 1.1rem; 
       backdrop-filter: blur(8px);
       border: 1px solid;
       min-width: 150px;
@@ -155,9 +148,7 @@
 <body>
 
   <div class="scene">
-    
     <div id="card" class="card">
-      
       <div class="face face-front">
         <div id="loading">SISTEMA INICIANDO...</div>
         
@@ -176,8 +167,7 @@
       </div>
 
       <div class="face face-back">
-        </div>
-
+      </div>
     </div>
 
     <button id="flip-btn" class="flip-btn" title="Alternar Vista">
@@ -188,20 +178,43 @@
         <line x1="3" y1="17" x2="15" y2="17"></line>
       </svg>
     </button>
-
   </div>
 
-  <script>
-    // --- LÓGICA DE LA TRANSICIÓN 3D Y BOTÓN INVISIBLE ---
+  <script type="module">
+    // 1. IMPORTACIONES DE FIREBASE
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, set, onDisconnect, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // 2. CONFIGURACIÓN DE FIREBASE (Reemplaza este objeto con el que te dé Firebase al registrar la app web)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
+    authDomain: "canal-moderno-2655e.firebaseapp.com",
+    databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
+    projectId: "canal-moderno-2655e",
+    storageBucket: "canal-moderno-2655e.firebasestorage.app",
+    messagingSenderId: "947512040134",
+    appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
+  };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Referencias a las carpetas en la base de datos
+    const muebleRef = ref(db, 'muebles/exhibicion_01/metricas');
+    const statusRef = ref(db, 'muebles/exhibicion_01/status');
+
+    // 3. SISTEMA DE PRESENCIA (Si se cae el internet o se cierra, avisa al monitor)
+    onDisconnect(statusRef).set('OFFLINE');
+    set(statusRef, 'ONLINE');
+
+    // --- LÓGICA DE LA TRANSICIÓN 3D ---
     const btnFlip = document.getElementById('flip-btn');
     const card = document.getElementById('card');
 
     btnFlip.addEventListener('click', () => {
       card.classList.toggle('is-flipped');
-      // Añade o quita la clase que vuelve el botón transparente
       btnFlip.classList.toggle('invisible');
     });
-    // ----------------------------------------------------
 
     const videoElement = document.getElementById('video');
     const canvasElement = document.getElementById('canvas');
@@ -213,11 +226,24 @@
     const avgElement = document.getElementById('avg-counter');
 
     let totalHistorico = 0;
-    let rostrosActivos = []; 
-    
-    let inicioSesionActual = null;
     let tiempoAcumuladoTotal = 0;
+    let rostrosActivos = []; 
+    let inicioSesionActual = null;
     let tiempoSesionActual = 0;
+    
+    // Controlador para no saturar Firebase (lo actualizaremos cada 3 seg)
+    let lastFirebaseUpdate = 0; 
+
+    // 4. RECUPERAR DATOS AL RECARGAR (Para que no se borren en la tablet)
+    get(muebleRef).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        totalHistorico = data.historico || 0;
+        tiempoAcumuladoTotal = data.tiempoAcumuladoTotal || 0;
+        
+        totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
+      }
+    });
 
     // PRE-RENDERIZADO DEL PUNTO BRILLANTE
     const glowCanvas = document.createElement('canvas');
@@ -280,21 +306,34 @@
       let tiempoTotalParaCalculo = tiempoAcumuladoTotal + tiempoSesionActual;
       let promedio = totalHistorico > 0 ? (tiempoTotalParaCalculo / totalHistorico) : 0;
 
-      // 4. ACTUALIZAR INTERFAZ
+      // 4. ACTUALIZAR INTERFAZ LOCAL
       faceElement.innerText = `ACTUAL: ${rostrosActuales}`;
       totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
       timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
       avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
 
-      // 5. DIBUJAR 
+      // 5. ENVÍO A FIREBASE (ESTRATEGIA OPTIMIZADA)
+      // Actualizamos solo cada 3 segundos en lugar de cada milisegundo
+      if (ahora - lastFirebaseUpdate >= 3000) {
+        set(muebleRef, {
+          actual: rostrosActuales,
+          historico: totalHistorico,
+          tiempo: tiempoSesionActual.toFixed(1),
+          promedio: promedio.toFixed(1),
+          tiempoAcumuladoTotal: tiempoAcumuladoTotal
+        });
+        lastFirebaseUpdate = ahora;
+      }
+
+      // 6. DIBUJAR 
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       canvasCtx.globalCompositeOperation = "lighter"; 
       
       if (results.multiFaceLandmarks) {
         for (const landmarks of results.multiFaceLandmarks) {
-          drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, 
-                         {color: '#00FF0050', lineWidth: 0.8});
+          // Asumimos que drawConnectors es global porque MediaPipe lo inyecta ahí
+          window.drawConnectors(canvasCtx, landmarks, window.FACEMESH_TESSELATION, {color: '#00FF0050', lineWidth: 0.8});
 
           for (let i = 0; i < landmarks.length; i++) {
             const px = landmarks[i].x * canvasElement.width;
@@ -306,7 +345,7 @@
       canvasCtx.restore();
     }
 
-    const faceMesh = new FaceMesh({locateFile: (file) => {
+    const faceMesh = new window.FaceMesh({locateFile: (file) => {
       return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
     }});
 
@@ -319,7 +358,7 @@
 
     faceMesh.onResults(onResults);
 
-    const camera = new Camera(videoElement, {
+    const camera = new window.Camera(videoElement, {
       onFrame: async () => { await faceMesh.send({image: videoElement}); },
       width: 1280, 
       height: 720
