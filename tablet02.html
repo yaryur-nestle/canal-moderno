@@ -5,27 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TABLET 02</title>
   <style>
-    /* --- CORRECCIÓN RESPONSIVE Y 100VH --- */
-    html, body { 
-      margin: 0; 
-      padding: 0;
-      overflow: hidden; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      width: 100%;
-      height: 100%; 
-      background-color: #000; 
-      color: white; 
-      font-family: 'Courier New', Courier, monospace; 
-    }
-    
-    .scene { 
-      position: relative; 
-      width: 100%; 
-      height: 100%; 
-      perspective: 1000px; 
-    }
+    /* --- CSS ORIGINAL RESTAURADO --- */
+    body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
+    .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; }
     
     /* --- Botón Pantalla Completa Invisible --- */
     .fullscreen-btn {
@@ -33,10 +15,10 @@
       top: 0;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 100; /* Asegura que esté por encima de todo */
-      width: 150px; /* Área táctil de 150px de ancho */
-      height: 80px; /* Área táctil de 80px de alto */
-      background: transparent; /* Totalmente invisible */
+      z-index: 100;
+      width: 150px;
+      height: 80px;
+      background: transparent;
       border: none;
       outline: none;
       cursor: pointer;
@@ -47,8 +29,8 @@
     .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: #000; }
     .face-back { transform: rotateY(180deg); background-image: url('imagen.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
     
-    /* --- CORRECCIÓN POSICIÓN BOTÓN DE VOLTEAR --- */
-    .flip-btn { position: absolute; bottom: 5%; right: 5%; z-index: 50; background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.3s ease; }
+    /* --- BOTÓN DE VOLTEAR MOVIDO MÁS ARRIBA (bottom: 12%) --- */
+    .flip-btn { position: absolute; bottom: 12%; right: 5%; z-index: 50; background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.3s ease; }
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
     .flip-btn.invisible { opacity: 0 !important; box-shadow: none !important; background: transparent !important; transform: none !important; }
     
@@ -130,21 +112,13 @@
     fullscreenBtn.addEventListener('click', () => {
       const elem = document.documentElement;
       if (!document.fullscreenElement) {
-        if (elem.requestFullscreen) {
-          elem.requestFullscreen();
-        } else if (elem.webkitRequestFullscreen) {
-          elem.webkitRequestFullscreen();
-        } else if (elem.msRequestFullscreen) {
-          elem.msRequestFullscreen();
-        }
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
       } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
       }
     });
 
@@ -172,13 +146,12 @@
       }
     });
 
-    const glowCanvas = document.createElement('canvas'); const glowCtx = glowCanvas.getContext('2d'); const glowSize = 20; const puntoRadius = 2.5; const centro = glowSize / 2;
-    glowCanvas.width = glowSize; glowCanvas.height = glowSize;
-    glowCtx.shadowColor = '#00FFFF'; glowCtx.shadowBlur = 10; glowCtx.fillStyle = '#00FFFF'; glowCtx.beginPath(); glowCtx.arc(centro, centro, puntoRadius, 0, 2 * Math.PI); glowCtx.fill();
-
     function onResults(results) {
       document.getElementById('loading').style.display = 'none';
-      if (results.image) { canvasElement.width = results.image.width; canvasElement.height = results.image.height; }
+      if (results.image) { 
+        canvasElement.width = results.image.width; 
+        canvasElement.height = results.image.height; 
+      }
 
       const rostrosActuales = results.multiFaceLandmarks ? results.multiFaceLandmarks.length : 0;
       const ahora = Date.now();
@@ -220,24 +193,22 @@
         lastFirebaseUpdate = ahora;
       }
 
+      // --- DIBUJADO OPTIMIZADO PARA TABLETS ---
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      canvasCtx.globalCompositeOperation = "lighter"; 
       
       if (results.multiFaceLandmarks) {
         for (const landmarks of results.multiFaceLandmarks) {
-          window.drawConnectors(canvasCtx, landmarks, window.FACEMESH_TESSELATION, {color: '#00FF0050', lineWidth: 0.8});
-          for (let i = 0; i < landmarks.length; i++) {
-            const px = landmarks[i].x * canvasElement.width; const py = landmarks[i].y * canvasElement.height;
-            canvasCtx.drawImage(glowCanvas, px - centro, py - centro);
-          }
+          // Solo se dibuja la malla limpia, un proceso altamente optimizado en MediaPipe
+          window.drawConnectors(canvasCtx, landmarks, window.FACEMESH_TESSELATION, {color: '#00FF00', lineWidth: 1.5});
         }
       }
       canvasCtx.restore();
     }
 
     const faceMesh = new window.FaceMesh({locateFile: (file) => { return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`; }});
-    faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+    // Bajamos ligeramente la exigencia del refinado para priorizar fluidez en tablets
+    faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
     faceMesh.onResults(onResults);
     const camera = new window.Camera(videoElement, { onFrame: async () => { await faceMesh.send({image: videoElement}); }, width: 1280, height: 720 });
     camera.start();
