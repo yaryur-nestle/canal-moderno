@@ -181,20 +181,20 @@
   </div>
 
   <script type="module">
-    // 1. IMPORTACIONES DE FIREBASE
+    // 1. IMPORTACIONES DE FIREBASE (Actualizadas con onValue)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, set, onDisconnect, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, set, onDisconnect, get, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // 2. CONFIGURACIÓN DE FIREBASE (Reemplaza este objeto con el que te dé Firebase al registrar la app web)
-  const firebaseConfig = {
-    apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
-    authDomain: "canal-moderno-2655e.firebaseapp.com",
-    databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
-    projectId: "canal-moderno-2655e",
-    storageBucket: "canal-moderno-2655e.firebasestorage.app",
-    messagingSenderId: "947512040134",
-    appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
-  };
+    // 2. CONFIGURACIÓN DE FIREBASE
+    const firebaseConfig = {
+      apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
+      authDomain: "canal-moderno-2655e.firebaseapp.com",
+      databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
+      projectId: "canal-moderno-2655e",
+      storageBucket: "canal-moderno-2655e.firebasestorage.app",
+      messagingSenderId: "947512040134",
+      appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
@@ -203,9 +203,17 @@
     const muebleRef = ref(db, 'muebles/exhibicion_01/metricas');
     const statusRef = ref(db, 'muebles/exhibicion_01/status');
 
-    // 3. SISTEMA DE PRESENCIA (Si se cae el internet o se cierra, avisa al monitor)
-    onDisconnect(statusRef).set('OFFLINE');
-    set(statusRef, 'ONLINE');
+    // 3. SISTEMA DE PRESENCIA MEJORADO (A prueba de micro-cortes de internet)
+    const connectedRef = ref(db, ".info/connected");
+    
+    onValue(connectedRef, (snap) => {
+      if (snap.val() === true) {
+        // Establecer el onDisconnect ANTES de cambiar el estado a ONLINE
+        onDisconnect(statusRef).set('OFFLINE').then(() => {
+          set(statusRef, 'ONLINE');
+        });
+      }
+    });
 
     // --- LÓGICA DE LA TRANSICIÓN 3D ---
     const btnFlip = document.getElementById('flip-btn');
@@ -231,10 +239,10 @@
     let inicioSesionActual = null;
     let tiempoSesionActual = 0;
     
-    // Controlador para no saturar Firebase (lo actualizaremos cada 3 seg)
+    // Controlador para no saturar Firebase
     let lastFirebaseUpdate = 0; 
 
-    // 4. RECUPERAR DATOS AL RECARGAR (Para que no se borren en la tablet)
+    // 4. RECUPERAR DATOS AL RECARGAR
     get(muebleRef).then((snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
@@ -273,7 +281,7 @@
       const rostrosActuales = results.multiFaceLandmarks ? results.multiFaceLandmarks.length : 0;
       const ahora = Date.now();
 
-      // 1. LÓGICA DE CONTEO HISTÓRICO (2 SEGUNDOS)
+      // LÓGICA DE CONTEO HISTÓRICO
       if (rostrosActuales > rostrosActivos.length) {
         const nuevosRostros = rostrosActuales - rostrosActivos.length;
         for (let i = 0; i < nuevosRostros; i++) {
@@ -290,7 +298,7 @@
         }
       }
 
-      // 2. LÓGICA DE TIEMPO
+      // LÓGICA DE TIEMPO
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) { inicioSesionActual = ahora; }
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
@@ -302,18 +310,17 @@
         }
       }
 
-      // 3. CALCULAR PROMEDIO
+      // CALCULAR PROMEDIO
       let tiempoTotalParaCalculo = tiempoAcumuladoTotal + tiempoSesionActual;
       let promedio = totalHistorico > 0 ? (tiempoTotalParaCalculo / totalHistorico) : 0;
 
-      // 4. ACTUALIZAR INTERFAZ LOCAL
+      // ACTUALIZAR INTERFAZ LOCAL
       faceElement.innerText = `ACTUAL: ${rostrosActuales}`;
       totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
       timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
       avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
 
-      // 5. ENVÍO A FIREBASE (ESTRATEGIA OPTIMIZADA)
-      // Actualizamos solo cada 3 segundos en lugar de cada milisegundo
+      // ENVÍO A FIREBASE (CADA 3 SEGUNDOS)
       if (ahora - lastFirebaseUpdate >= 3000) {
         set(muebleRef, {
           actual: rostrosActuales,
@@ -325,14 +332,13 @@
         lastFirebaseUpdate = ahora;
       }
 
-      // 6. DIBUJAR 
+      // DIBUJAR 
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       canvasCtx.globalCompositeOperation = "lighter"; 
       
       if (results.multiFaceLandmarks) {
         for (const landmarks of results.multiFaceLandmarks) {
-          // Asumimos que drawConnectors es global porque MediaPipe lo inyecta ahí
           window.drawConnectors(canvasCtx, landmarks, window.FACEMESH_TESSELATION, {color: '#00FF0050', lineWidth: 0.8});
 
           for (let i = 0; i < landmarks.length; i++) {
