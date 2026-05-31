@@ -49,7 +49,6 @@
     .card h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: #aaa; }
     .card .value { font-size: 3rem; font-weight: bold; }
 
-    /* Colores temáticos extraídos de tu diseño */
     #val-actual { color: #00FF00; text-shadow: 0 0 10px rgba(0,255,0,0.5); }
     #val-historico { color: #00FFFF; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
     #val-tiempo { color: #FFFF00; text-shadow: 0 0 10px rgba(255,255,0,0.5); }
@@ -83,15 +82,15 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // IMPORTANTE: Pon la misma configuración exacta que pusiste en el index.html
+    // 1. CONFIGURACIÓN DE FIREBASE (Con tus credenciales reales)
     const firebaseConfig = {
-    apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
-    authDomain: "canal-moderno-2655e.firebaseapp.com",
-    databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
-    projectId: "canal-moderno-2655e",
-    storageBucket: "canal-moderno-2655e.firebasestorage.app",
-    messagingSenderId: "947512040134",
-    appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
+      apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
+      authDomain: "canal-moderno-2655e.firebaseapp.com",
+      databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
+      projectId: "canal-moderno-2655e",
+      storageBucket: "canal-moderno-2655e.firebasestorage.app",
+      messagingSenderId: "947512040134",
+      appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -101,7 +100,7 @@
     const muebleRef = ref(db, 'muebles/exhibicion_01/metricas');
     const statusRef = ref(db, 'muebles/exhibicion_01/status');
 
-    // Escuchar estado de conexión
+    // Escuchar estado de conexión (ONLINE/OFFLINE)
     onValue(statusRef, (snapshot) => {
       const status = snapshot.val();
       const badge = document.getElementById('status-badge');
@@ -112,7 +111,7 @@
       } else {
         badge.textContent = 'MUEBLE OFFLINE';
         badge.className = 'status-badge offline';
-        // Opcional: podrías poner las variables actuales en 0 o mostrar un guión
+        // Reiniciamos los valores visuales a cero para que no se quede congelado con un número viejo
         document.getElementById('val-actual').innerText = "0";
         document.getElementById('val-tiempo').innerText = "0.0 s";
       }
