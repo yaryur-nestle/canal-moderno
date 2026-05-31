@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TABLET 03</title>
+  <title>TABLET 02</title>
   <style>
     /* --- CORRECCIÓN RESPONSIVE Y 100VH --- */
     html, body { 
@@ -114,9 +114,9 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // ESTA LÍNEA DEFINE QUE ES LA TABLET 03
-    const muebleRef = ref(db, 'muebles/exhibicion_03/metricas');
-    const statusRef = ref(db, 'muebles/exhibicion_03/status');
+    // ESTA LÍNEA DEFINE QUE ES LA TABLET 02
+    const muebleRef = ref(db, 'muebles/exhibicion_02/metricas');
+    const statusRef = ref(db, 'muebles/exhibicion_02/status');
 
     const connectedRef = ref(db, ".info/connected");
     onValue(connectedRef, (snap) => {
