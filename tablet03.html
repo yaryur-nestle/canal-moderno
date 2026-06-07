@@ -50,11 +50,12 @@
     .panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
     .left { top: 0; left: 0; }
     .right { top: 0; right: 0; align-items: flex-end; }
-    .counter-box { padding: 10px 20px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; backdrop-filter: blur(8px); border: 1px solid; min-width: 150px; text-shadow: 0 0 5px currentColor; }
+    .counter-box { padding: 10px 20px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; backdrop-filter: blur(8px); border: 1px solid; min-width: 150px; text-shadow: 0 0 5px currentColor; transition: all 0.3s ease; }
     #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
     #total-counter { background: rgba(0, 255, 255, 0.15); color: #00FFFF; border-color: #00FFFF; }
     #time-counter { background: rgba(255, 255, 0, 0.15); color: #FFFF00; border-color: #FFFF00; }
     #avg-counter { background: rgba(255, 0, 255, 0.15); color: #FF00FF; border-color: #FF00FF; }
+    #barcode-counter { background: rgba(255, 165, 0, 0.15); color: #FFA500; border-color: #FFA500; display: none; }
     #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 40; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid #00FFFF; color: #00FFFF; font-weight: bold; font-size: 1.2rem; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -80,6 +81,7 @@
         <div class="panel right">
           <div id="time-counter" class="counter-box">TIEMPO: 0.0s</div>
           <div id="avg-counter" class="counter-box">PROMEDIO: 0.0s</div>
+          <div id="barcode-counter" class="counter-box">CÓDIGO: ---</div>
         </div>
         <video id="video" autoplay playsinline muted></video>
         <canvas id="canvas"></canvas>
@@ -112,6 +114,7 @@
 
     const eventosRef = ref(db, 'muebles/tablet_03/eventos');
     const statusRef = ref(db, 'muebles/tablet_03/status');
+    const codigosRef = ref(db, 'muebles/tablet_03/codigos_barra'); // Nueva referencia para códigos
 
     const connectedRef = ref(db, ".info/connected");
     onValue(connectedRef, (snap) => {
@@ -119,6 +122,47 @@
         onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
       }
     });
+
+    // --- SISTEMA DE AUDIO (BIP) ---
+    let audioCtx;
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playBeep() {
+      if (!audioCtx) return;
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(2000, audioCtx.currentTime); // Tono agudo de escáner (2000Hz)
+      
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volumen suave
+      gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.1); // Duración de 100ms
+    }
+
+    // --- DETECTOR DE CÓDIGOS DE BARRA ---
+    let barcodeDetector;
+    try {
+      if ('BarcodeDetector' in window) {
+        barcodeDetector = new BarcodeDetector();
+      } else {
+        console.warn('BarcodeDetector API no soportada por este navegador. Actualiza Chrome/Edge o tu versión de Android/iOS.');
+      }
+    } catch (e) {
+      console.error('Error inicializando BarcodeDetector:', e);
+    }
 
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     fullscreenBtn.addEventListener('click', () => {
@@ -149,6 +193,8 @@
     let clickCount = 0;
     let clickTimeout;
     document.addEventListener('click', (e) => {
+      initAudio(); // Inicializa el audio en la primera interacción del usuario (política del navegador)
+
       if (card.classList.contains('is-flipped')) return;
 
       if (e.target !== fullscreenBtn && e.target !== btnFlip) {
@@ -177,10 +223,12 @@
     const videoElement = document.getElementById('video');
     const canvasElement = document.getElementById('canvas');
     const canvasCtx = canvasElement.getContext('2d');
+    
     const faceElement = document.getElementById('face-counter');
     const totalElement = document.getElementById('total-counter');
     const timeElement = document.getElementById('time-counter');
     const avgElement = document.getElementById('avg-counter');
+    const barcodeBox = document.getElementById('barcode-counter');
 
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
     let currentFacesCount = 0;
@@ -278,7 +326,57 @@
     const faceMesh = new window.FaceMesh({locateFile: (file) => { return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`; }});
     faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
     faceMesh.onResults(onResults);
-    const camera = new window.Camera(videoElement, { onFrame: async () => { await faceMesh.send({image: videoElement}); }, width: 1280, height: 720 });
+
+    let lastScanTime = 0;
+    let lastScannedCode = null;
+    let codeCooldownTimer = null;
+
+    const camera = new window.Camera(videoElement, { 
+      onFrame: async () => { 
+        // 1. Envía el cuadro para la malla facial
+        await faceMesh.send({image: videoElement}); 
+        
+        // 2. Procesa la lectura de código de barras sin bloquear el hilo principal (cada 400ms)
+        const ahora = Date.now();
+        if (barcodeDetector && (ahora - lastScanTime > 400)) {
+          lastScanTime = ahora;
+          try {
+            const barcodes = await barcodeDetector.detect(videoElement);
+            if (barcodes.length > 0) {
+              const code = barcodes[0].rawValue;
+              
+              // Verifica que no estemos escaneando el mismo código repetitivamente en el mismo segundo
+              if (code !== lastScannedCode) {
+                lastScannedCode = code;
+                playBeep(); // Llama a la señal auditiva
+
+                // Muestra en la UI posterior
+                barcodeBox.style.display = 'block';
+                barcodeBox.innerText = `CÓDIGO: ${code}`;
+                
+                // Enviar a Firebase
+                push(codigosRef, {
+                  codigo: code,
+                  timestamp: ahora,
+                  fecha: new Date().toISOString()
+                });
+
+                // Reinicia el bloqueo de este código específico tras 4 segundos
+                clearTimeout(codeCooldownTimer);
+                codeCooldownTimer = setTimeout(() => {
+                  lastScannedCode = null;
+                  barcodeBox.innerText = `ÚLTIMO: ${code}`;
+                }, 4000);
+              }
+            }
+          } catch (err) {
+            // Ignorar errores silentes de lectura
+          }
+        }
+      }, 
+      width: 1280, 
+      height: 720 
+    });
     camera.start();
   </script>
 </body>
