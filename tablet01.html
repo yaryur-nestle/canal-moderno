@@ -95,7 +95,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, set, onDisconnect, get, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, set, push, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
@@ -110,8 +110,9 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const muebleRef = ref(db, 'muebles/exhibicion_01/metricas');
-    const statusRef = ref(db, 'muebles/exhibicion_01/status');
+    // NUEVAS RUTAS PARA TABLET 02
+    const eventosRef = ref(db, 'muebles/tablet_01/eventos');
+    const statusRef = ref(db, 'muebles/tablet_01/status');
 
     // Lógica nativa de Firebase para desconexiones abruptas
     const connectedRef = ref(db, ".info/connected");
@@ -175,8 +176,12 @@
     const timeElement = document.getElementById('time-counter');
     const avgElement = document.getElementById('avg-counter');
 
-    let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0, lastFirebaseUpdate = 0; 
+    let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
     let currentFacesCount = 0;
+
+    let lastLoggedFaceCount = 0;
+    let pendingFaceCount = 0;
+    let stabilityTimer = null;
 
     frontVideo.addEventListener('ended', () => {
       if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
@@ -185,15 +190,6 @@
       } else {
         frontVideo.style.display = 'none';
         isPlayingVideo = false;
-      }
-    });
-
-    get(muebleRef).then((snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        totalHistorico = data.historico || 0;
-        tiempoAcumuladoTotal = data.tiempoAcumuladoTotal || 0;
-        totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
       }
     });
 
@@ -209,6 +205,27 @@
       
       currentFacesCount = rostrosActuales;
 
+      if (rostrosActuales !== pendingFaceCount) {
+        pendingFaceCount = rostrosActuales;
+        clearTimeout(stabilityTimer); 
+        
+        stabilityTimer = setTimeout(() => {
+          if (pendingFaceCount !== lastLoggedFaceCount) {
+            const fechaISO = new Date().toISOString();
+            
+            push(eventosRef, {
+              timestamp: Date.now(),
+              fecha: fechaISO,
+              conteoAnterior: lastLoggedFaceCount,
+              conteoActual: pendingFaceCount
+            });
+
+            set(statusRef, 'ONLINE');
+
+            lastLoggedFaceCount = pendingFaceCount;
+          }
+        }, 1000); 
+      }
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) { inicioSesionActual = ahora; }
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
@@ -223,7 +240,7 @@
         isPlayingVideo = true;
         frontVideo.style.display = 'block';
         frontVideo.play().catch(e => {
-          console.log("Autoplay bloqueado (Se requiere interacción previa o mutear el video):", e);
+          console.log("Autoplay bloqueado:", e);
         });
       }
 
@@ -245,17 +262,6 @@
       totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
       timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
       avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
-
-      if (ahora - lastFirebaseUpdate >= 1000) {
-        set(muebleRef, {
-          actual: rostrosActuales, historico: totalHistorico, tiempo: tiempoSesionActual.toFixed(1),
-          promedio: promedio.toFixed(1), tiempoAcumuladoTotal: tiempoAcumuladoTotal
-        });
-        
-        set(statusRef, 'ONLINE');
-
-        lastFirebaseUpdate = ahora;
-      }
 
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
