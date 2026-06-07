@@ -68,7 +68,7 @@
 
     <div id="card" class="card">
       <div class="face face-front">
-        <video id="front-video" src="video.mp4" playsinline style="display: none; width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 5; transform: scaleX(1);"></video>
+        <video id="front-video" src="video.mp4" playsinline preload="metadata" style="display: none; width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 5; transform: scaleX(1);"></video>
       </div>
       
       <div class="face face-back">
@@ -81,7 +81,7 @@
           <div id="time-counter" class="counter-box">TIEMPO: 0.0s</div>
           <div id="avg-counter" class="counter-box">PROMEDIO: 0.0s</div>
         </div>
-        <video id="video" autoplay playsinline></video>
+        <video id="video" autoplay playsinline muted></video>
         <canvas id="canvas"></canvas>
       </div>
     </div>
@@ -110,11 +110,9 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // NUEVAS RUTAS PARA TABLET 02
     const eventosRef = ref(db, 'muebles/tablet_01/eventos');
     const statusRef = ref(db, 'muebles/tablet_01/status');
 
-    // Lógica nativa de Firebase para desconexiones abruptas
     const connectedRef = ref(db, ".info/connected");
     onValue(connectedRef, (snap) => {
       if (snap.val() === true) {
@@ -141,6 +139,9 @@
     const frontVideo = document.getElementById('front-video');
     let isPlayingVideo = false;
     
+    let systemReady = false;
+    setTimeout(() => { systemReady = true; }, 2000);
+    
     btnFlip.addEventListener('click', () => { 
         card.classList.remove('is-flipped'); 
     });
@@ -160,8 +161,13 @@
           
           if (isPlayingVideo) {
             frontVideo.pause();
+            frontVideo.currentTime = 0;
+            frontVideo.style.display = 'none';
             isPlayingVideo = false;
           }
+          inicioSesionActual = null;
+          tiempoSesionActual = 0;
+          
         } else {
           clickTimeout = setTimeout(() => { clickCount = 0; }, 500);
         }
@@ -226,6 +232,7 @@
           }
         }, 1000); 
       }
+
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) { inicioSesionActual = ahora; }
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
@@ -236,7 +243,7 @@
         }
       }
 
-      if (currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo && !card.classList.contains('is-flipped')) {
+      if (systemReady && currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo && !card.classList.contains('is-flipped')) {
         isPlayingVideo = true;
         frontVideo.style.display = 'block';
         frontVideo.play().catch(e => {
