@@ -110,10 +110,10 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // ESTA LÍNEA DEFINE QUE ES LA TABLET 02
     const muebleRef = ref(db, 'muebles/exhibicion_02/metricas');
     const statusRef = ref(db, 'muebles/exhibicion_02/status');
 
+    // Lógica nativa de Firebase para desconexiones abruptas
     const connectedRef = ref(db, ".info/connected");
     onValue(connectedRef, (snap) => {
       if (snap.val() === true) {
@@ -142,9 +142,21 @@
         card.classList.toggle('is-flipped'); 
     });
 
-    document.addEventListener('dblclick', (e) => {
+    // Lógica para voltear con 5 toques seguidos
+    let clickCount = 0;
+    let clickTimeout;
+    document.addEventListener('click', (e) => {
       if (e.target !== fullscreenBtn && e.target !== btnFlip) {
-        card.classList.toggle('is-flipped');
+        clickCount++;
+        clearTimeout(clickTimeout);
+        
+        if (clickCount >= 5) {
+          card.classList.toggle('is-flipped');
+          clickCount = 0; // Reiniciar contador tras voltear
+        } else {
+          // Si pasa más de medio segundo (500ms) sin otro toque, se reinicia la cuenta
+          clickTimeout = setTimeout(() => { clickCount = 0; }, 500);
+        }
       }
     });
 
@@ -193,7 +205,19 @@
       
       currentFacesCount = rostrosActuales;
 
-      if (currentFacesCount > 0 && !isPlayingVideo) {
+      // Calcular tiempo de sesión actual antes de disparar el video
+      if (rostrosActuales > 0) {
+        if (!inicioSesionActual) { inicioSesionActual = ahora; }
+        tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
+      } else {
+        if (inicioSesionActual) {
+          tiempoAcumuladoTotal += (ahora - inicioSesionActual) / 1000;
+          inicioSesionActual = null; tiempoSesionActual = 0;
+        }
+      }
+
+      // Lógica del Video: Solo se reproduce si hay al menos 1 segundo de visualización continua
+      if (currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo) {
         isPlayingVideo = true;
         frontVideo.style.display = 'block';
         frontVideo.play().catch(e => {
@@ -212,16 +236,6 @@
         }
       }
 
-      if (rostrosActuales > 0) {
-        if (!inicioSesionActual) { inicioSesionActual = ahora; }
-        tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
-      } else {
-        if (inicioSesionActual) {
-          tiempoAcumuladoTotal += (ahora - inicioSesionActual) / 1000;
-          inicioSesionActual = null; tiempoSesionActual = 0;
-        }
-      }
-
       let tiempoTotalParaCalculo = tiempoAcumuladoTotal + tiempoSesionActual;
       let promedio = totalHistorico > 0 ? (tiempoTotalParaCalculo / totalHistorico) : 0;
 
@@ -230,11 +244,17 @@
       timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
       avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
 
-      if (ahora - lastFirebaseUpdate >= 3000) {
+      // Actualización a Firebase cada 1 segundo (1000ms en lugar de 3000ms)
+      if (ahora - lastFirebaseUpdate >= 1000) {
+        // Enviar datos
         set(muebleRef, {
           actual: rostrosActuales, historico: totalHistorico, tiempo: tiempoSesionActual.toFixed(1),
           promedio: promedio.toFixed(1), tiempoAcumuladoTotal: tiempoAcumuladoTotal
         });
+        
+        // Forzar latido de ONLINE constante siempre que haya envío de datos exitoso
+        set(statusRef, 'ONLINE');
+
         lastFirebaseUpdate = ahora;
       }
 
