@@ -58,9 +58,12 @@
     #barcode-counter { background: rgba(255, 165, 0, 0.15); color: #FFA500; border-color: #FFA500; display: none; }
     #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 40; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid #00FFFF; color: #00FFFF; font-weight: bold; font-size: 1.2rem; }
   </style>
+  
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript" src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 </head>
 <body>
   <div class="scene">
@@ -114,7 +117,7 @@
 
     const eventosRef = ref(db, 'muebles/tablet_03/eventos');
     const statusRef = ref(db, 'muebles/tablet_03/status');
-    const codigosRef = ref(db, 'muebles/tablet_03/codigos_barra'); // Nueva referencia para códigos
+    const codigosRef = ref(db, 'muebles/tablet_03/codigos_barra');
 
     const connectedRef = ref(db, ".info/connected");
     onValue(connectedRef, (snap) => {
@@ -140,30 +143,40 @@
       const gainNode = audioCtx.createGain();
       
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(2000, audioCtx.currentTime); // Tono agudo de escáner (2000Hz)
+      oscillator.frequency.setValueAtTime(2000, audioCtx.currentTime);
       
-      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volumen suave
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1);
       
       oscillator.connect(gainNode);
       gainNode.connect(audioCtx.destination);
       
       oscillator.start(audioCtx.currentTime);
-      oscillator.stop(audioCtx.currentTime + 0.1); // Duración de 100ms
+      oscillator.stop(audioCtx.currentTime + 0.1);
     }
 
-    // --- DETECTOR DE CÓDIGOS DE BARRA ---
-    let barcodeDetector;
-    try {
-      if ('BarcodeDetector' in window) {
-        barcodeDetector = new BarcodeDetector();
-      } else {
-        console.warn('BarcodeDetector API no soportada por este navegador. Actualiza Chrome/Edge o tu versión de Android/iOS.');
-      }
-    } catch (e) {
-      console.error('Error inicializando BarcodeDetector:', e);
-    }
+    // --- CONFIGURACIÓN DE ZXING (Ruta 2) ---
+    const hints = new Map();
+    // Filtramos solo formatos de productos comerciales para mejorar la velocidad
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.EAN_13,
+      ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.UPC_A,
+      ZXing.BarcodeFormat.UPC_E,
+      ZXing.BarcodeFormat.CODE_128,
+      ZXing.BarcodeFormat.CODE_39
+    ]);
+    // TRY_HARDER fuerza algoritmos matemáticos más pesados para leer códigos borrosos
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
 
+    const zxingReader = new ZXing.MultiFormatReader();
+    zxingReader.setHints(hints);
+
+    // Canvas interno en memoria usado para pasar la imagen a ZXing limpiamente
+    const scanCanvas = document.createElement('canvas');
+    const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+
+    // --- MANEJO DE INTERFAZ ---
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     fullscreenBtn.addEventListener('click', () => {
       const elem = document.documentElement;
@@ -193,7 +206,7 @@
     let clickCount = 0;
     let clickTimeout;
     document.addEventListener('click', (e) => {
-      initAudio(); // Inicializa el audio en la primera interacción del usuario (política del navegador)
+      initAudio(); // Inicializa audio al primer toque
 
       if (card.classList.contains('is-flipped')) return;
 
@@ -247,6 +260,7 @@
       }
     });
 
+    // --- RECONOCIMIENTO FACIAL ---
     function onResults(results) {
       document.getElementById('loading').style.display = 'none';
       if (results.image) { 
@@ -265,17 +279,14 @@
         
         stabilityTimer = setTimeout(() => {
           if (pendingFaceCount !== lastLoggedFaceCount) {
-            const fechaISO = new Date().toISOString();
-            
             push(eventosRef, {
               timestamp: Date.now(),
-              fecha: fechaISO,
+              fecha: new Date().toISOString(),
               conteoAnterior: lastLoggedFaceCount,
               conteoActual: pendingFaceCount
             });
 
             set(statusRef, 'ONLINE');
-
             lastLoggedFaceCount = pendingFaceCount;
           }
         }, 1000); 
@@ -294,9 +305,7 @@
       if (systemReady && currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo && !card.classList.contains('is-flipped')) {
         isPlayingVideo = true;
         frontVideo.style.display = 'block';
-        frontVideo.play().catch(e => {
-          console.log("Autoplay bloqueado:", e);
-        });
+        frontVideo.play().catch(e => console.log("Autoplay bloqueado:", e));
       }
 
       if (rostrosActuales > rostrosActivos.length) {
@@ -331,46 +340,59 @@
     let lastScannedCode = null;
     let codeCooldownTimer = null;
 
+    // --- CÁMARA (MediaPipe + ZXing) ---
     const camera = new window.Camera(videoElement, { 
       onFrame: async () => { 
-        // 1. Envía el cuadro para la malla facial
+        // 1. Envía el cuadro para la malla facial de forma asíncrona
         await faceMesh.send({image: videoElement}); 
         
-        // 2. Procesa la lectura de código de barras sin bloquear el hilo principal (cada 400ms)
         const ahora = Date.now();
-        if (barcodeDetector && (ahora - lastScanTime > 400)) {
+        // 2. Procesar con ZXing limitando la ejecución a 1 vez cada 600ms para evitar congelar la tablet
+        if (ahora - lastScanTime > 600) {
           lastScanTime = ahora;
+          
+          if (scanCanvas.width !== videoElement.videoWidth) {
+            scanCanvas.width = videoElement.videoWidth;
+            scanCanvas.height = videoElement.videoHeight;
+          }
+          
+          // Captura el fotograma actual del video a nuestro canvas en memoria
+          scanCtx.drawImage(videoElement, 0, 0, scanCanvas.width, scanCanvas.height);
+          
           try {
-            const barcodes = await barcodeDetector.detect(videoElement);
-            if (barcodes.length > 0) {
-              const code = barcodes[0].rawValue;
+            // Conversión estricta síncrona para ZXing
+            const luminanceSource = new ZXing.HTMLCanvasElementLuminanceSource(scanCanvas);
+            const binaryBitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceSource));
+            
+            // Intenta decodificar el frame (arrojará una excepción si no hay código)
+            const result = zxingReader.decode(binaryBitmap);
+            const code = result.getText();
+            
+            if (code !== lastScannedCode) {
+              lastScannedCode = code;
+              playBeep(); // Llama a la señal auditiva
+
+              // Muestra en la UI posterior
+              barcodeBox.style.display = 'block';
+              barcodeBox.innerText = `CÓDIGO: ${code}`;
               
-              // Verifica que no estemos escaneando el mismo código repetitivamente en el mismo segundo
-              if (code !== lastScannedCode) {
-                lastScannedCode = code;
-                playBeep(); // Llama a la señal auditiva
+              // Enviar a Firebase
+              push(codigosRef, {
+                codigo: code,
+                timestamp: ahora,
+                fecha: new Date().toISOString(),
+                metodo: 'zxing_software'
+              });
 
-                // Muestra en la UI posterior
-                barcodeBox.style.display = 'block';
-                barcodeBox.innerText = `CÓDIGO: ${code}`;
-                
-                // Enviar a Firebase
-                push(codigosRef, {
-                  codigo: code,
-                  timestamp: ahora,
-                  fecha: new Date().toISOString()
-                });
-
-                // Reinicia el bloqueo de este código específico tras 4 segundos
-                clearTimeout(codeCooldownTimer);
-                codeCooldownTimer = setTimeout(() => {
-                  lastScannedCode = null;
-                  barcodeBox.innerText = `ÚLTIMO: ${code}`;
-                }, 4000);
-              }
+              // Reinicia el bloqueo de este código específico tras 4 segundos
+              clearTimeout(codeCooldownTimer);
+              codeCooldownTimer = setTimeout(() => {
+                lastScannedCode = null;
+                barcodeBox.innerText = `ÚLTIMO: ${code}`;
+              }, 4000);
             }
           } catch (err) {
-            // Ignorar errores silentes de lectura
+            // "NotFoundException" es lo que arroja ZXing en el 99% de los cuadros, se ignora por completo.
           }
         }
       }, 
