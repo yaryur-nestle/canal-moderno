@@ -7,7 +7,7 @@
   <style>
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
     .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; }
-
+    
     .fullscreen-btn {
       position: absolute;
       top: 0;
@@ -22,23 +22,17 @@
       cursor: pointer;
     }
 
-
-
-
-
-
     .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
     .card.is-flipped { transform: rotateY(180deg); }
     .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: #000; }
     
-    .face-front { background-image: url('TABLET 01.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
+    .face-front { background-image: url('TABLET 02.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
     .face-back { transform: rotateY(180deg); }
     
     .flip-btn { position: absolute; bottom: 12%; right: 5%; z-index: 50; background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.3s ease; }
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
     .flip-btn.invisible { opacity: 0 !important; box-shadow: none !important; background: transparent !important; transform: none !important; }
-
-   
+    
     video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
     canvas { z-index: 10; }
     .panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
@@ -61,7 +55,9 @@
     <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
 
     <div id="card" class="card">
-      <div class="face face-front">
+      <div class="face face-front"></div>
+      
+      <div class="face face-back">
         <div id="loading">SISTEMA INICIANDO...</div>
         <div class="panel left">
           <div id="face-counter" class="counter-box">ACTUAL: 0</div>
@@ -74,7 +70,6 @@
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas"></canvas>
       </div>
-      <div class="face face-back"></div>
     </div>
     
     <button id="flip-btn" class="flip-btn" title="Alternar Vista">
