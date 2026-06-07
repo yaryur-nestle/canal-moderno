@@ -15,7 +15,7 @@
       height: 100%;
       background-color: #000000;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      overflow: hidden; /* Evita barras de desplazamiento */
+      overflow: hidden; 
     }
 
     /* --- Botón Pantalla Completa --- */
@@ -46,10 +46,9 @@
       width: 100%;
       height: 100%;
       transform-style: preserve-3d;
-      transition: transform 1s cubic-bezier(0.68, -0.15, 0.265, 1.15); /* Transición suave y elástica */
+      transition: transform 1s cubic-bezier(0.68, -0.15, 0.265, 1.15); 
     }
 
-    /* Clase que ejecuta el giro */
     .flip-container.flipped .flipper {
       transform: rotateY(180deg);
     }
@@ -61,37 +60,37 @@
       left: 0;
       width: 100%;
       height: 100%;
-      backface-visibility: hidden; /* Oculta la parte trasera cuando está de espaldas */
+      backface-visibility: hidden; 
     }
 
-    /* --- ESTILOS DE LA CARA FRONTAL (Exhibidor Mágico) --- */
-    .front {
-      background-color: #ffffff;
-    }
+    /* Lógica de interacciones táctiles segura */
+    .front { pointer-events: auto; background-color: #ffffff; }
+    .back { pointer-events: none; } /* Desactivado mientras estamos en el frente */
+    
+    .flip-container.flipped .front { pointer-events: none; } /* Desactivado al girar */
+    .flip-container.flipped .back { pointer-events: auto; } /* Activado al girar */
 
-    /* Las imágenes ocupan toda la pantalla para mantener la alineación del render */
+    /* Imágenes */
     .base-img, .person-img {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover; /* Ajusta sin deformar, llenando la pantalla */
-      pointer-events: none; /* Evita que las imágenes bloqueen los clics */
+      object-fit: cover; 
+      pointer-events: none; /* Asegura que no tapen los clics de las zonas */
     }
 
-    /* Estado inicial invisible con fundido (fade) de 1.5 segundos */
     .person-img {
       opacity: 0;
       transition: opacity 1.5s ease-in-out;
     }
 
-    /* Clase para hacer aparecer a la persona */
     .person-img.active {
       opacity: 1;
     }
 
-    /* Zonas interactivas invisibles para activar el giro */
+    /* Zonas interactivas */
     .click-zone {
       position: absolute;
       top: 0;
@@ -104,9 +103,9 @@
     .click-zone.center { left: 33.33%; }
     .click-zone.right { left: 66.66%; }
 
-    /* --- ESTILOS DE LA CARA TRASERA (Dashboard Analítico) --- */
+    /* Cara trasera */
     .back {
-      transform: rotateY(180deg); /* Volteado por defecto */
+      transform: rotateY(180deg); 
       background-color: #ffffff;
       display: flex;
       flex-direction: column;
@@ -114,7 +113,7 @@
       justify-content: center;
       padding: 40px;
       box-sizing: border-box;
-      cursor: pointer; /* Indica que se puede tocar para volver */
+      cursor: pointer; /* Toda la pantalla es un botón de regreso */
     }
 
     .back-content {
@@ -126,6 +125,7 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.1);
       border: 1px solid #e0e0e0;
       text-align: center;
+      pointer-events: none; /* Que el clic atraviese esto hacia el .back */
     }
 
     h1 {
@@ -229,7 +229,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // --- PANTALLA COMPLETA ---
     document.getElementById('fullscreen-btn').addEventListener('click', () => {
       const elem = document.documentElement;
       if (!document.fullscreenElement) {
@@ -239,7 +238,6 @@
       }
     });
 
-    // --- CONTROL DE TIEMPO Y RESETEO ---
     const currentHour = new Date().getHours();
     setInterval(() => {
       if (new Date().getHours() !== currentHour) location.reload(); 
@@ -250,25 +248,24 @@
     const startTimestamp = startOfHourDate.getTime();
     const labelsMinutos = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
 
-    // --- ESTADO GLOBAL DE LAS SILUETAS Y LOS DATOS ---
     const configTablets = {
       1: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 206, 86, 0.8)', colorBorder: 'rgb(255, 206, 86)', name: 'TABLET 01 (AMARILLO)' },
       2: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(54, 162, 235, 0.8)', colorBorder: 'rgb(54, 162, 235)', name: 'TABLET 02 (AZUL)' },
       3: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 99, 132, 0.8)', colorBorder: 'rgb(255, 99, 132)', name: 'TABLET 03 (ROJO)' }
     };
 
-    const estadoVisual = { 1: [], 2: [], 3: [] }; // Guarda qué IDs de imagen (1-5) están visibles
+    const estadoVisual = { 1: [], 2: [], 3: [] }; 
     const dataHistogramas = { 1: new Array(60).fill(0), 2: new Array(60).fill(0), 3: new Array(60).fill(0) };
-    let tabletActualEnGrafico = null; // Para saber qué gráfico estamos mirando al voltear
+    let tabletActualEnGrafico = null; 
 
-    // --- INICIALIZAR EL GRÁFICO ÚNICO (Cara Trasera) ---
+    // --- CONFIGURACIÓN DEL TOOLTIP PERSONALIZADO (Chart.js) ---
     const ctx = document.getElementById('main-chart').getContext('2d');
     const mainChart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: labelsMinutos,
         datasets: [{
-          label: 'Personas detectadas',
+          label: 'Personas',
           data: [],
           backgroundColor: '#000',
           borderColor: '#000',
@@ -284,26 +281,53 @@
           y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#eaeaea' } },
           x: { grid: { display: false } }
         },
-        plugins: { legend: { display: false } }
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: { size: 16, family: "'Segoe UI', sans-serif" },
+            bodyFont: { size: 14, family: "'Segoe UI', sans-serif" },
+            padding: 12,
+            displayColors: false, // Oculta el cuadrito de color en el tooltip
+            callbacks: {
+              // Formatear la hora (ej. 07:41pm)
+              title: function(context) {
+                const minuto = context[0].label;
+                let hr = currentHour;
+                const ampm = hr >= 12 ? 'pm' : 'am';
+                hr = hr % 12;
+                hr = hr ? hr : 12; // la hora 0 debe ser 12
+                const hrStr = hr.toString().padStart(2, '0');
+                return `${hrStr}:${minuto}${ampm}`;
+              },
+              // Formatear el texto (ej. 4 personas)
+              label: function(context) {
+                const cantidad = context.raw;
+                if(cantidad === 1) return cantidad + ' persona';
+                return cantidad + ' personas';
+              }
+            }
+          }
+        }
       }
     });
 
-    // --- FUNCIONES DE GIRO 3D ---
     window.flipToChart = function(tabletId) {
       tabletActualEnGrafico = tabletId;
       const hourStr = currentHour.toString().padStart(2, '0');
       
-      // Actualizar textos
       document.getElementById('chart-title').innerText = configTablets[tabletId].name;
       document.getElementById('chart-subtitle').innerText = `Hora: ${hourStr}:00 - ${hourStr}:59`;
       
-      // Inyectar los datos correctos al gráfico central
       mainChart.data.datasets[0].data = dataHistogramas[tabletId];
       mainChart.data.datasets[0].backgroundColor = configTablets[tabletId].colorBg;
       mainChart.data.datasets[0].borderColor = configTablets[tabletId].colorBorder;
       mainChart.update();
 
-      // Ejecutar el giro CSS
       document.getElementById('flip-container').classList.add('flipped');
     }
 
@@ -312,33 +336,25 @@
       tabletActualEnGrafico = null;
     }
 
-    // --- LÓGICA DE APARICIÓN DE SILUETAS (LA MAGIA) ---
     function actualizarSiluetas(tabletId, nuevoConteo) {
-      const objetivo = Math.min(nuevoConteo, 5); // Máximo 5 imágenes por mueble
+      const objetivo = Math.min(nuevoConteo, 5); 
       let activasActuales = estadoVisual[tabletId];
 
       if (objetivo > activasActuales.length) {
-        // Entraron personas: Encender imágenes aleatorias que estén apagadas
         const cantidadAEncender = objetivo - activasActuales.length;
         let inactivas = configTablets[tabletId].ids.filter(id => !activasActuales.includes(id));
-        
-        // Barajar array de inactivas (shuffle)
         inactivas = inactivas.sort(() => Math.random() - 0.5);
 
         for (let j = 0; j < cantidadAEncender; j++) {
           const imgId = inactivas[j];
-          document.getElementById(`img-${tabletId}-${imgId}`).classList.add('active');
-          activasActuales.push(imgId);
+          if (imgId) {
+            document.getElementById(`img-${tabletId}-${imgId}`).classList.add('active');
+            activasActuales.push(imgId);
+          }
         }
-
       } else if (objetivo < activasActuales.length) {
-        // Salieron personas: Apagar imágenes aleatorias de las que están encendidas
         const cantidadAApagar = activasActuales.length - objetivo;
-        
-        // Barajar array de activas (shuffle) para apagar al azar
         activasActuales = activasActuales.sort(() => Math.random() - 0.5);
-
-        // Sacar del array las que vamos a apagar
         const paraApagar = activasActuales.splice(0, cantidadAApagar); 
         
         for (let j = 0; j < paraApagar.length; j++) {
@@ -347,10 +363,9 @@
         }
       }
       
-      estadoVisual[tabletId] = activasActuales; // Guardar el nuevo estado
+      estadoVisual[tabletId] = activasActuales; 
     }
 
-    // --- CONEXIÓN A FIREBASE Y LECTURA EN TIEMPO REAL ---
     for (let i = 1; i <= 3; i++) {
       const numFormat = i.toString().padStart(2, '0'); 
       
@@ -360,16 +375,13 @@
         startAt(startTimestamp)
       );
 
-      // Leemos histórico de la hora actual y nos quedamos escuchando en vivo
       onChildAdded(eventosQuery, (snapshot) => {
         const data = snapshot.val();
         
         if (data && data.timestamp && data.conteoActual !== undefined) {
           
-          // 1. Efecto Visual: Aparición/Desaparición
           actualizarSiluetas(i, data.conteoActual);
 
-          // 2. Efecto de Datos: Sumatoria de nuevas detecciones
           const conteoAnterior = data.conteoAnterior || 0;
           if (data.conteoActual > conteoAnterior) {
             const eventDate = new Date(data.timestamp);
@@ -378,7 +390,6 @@
             const nuevasDetecciones = data.conteoActual - conteoAnterior;
             dataHistogramas[i][minutoDelEvento] += nuevasDetecciones;
             
-            // Si la tarjeta está volteada mirando ESTE gráfico específico, actualizamos en vivo
             if (tabletActualEnGrafico === i) {
               mainChart.update(); 
             }
