@@ -3,44 +3,136 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monitor Remoto - Yar-Yur System</title>
+  <title>Yar-Yur System - Monitor Interactivo</title>
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    body {
+    body, html {
       margin: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      background-color: #ffffff;
-      color: #333333;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      padding: 20px;
-      box-sizing: border-box;
+      overflow: hidden; /* Evita barras de desplazamiento */
     }
 
-    /* Botón Pantalla Completa Invisible */
+    /* --- Botón Pantalla Completa --- */
     .fullscreen-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 1000;
+      transition: background 0.3s;
+    }
+    .fullscreen-btn:hover { background: rgba(255, 255, 255, 0.5); }
+
+    /* --- Contenedor Principal (Efecto Flip 3D) --- */
+    .flip-container {
+      perspective: 1500px;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .flipper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 1s cubic-bezier(0.68, -0.15, 0.265, 1.15); /* Transición suave y elástica */
+    }
+
+    /* Clase que ejecuta el giro */
+    .flip-container.flipped .flipper {
+      transform: rotateY(180deg);
+    }
+
+    /* Caras del interactivo */
+    .front, .back {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      height: 80px;
-      background: transparent;
-      border: none;
-      outline: none;
+      height: 100%;
+      backface-visibility: hidden; /* Oculta la parte trasera cuando está de espaldas */
+    }
+
+    /* --- ESTILOS DE LA CARA FRONTAL (Exhibidor Mágico) --- */
+    .front {
+      background-color: #ffffff;
+    }
+
+    /* Las imágenes ocupan toda la pantalla para mantener la alineación del render */
+    .base-img, .person-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Ajusta sin deformar, llenando la pantalla */
+      pointer-events: none; /* Evita que las imágenes bloqueen los clics */
+    }
+
+    /* Estado inicial invisible con fundido (fade) de 1.5 segundos */
+    .person-img {
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+    }
+
+    /* Clase para hacer aparecer a la persona */
+    .person-img.active {
+      opacity: 1;
+    }
+
+    /* Zonas interactivas invisibles para activar el giro */
+    .click-zone {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 33.33%;
       cursor: pointer;
-      z-index: 100;
+      z-index: 50;
+    }
+    .click-zone.left { left: 0; }
+    .click-zone.center { left: 33.33%; }
+    .click-zone.right { left: 66.66%; }
+
+    /* --- ESTILOS DE LA CARA TRASERA (Dashboard Analítico) --- */
+    .back {
+      transform: rotateY(180deg); /* Volteado por defecto */
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      box-sizing: border-box;
+      cursor: pointer; /* Indica que se puede tocar para volver */
+    }
+
+    .back-content {
+      background: #f8f9fa;
+      padding: 40px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 1200px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0;
+      text-align: center;
     }
 
     h1 {
       color: #111;
-      letter-spacing: 2px;
-      margin-top: 30px;
-      margin-bottom: 5px;
-      text-align: center;
+      letter-spacing: 3px;
+      margin-top: 0;
+      margin-bottom: 10px;
       text-transform: uppercase;
       font-weight: 800;
     }
@@ -52,47 +144,24 @@
       text-transform: uppercase;
     }
 
-    .dashboard-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-      width: 100%;
-      max-width: 1600px;
-    }
-
-    .mueble-col {
-      background: #f8f9fa;
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid #e0e0e0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex: 1;
-      min-width: 350px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-
-    .status-badge {
-      padding: 8px 20px;
-      border-radius: 20px;
-      font-weight: bold;
-      font-size: 1rem;
-      margin-bottom: 15px;
-      letter-spacing: 1px;
-      width: 80%;
-      text-align: center;
-      transition: all 0.3s ease;
-    }
-
-    .online { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .offline { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-
     .chart-container {
       position: relative;
-      height: 300px;
+      height: 50vh;
       width: 100%;
+    }
+
+    .hint {
+      margin-top: 30px;
+      color: #888;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
     }
   </style>
 </head>
@@ -100,39 +169,53 @@
 
   <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
 
-  <h1>Yar-Yur System</h1>
-  <div id="hour-subtitle" class="subtitle">Tráfico de personas (Hora Actual)</div>
+  <div class="flip-container" id="flip-container">
+    <div class="flipper">
+      
+      <div class="front">
+        <img src="fondo.jpg" class="base-img" alt="Exhibidores Yar-Yur">
+        
+        <img src="1-1.png" class="person-img" id="img-1-1">
+        <img src="1-2.png" class="person-img" id="img-1-2">
+        <img src="1-3.png" class="person-img" id="img-1-3">
+        <img src="1-4.png" class="person-img" id="img-1-4">
+        <img src="1-5.png" class="person-img" id="img-1-5">
 
-  <div class="dashboard-container">
-    
-    <div class="mueble-col">
-      <div id="badge-1" class="status-badge offline">TABLET 01 OFFLINE</div>
-      <div class="chart-container">
-        <canvas id="chart-1"></canvas>
+        <img src="2-1.png" class="person-img" id="img-2-1">
+        <img src="2-2.png" class="person-img" id="img-2-2">
+        <img src="2-3.png" class="person-img" id="img-2-3">
+        <img src="2-4.png" class="person-img" id="img-2-4">
+        <img src="2-5.png" class="person-img" id="img-2-5">
+
+        <img src="3-1.png" class="person-img" id="img-3-1">
+        <img src="3-2.png" class="person-img" id="img-3-2">
+        <img src="3-3.png" class="person-img" id="img-3-3">
+        <img src="3-4.png" class="person-img" id="img-3-4">
+        <img src="3-5.png" class="person-img" id="img-3-5">
+
+        <div class="click-zone left" onclick="flipToChart(1)"></div>
+        <div class="click-zone center" onclick="flipToChart(2)"></div>
+        <div class="click-zone right" onclick="flipToChart(3)"></div>
       </div>
-    </div>
 
-    <div class="mueble-col">
-      <div id="badge-2" class="status-badge offline">TABLET 02 OFFLINE</div>
-      <div class="chart-container">
-        <canvas id="chart-2"></canvas>
+      <div class="back" onclick="flipToFront()">
+        <div class="back-content">
+          <h1 id="chart-title">YAR-YUR SYSTEM</h1>
+          <div id="chart-subtitle" class="subtitle">Tráfico de personas</div>
+          <div class="chart-container">
+            <canvas id="main-chart"></canvas>
+          </div>
+          <div class="hint">Toca en cualquier parte para volver al exhibidor interactivo</div>
+        </div>
       </div>
-    </div>
 
-    <div class="mueble-col">
-      <div id="badge-3" class="status-badge offline">TABLET 03 OFFLINE</div>
-      <div class="chart-container">
-        <canvas id="chart-3"></canvas>
-      </div>
     </div>
-
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, onValue, query, orderByChild, startAt, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
       authDomain: "canal-moderno-2655e.firebaseapp.com",
@@ -146,134 +229,159 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // --- LÓGICA DE PANTALLA COMPLETA ---
-    const fullscreenBtn = document.getElementById('fullscreen-btn');
-    fullscreenBtn.addEventListener('click', () => {
+    // --- PANTALLA COMPLETA ---
+    document.getElementById('fullscreen-btn').addEventListener('click', () => {
       const elem = document.documentElement;
       if (!document.fullscreenElement) {
-        if (elem.requestFullscreen) elem.requestFullscreen();
-        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+        elem.requestFullscreen?.() || elem.webkitRequestFullscreen?.() || elem.msRequestFullscreen?.();
       } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.msExitFullscreen) document.msExitFullscreen();
+        document.exitFullscreen?.() || document.webkitExitFullscreen?.() || document.msExitFullscreen?.();
       }
     });
 
-    // --- CONFIGURACIÓN DEL TIEMPO ---
+    // --- CONTROL DE TIEMPO Y RESETEO ---
     const currentHour = new Date().getHours();
     setInterval(() => {
-      if (new Date().getHours() !== currentHour) {
-        location.reload(); 
-      }
+      if (new Date().getHours() !== currentHour) location.reload(); 
     }, 60000);
-
-    const hourStr = currentHour.toString().padStart(2, '0');
-    document.getElementById('hour-subtitle').innerText = `Tráfico de personas (${hourStr}:00 - ${hourStr}:59)`;
 
     const startOfHourDate = new Date();
     startOfHourDate.setMinutes(0, 0, 0);
     const startTimestamp = startOfHourDate.getTime();
-
     const labelsMinutos = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
 
-    const configColores = {
-      1: { bg: 'rgba(255, 206, 86, 0.8)', border: 'rgb(255, 206, 86)' }, 
-      2: { bg: 'rgba(54, 162, 235, 0.8)', border: 'rgb(54, 162, 235)' }, 
-      3: { bg: 'rgba(255, 99, 132, 0.8)', border: 'rgb(255, 99, 132)' }  
+    // --- ESTADO GLOBAL DE LAS SILUETAS Y LOS DATOS ---
+    const configTablets = {
+      1: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 206, 86, 0.8)', colorBorder: 'rgb(255, 206, 86)', name: 'TABLET 01 (AMARILLO)' },
+      2: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(54, 162, 235, 0.8)', colorBorder: 'rgb(54, 162, 235)', name: 'TABLET 02 (AZUL)' },
+      3: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 99, 132, 0.8)', colorBorder: 'rgb(255, 99, 132)', name: 'TABLET 03 (ROJO)' }
     };
 
-    const charts = {};
+    const estadoVisual = { 1: [], 2: [], 3: [] }; // Guarda qué IDs de imagen (1-5) están visibles
+    const dataHistogramas = { 1: new Array(60).fill(0), 2: new Array(60).fill(0), 3: new Array(60).fill(0) };
+    let tabletActualEnGrafico = null; // Para saber qué gráfico estamos mirando al voltear
 
+    // --- INICIALIZAR EL GRÁFICO ÚNICO (Cara Trasera) ---
+    const ctx = document.getElementById('main-chart').getContext('2d');
+    const mainChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labelsMinutos,
+        datasets: [{
+          label: 'Personas detectadas',
+          data: [],
+          backgroundColor: '#000',
+          borderColor: '#000',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 500, easing: 'easeOutQuart' },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#eaeaea' } },
+          x: { grid: { display: false } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    // --- FUNCIONES DE GIRO 3D ---
+    window.flipToChart = function(tabletId) {
+      tabletActualEnGrafico = tabletId;
+      const hourStr = currentHour.toString().padStart(2, '0');
+      
+      // Actualizar textos
+      document.getElementById('chart-title').innerText = configTablets[tabletId].name;
+      document.getElementById('chart-subtitle').innerText = `Hora: ${hourStr}:00 - ${hourStr}:59`;
+      
+      // Inyectar los datos correctos al gráfico central
+      mainChart.data.datasets[0].data = dataHistogramas[tabletId];
+      mainChart.data.datasets[0].backgroundColor = configTablets[tabletId].colorBg;
+      mainChart.data.datasets[0].borderColor = configTablets[tabletId].colorBorder;
+      mainChart.update();
+
+      // Ejecutar el giro CSS
+      document.getElementById('flip-container').classList.add('flipped');
+    }
+
+    window.flipToFront = function() {
+      document.getElementById('flip-container').classList.remove('flipped');
+      tabletActualEnGrafico = null;
+    }
+
+    // --- LÓGICA DE APARICIÓN DE SILUETAS (LA MAGIA) ---
+    function actualizarSiluetas(tabletId, nuevoConteo) {
+      const objetivo = Math.min(nuevoConteo, 5); // Máximo 5 imágenes por mueble
+      let activasActuales = estadoVisual[tabletId];
+
+      if (objetivo > activasActuales.length) {
+        // Entraron personas: Encender imágenes aleatorias que estén apagadas
+        const cantidadAEncender = objetivo - activasActuales.length;
+        let inactivas = configTablets[tabletId].ids.filter(id => !activasActuales.includes(id));
+        
+        // Barajar array de inactivas (shuffle)
+        inactivas = inactivas.sort(() => Math.random() - 0.5);
+
+        for (let j = 0; j < cantidadAEncender; j++) {
+          const imgId = inactivas[j];
+          document.getElementById(`img-${tabletId}-${imgId}`).classList.add('active');
+          activasActuales.push(imgId);
+        }
+
+      } else if (objetivo < activasActuales.length) {
+        // Salieron personas: Apagar imágenes aleatorias de las que están encendidas
+        const cantidadAApagar = activasActuales.length - objetivo;
+        
+        // Barajar array de activas (shuffle) para apagar al azar
+        activasActuales = activasActuales.sort(() => Math.random() - 0.5);
+
+        // Sacar del array las que vamos a apagar
+        const paraApagar = activasActuales.splice(0, cantidadAApagar); 
+        
+        for (let j = 0; j < paraApagar.length; j++) {
+          const imgId = paraApagar[j];
+          document.getElementById(`img-${tabletId}-${imgId}`).classList.remove('active');
+        }
+      }
+      
+      estadoVisual[tabletId] = activasActuales; // Guardar el nuevo estado
+    }
+
+    // --- CONEXIÓN A FIREBASE Y LECTURA EN TIEMPO REAL ---
     for (let i = 1; i <= 3; i++) {
       const numFormat = i.toString().padStart(2, '0'); 
       
-      const ctx = document.getElementById(`chart-${i}`).getContext('2d');
-      const datosIniciales = new Array(60).fill(0);
-
-      charts[i] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labelsMinutos,
-          datasets: [{
-            label: 'Personas detectadas',
-            data: datosIniciales,
-            backgroundColor: configColores[i].bg,
-            borderColor: configColores[i].border,
-            borderWidth: 1,
-            borderRadius: 4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: {
-            duration: 500,
-            easing: 'easeOutQuart'
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                stepSize: 1,
-                precision: 0
-              },
-              grid: { color: '#eaeaea' }
-            },
-            x: {
-              grid: { display: false }
-            }
-          },
-          plugins: {
-            legend: { display: false }
-          }
-        }
-      });
-
-      // CONECTAR CON FIREBASE - STATUS
-      const statusRef = ref(db, `muebles/tablet_${numFormat}/status`);
-      onValue(statusRef, (snapshot) => {
-        const status = snapshot.val();
-        const badge = document.getElementById(`badge-${i}`);
-        
-        if (status === 'ONLINE') {
-          badge.textContent = `TABLET ${numFormat} ONLINE`;
-          badge.className = 'status-badge online';
-        } else {
-          badge.textContent = `TABLET ${numFormat} OFFLINE`;
-          badge.className = 'status-badge offline';
-        }
-      });
-
-      // CONECTAR CON FIREBASE - EVENTOS (HISTOGRAMA EN TIEMPO REAL)
       const eventosQuery = query(
         ref(db, `muebles/tablet_${numFormat}/eventos`), 
         orderByChild('timestamp'), 
         startAt(startTimestamp)
       );
 
+      // Leemos histórico de la hora actual y nos quedamos escuchando en vivo
       onChildAdded(eventosQuery, (snapshot) => {
         const data = snapshot.val();
         
         if (data && data.timestamp && data.conteoActual !== undefined) {
-          const eventDate = new Date(data.timestamp);
-          const minutoDelEvento = eventDate.getMinutes();
-
-          // LÓGICA CORREGIDA:
-          // Solo sumamos cuando hay una detección nueva (el conteo sube)
-          // Si el conteo baja (alguien sale del rango de la cámara), lo ignoramos.
-          const conteoAnterior = data.conteoAnterior || 0;
           
+          // 1. Efecto Visual: Aparición/Desaparición
+          actualizarSiluetas(i, data.conteoActual);
+
+          // 2. Efecto de Datos: Sumatoria de nuevas detecciones
+          const conteoAnterior = data.conteoAnterior || 0;
           if (data.conteoActual > conteoAnterior) {
-            // Calculamos cuántas personas nuevas entraron en este evento en particular
+            const eventDate = new Date(data.timestamp);
+            const minutoDelEvento = eventDate.getMinutes();
+            
             const nuevasDetecciones = data.conteoActual - conteoAnterior;
+            dataHistogramas[i][minutoDelEvento] += nuevasDetecciones;
             
-            // Sumamos esa cantidad a la barra correspondiente de ese minuto
-            charts[i].data.datasets[0].data[minutoDelEvento] += nuevasDetecciones;
-            
-            // Actualizamos la vista
-            charts[i].update(); 
+            // Si la tarjeta está volteada mirando ESTE gráfico específico, actualizamos en vivo
+            if (tabletActualEnGrafico === i) {
+              mainChart.update(); 
+            }
           }
         }
       });
