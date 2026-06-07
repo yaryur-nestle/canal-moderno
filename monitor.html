@@ -14,7 +14,7 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      background-color: #ffffff; /* Fondo blanco solicitado */
+      background-color: #ffffff;
       color: #333333;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       padding: 20px;
@@ -86,7 +86,6 @@
       transition: all 0.3s ease;
     }
 
-    /* Estilos de los badges adaptados a fondo claro */
     .online { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .offline { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
@@ -163,43 +162,34 @@
     });
 
     // --- CONFIGURACIÓN DEL TIEMPO ---
-    // Recargar la página automáticamente cuando cambie la hora para resetear los gráficos
     const currentHour = new Date().getHours();
     setInterval(() => {
       if (new Date().getHours() !== currentHour) {
         location.reload(); 
       }
-    }, 60000); // Revisa cada minuto
+    }, 60000);
 
-    // Actualizar el subtítulo con la hora actual (ej. 18:00 - 18:59)
     const hourStr = currentHour.toString().padStart(2, '0');
     document.getElementById('hour-subtitle').innerText = `Tráfico de personas (${hourStr}:00 - ${hourStr}:59)`;
 
-    // Obtener el timestamp exacto del minuto 0 de la hora actual para filtrar la base de datos
     const startOfHourDate = new Date();
     startOfHourDate.setMinutes(0, 0, 0);
     const startTimestamp = startOfHourDate.getTime();
 
-    // Etiquetas del eje X (00 a 59 minutos)
     const labelsMinutos = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
 
-    // Configuración de colores para cada tablet
     const configColores = {
-      1: { bg: 'rgba(255, 206, 86, 0.8)', border: 'rgb(255, 206, 86)' }, // Amarillo
-      2: { bg: 'rgba(54, 162, 235, 0.8)', border: 'rgb(54, 162, 235)' }, // Azul
-      3: { bg: 'rgba(255, 99, 132, 0.8)', border: 'rgb(255, 99, 132)' }  // Rojo
+      1: { bg: 'rgba(255, 206, 86, 0.8)', border: 'rgb(255, 206, 86)' }, 
+      2: { bg: 'rgba(54, 162, 235, 0.8)', border: 'rgb(54, 162, 235)' }, 
+      3: { bg: 'rgba(255, 99, 132, 0.8)', border: 'rgb(255, 99, 132)' }  
     };
 
     const charts = {};
 
-    // Bucle para configurar las 3 tablets
     for (let i = 1; i <= 3; i++) {
       const numFormat = i.toString().padStart(2, '0'); 
       
-      // 1. INICIALIZAR EL GRÁFICO (CHART.JS)
       const ctx = document.getElementById(`chart-${i}`).getContext('2d');
-      
-      // Creamos un array de 60 ceros para los datos iniciales
       const datosIniciales = new Array(60).fill(0);
 
       charts[i] = new Chart(ctx, {
@@ -212,21 +202,21 @@
             backgroundColor: configColores[i].bg,
             borderColor: configColores[i].border,
             borderWidth: 1,
-            borderRadius: 4 // Bordes ligeramente redondeados en las barras
+            borderRadius: 4
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           animation: {
-            duration: 500, // Velocidad de la animación ("arte de magia")
+            duration: 500,
             easing: 'easeOutQuart'
           },
           scales: {
             y: {
               beginAtZero: true,
               ticks: {
-                stepSize: 1, // Solo números enteros (no hay medias personas)
+                stepSize: 1,
                 precision: 0
               },
               grid: { color: '#eaeaea' }
@@ -236,12 +226,12 @@
             }
           },
           plugins: {
-            legend: { display: false } // Ocultar leyenda para más limpieza
+            legend: { display: false }
           }
         }
       });
 
-      // 2. CONECTAR CON FIREBASE - STATUS
+      // CONECTAR CON FIREBASE - STATUS
       const statusRef = ref(db, `muebles/tablet_${numFormat}/status`);
       onValue(statusRef, (snapshot) => {
         const status = snapshot.val();
@@ -256,15 +246,13 @@
         }
       });
 
-      // 3. CONECTAR CON FIREBASE - EVENTOS (HISTOGRAMA EN TIEMPO REAL)
-      // Usamos una query para traer solo los eventos de la HORA ACTUAL en adelante
+      // CONECTAR CON FIREBASE - EVENTOS (HISTOGRAMA EN TIEMPO REAL)
       const eventosQuery = query(
         ref(db, `muebles/tablet_${numFormat}/eventos`), 
         orderByChild('timestamp'), 
         startAt(startTimestamp)
       );
 
-      // onChildAdded se dispara por cada dato existente en esa hora y por cada dato NUEVO en tiempo real
       onChildAdded(eventosQuery, (snapshot) => {
         const data = snapshot.val();
         
@@ -272,15 +260,21 @@
           const eventDate = new Date(data.timestamp);
           const minutoDelEvento = eventDate.getMinutes();
 
-          // Actualizamos el array del gráfico.
-          // Si llegan varios eventos en el mismo minuto, guardamos el número máximo detectado en ese minuto.
-          const valorActualEnGrafico = charts[i].data.datasets[0].data[minutoDelEvento];
-          const nuevoValor = Math.max(valorActualEnGrafico, data.conteoActual);
+          // LÓGICA CORREGIDA:
+          // Solo sumamos cuando hay una detección nueva (el conteo sube)
+          // Si el conteo baja (alguien sale del rango de la cámara), lo ignoramos.
+          const conteoAnterior = data.conteoAnterior || 0;
           
-          charts[i].data.datasets[0].data[minutoDelEvento] = nuevoValor;
-          
-          // Esta es la línea que hace la "magia" y actualiza la vista inmediatamente
-          charts[i].update(); 
+          if (data.conteoActual > conteoAnterior) {
+            // Calculamos cuántas personas nuevas entraron en este evento en particular
+            const nuevasDetecciones = data.conteoActual - conteoAnterior;
+            
+            // Sumamos esa cantidad a la barra correspondiente de ese minuto
+            charts[i].data.datasets[0].data[minutoDelEvento] += nuevasDetecciones;
+            
+            // Actualizamos la vista
+            charts[i].update(); 
+          }
         }
       });
     }
