@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TABLET 01</title>
   <style>
-    /* --- CSS ORIGINAL RESTAURADO --- */
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
     .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; }
     
-    /* --- Botón Pantalla Completa Invisible --- */
     .fullscreen-btn {
       position: absolute;
       top: 0;
@@ -27,9 +25,8 @@
     .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
     .card.is-flipped { transform: rotateY(180deg); }
     .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: #000; }
-    .face-back { transform: rotateY(180deg); background-image: url('imagen.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
+    .face-back { transform: rotateY(180deg); background-image: url('TABLET 01.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
     
-    /* --- BOTÓN DE VOLTEAR --- */
     .flip-btn { position: absolute; bottom: 12%; right: 5%; z-index: 50; background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.3s ease; }
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
     .flip-btn.invisible { opacity: 0 !important; box-shadow: none !important; background: transparent !important; transform: none !important; }
@@ -107,7 +104,6 @@
       }
     });
 
-    // --- LÓGICA DE PANTALLA COMPLETA ---
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     fullscreenBtn.addEventListener('click', () => {
       const elem = document.documentElement;
@@ -122,7 +118,6 @@
       }
     });
 
-    // --- LÓGICA TRANSICIÓN 3D ---
     const btnFlip = document.getElementById('flip-btn');
     const card = document.getElementById('card');
     btnFlip.addEventListener('click', () => { card.classList.toggle('is-flipped'); btnFlip.classList.toggle('invisible'); });
@@ -193,13 +188,11 @@
         lastFirebaseUpdate = ahora;
       }
 
-      // --- DIBUJADO OPTIMIZADO PARA TABLETS ---
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       
       if (results.multiFaceLandmarks) {
         for (const landmarks of results.multiFaceLandmarks) {
-          // Solo se dibuja la malla limpia, un proceso altamente optimizado en MediaPipe
           window.drawConnectors(canvasCtx, landmarks, window.FACEMESH_TESSELATION, {color: '#00FF00', lineWidth: 1.5});
         }
       }
@@ -207,7 +200,6 @@
     }
 
     const faceMesh = new window.FaceMesh({locateFile: (file) => { return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`; }});
-    // Bajamos ligeramente la exigencia del refinado para priorizar fluidez en tablets
     faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
     faceMesh.onResults(onResults);
     const camera = new window.Camera(videoElement, { onFrame: async () => { await faceMesh.send({image: videoElement}); }, width: 1280, height: 720 });
