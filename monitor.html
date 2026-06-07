@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monitor Remoto - Yar-Yur System</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     body {
       margin: 0;
@@ -11,133 +14,116 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      background-color: #0a0a0a;
-      color: white;
-      font-family: 'Courier New', Courier, monospace;
+      background-color: #ffffff; /* Fondo blanco solicitado */
+      color: #333333;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       padding: 20px;
       box-sizing: border-box;
     }
 
-    /* --- Botón Pantalla Completa Invisible (Toda la franja superior) --- */
+    /* Botón Pantalla Completa Invisible */
     .fullscreen-btn {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%; /* Ocupa todo el ancho de la pantalla */
-      height: 100px; /* Área táctil de 100px de alto */
-      background: transparent; /* Totalmente invisible */
+      width: 100%;
+      height: 80px;
+      background: transparent;
       border: none;
       outline: none;
       cursor: pointer;
-      z-index: 100; /* Asegura que esté por encima del título */
+      z-index: 100;
     }
 
     h1 {
-      color: #ccc;
-      letter-spacing: 3px;
-      margin-top: 40px; /* Separado del borde superior para compensar el área del botón */
-      margin-bottom: 40px;
+      color: #111;
+      letter-spacing: 2px;
+      margin-top: 30px;
+      margin-bottom: 5px;
       text-align: center;
       text-transform: uppercase;
+      font-weight: 800;
     }
-    
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
     .dashboard-container {
       display: flex;
       flex-wrap: wrap;
-      gap: 30px;
+      gap: 20px;
       justify-content: center;
       width: 100%;
-      max-width: 1400px;
+      max-width: 1600px;
     }
 
     .mueble-col {
-      background: #141414;
-      padding: 25px;
-      border-radius: 15px;
-      border: 1px solid #333;
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
       display: flex;
       flex-direction: column;
       align-items: center;
       flex: 1;
-      min-width: 320px;
-      max-width: 400px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      min-width: 350px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
 
     .status-badge {
-      padding: 10px 20px;
+      padding: 8px 20px;
       border-radius: 20px;
       font-weight: bold;
-      font-size: 1.2rem;
-      margin-bottom: 25px;
-      letter-spacing: 2px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      letter-spacing: 1px;
       width: 80%;
       text-align: center;
+      transition: all 0.3s ease;
     }
 
-    .online { background-color: rgba(0, 255, 0, 0.15); color: #00FF00; border: 1px solid #00FF00; }
-    .offline { background-color: rgba(255, 0, 0, 0.15); color: #FF0000; border: 1px solid #FF0000; }
+    /* Estilos de los badges adaptados a fondo claro */
+    .online { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .offline { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
+    .chart-container {
+      position: relative;
+      height: 300px;
       width: 100%;
     }
-
-    .card {
-      background: #1f1f1f;
-      padding: 20px 10px;
-      border-radius: 10px;
-      text-align: center;
-      border: 1px solid #2a2a2a;
-    }
-
-    .card h2 { margin: 0 0 10px 0; font-size: 0.9rem; color: #888; }
-    .card .value { font-size: 2.2rem; font-weight: bold; }
-
-    /* Colores temáticos */
-    .val-actual { color: #00FF00; text-shadow: 0 0 10px rgba(0,255,0,0.4); }
-    .val-historico { color: #00FFFF; text-shadow: 0 0 10px rgba(0,255,255,0.4); }
-    .val-tiempo { color: #FFFF00; text-shadow: 0 0 10px rgba(255,255,0,0.4); }
-    .val-promedio { color: #FF00FF; text-shadow: 0 0 10px rgba(255,0,255,0.4); }
   </style>
 </head>
 <body>
 
   <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
 
-  <h1>Yar-Yur System: Dashboard de Exhibiciones</h1>
+  <h1>Yar-Yur System</h1>
+  <div id="hour-subtitle" class="subtitle">Tráfico de personas (Hora Actual)</div>
 
   <div class="dashboard-container">
     
     <div class="mueble-col">
-      <div id="badge-1" class="status-badge offline">MUEBLE 01 OFFLINE</div>
-      <div class="stats-grid">
-        <div class="card"><h2>ACTUALES</h2><div id="val-actual-1" class="value val-actual">-</div></div>
-        <div class="card"><h2>HISTÓRICO</h2><div id="val-historico-1" class="value val-historico">-</div></div>
-        <div class="card"><h2>TIEMPO</h2><div id="val-tiempo-1" class="value val-tiempo">- s</div></div>
-        <div class="card"><h2>PROMEDIO</h2><div id="val-promedio-1" class="value val-promedio">- s</div></div>
+      <div id="badge-1" class="status-badge offline">TABLET 01 OFFLINE</div>
+      <div class="chart-container">
+        <canvas id="chart-1"></canvas>
       </div>
     </div>
 
     <div class="mueble-col">
-      <div id="badge-2" class="status-badge offline">MUEBLE 02 OFFLINE</div>
-      <div class="stats-grid">
-        <div class="card"><h2>ACTUALES</h2><div id="val-actual-2" class="value val-actual">-</div></div>
-        <div class="card"><h2>HISTÓRICO</h2><div id="val-historico-2" class="value val-historico">-</div></div>
-        <div class="card"><h2>TIEMPO</h2><div id="val-tiempo-2" class="value val-tiempo">- s</div></div>
-        <div class="card"><h2>PROMEDIO</h2><div id="val-promedio-2" class="value val-promedio">- s</div></div>
+      <div id="badge-2" class="status-badge offline">TABLET 02 OFFLINE</div>
+      <div class="chart-container">
+        <canvas id="chart-2"></canvas>
       </div>
     </div>
 
     <div class="mueble-col">
-      <div id="badge-3" class="status-badge offline">MUEBLE 03 OFFLINE</div>
-      <div class="stats-grid">
-        <div class="card"><h2>ACTUALES</h2><div id="val-actual-3" class="value val-actual">-</div></div>
-        <div class="card"><h2>HISTÓRICO</h2><div id="val-historico-3" class="value val-historico">-</div></div>
-        <div class="card"><h2>TIEMPO</h2><div id="val-tiempo-3" class="value val-tiempo">- s</div></div>
-        <div class="card"><h2>PROMEDIO</h2><div id="val-promedio-3" class="value val-promedio">- s</div></div>
+      <div id="badge-3" class="status-badge offline">TABLET 03 OFFLINE</div>
+      <div class="chart-container">
+        <canvas id="chart-3"></canvas>
       </div>
     </div>
 
@@ -145,8 +131,9 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, onValue, query, orderByChild, startAt, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
       authDomain: "canal-moderno-2655e.firebaseapp.com",
@@ -175,40 +162,125 @@
       }
     });
 
-    // Bucle para configurar los 3 muebles automáticamente
-    for (let i = 1; i <= 3; i++) {
-      const muebleId = i;
-      // Formatea el número para que sea 01, 02, 03
-      const numFormat = muebleId.toString().padStart(2, '0'); 
-      
-      const muebleRef = ref(db, `muebles/exhibicion_${numFormat}/metricas`);
-      const statusRef = ref(db, `muebles/exhibicion_${numFormat}/status`);
+    // --- CONFIGURACIÓN DEL TIEMPO ---
+    // Recargar la página automáticamente cuando cambie la hora para resetear los gráficos
+    const currentHour = new Date().getHours();
+    setInterval(() => {
+      if (new Date().getHours() !== currentHour) {
+        location.reload(); 
+      }
+    }, 60000); // Revisa cada minuto
 
-      // Escuchar estado (ONLINE/OFFLINE)
-      onValue(statusRef, (snapshot) => {
-        const status = snapshot.val();
-        const badge = document.getElementById(`badge-${muebleId}`);
-        
-        if (status === 'ONLINE') {
-          badge.textContent = `MUEBLE ${numFormat} ONLINE`;
-          badge.className = 'status-badge online';
-        } else {
-          badge.textContent = `MUEBLE ${numFormat} OFFLINE`;
-          badge.className = 'status-badge offline';
-          // Reiniciar a 0 si se desconecta
-          document.getElementById(`val-actual-${muebleId}`).innerText = "0";
-          document.getElementById(`val-tiempo-${muebleId}`).innerText = "0.0 s";
+    // Actualizar el subtítulo con la hora actual (ej. 18:00 - 18:59)
+    const hourStr = currentHour.toString().padStart(2, '0');
+    document.getElementById('hour-subtitle').innerText = `Tráfico de personas (${hourStr}:00 - ${hourStr}:59)`;
+
+    // Obtener el timestamp exacto del minuto 0 de la hora actual para filtrar la base de datos
+    const startOfHourDate = new Date();
+    startOfHourDate.setMinutes(0, 0, 0);
+    const startTimestamp = startOfHourDate.getTime();
+
+    // Etiquetas del eje X (00 a 59 minutos)
+    const labelsMinutos = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
+
+    // Configuración de colores para cada tablet
+    const configColores = {
+      1: { bg: 'rgba(255, 206, 86, 0.8)', border: 'rgb(255, 206, 86)' }, // Amarillo
+      2: { bg: 'rgba(54, 162, 235, 0.8)', border: 'rgb(54, 162, 235)' }, // Azul
+      3: { bg: 'rgba(255, 99, 132, 0.8)', border: 'rgb(255, 99, 132)' }  // Rojo
+    };
+
+    const charts = {};
+
+    // Bucle para configurar las 3 tablets
+    for (let i = 1; i <= 3; i++) {
+      const numFormat = i.toString().padStart(2, '0'); 
+      
+      // 1. INICIALIZAR EL GRÁFICO (CHART.JS)
+      const ctx = document.getElementById(`chart-${i}`).getContext('2d');
+      
+      // Creamos un array de 60 ceros para los datos iniciales
+      const datosIniciales = new Array(60).fill(0);
+
+      charts[i] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labelsMinutos,
+          datasets: [{
+            label: 'Personas detectadas',
+            data: datosIniciales,
+            backgroundColor: configColores[i].bg,
+            borderColor: configColores[i].border,
+            borderWidth: 1,
+            borderRadius: 4 // Bordes ligeramente redondeados en las barras
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 500, // Velocidad de la animación ("arte de magia")
+            easing: 'easeOutQuart'
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1, // Solo números enteros (no hay medias personas)
+                precision: 0
+              },
+              grid: { color: '#eaeaea' }
+            },
+            x: {
+              grid: { display: false }
+            }
+          },
+          plugins: {
+            legend: { display: false } // Ocultar leyenda para más limpieza
+          }
         }
       });
 
-      // Escuchar métricas
-      onValue(muebleRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          document.getElementById(`val-actual-${muebleId}`).innerText = data.actual;
-          document.getElementById(`val-historico-${muebleId}`).innerText = data.historico;
-          document.getElementById(`val-tiempo-${muebleId}`).innerText = data.tiempo + ' s';
-          document.getElementById(`val-promedio-${muebleId}`).innerText = data.promedio + ' s';
+      // 2. CONECTAR CON FIREBASE - STATUS
+      const statusRef = ref(db, `muebles/tablet_${numFormat}/status`);
+      onValue(statusRef, (snapshot) => {
+        const status = snapshot.val();
+        const badge = document.getElementById(`badge-${i}`);
+        
+        if (status === 'ONLINE') {
+          badge.textContent = `TABLET ${numFormat} ONLINE`;
+          badge.className = 'status-badge online';
+        } else {
+          badge.textContent = `TABLET ${numFormat} OFFLINE`;
+          badge.className = 'status-badge offline';
+        }
+      });
+
+      // 3. CONECTAR CON FIREBASE - EVENTOS (HISTOGRAMA EN TIEMPO REAL)
+      // Usamos una query para traer solo los eventos de la HORA ACTUAL en adelante
+      const eventosQuery = query(
+        ref(db, `muebles/tablet_${numFormat}/eventos`), 
+        orderByChild('timestamp'), 
+        startAt(startTimestamp)
+      );
+
+      // onChildAdded se dispara por cada dato existente en esa hora y por cada dato NUEVO en tiempo real
+      onChildAdded(eventosQuery, (snapshot) => {
+        const data = snapshot.val();
+        
+        if (data && data.timestamp && data.conteoActual !== undefined) {
+          const eventDate = new Date(data.timestamp);
+          const minutoDelEvento = eventDate.getMinutes();
+
+          // Actualizamos el array del gráfico.
+          // Si llegan varios eventos en el mismo minuto, guardamos el número máximo detectado en ese minuto.
+          const valorActualEnGrafico = charts[i].data.datasets[0].data[minutoDelEvento];
+          const nuevoValor = Math.max(valorActualEnGrafico, data.conteoActual);
+          
+          charts[i].data.datasets[0].data[minutoDelEvento] = nuevoValor;
+          
+          // Esta es la línea que hace la "magia" y actualiza la vista inmediatamente
+          charts[i].update(); 
         }
       });
     }
