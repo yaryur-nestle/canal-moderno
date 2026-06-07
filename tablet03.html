@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TABLET 03</title>
+  <title>TABLET 03 - ANALÍTICAS</title>
   <style>
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
     .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; }
@@ -39,35 +39,60 @@
       opacity: 0; 
       pointer-events: none; 
     }
-    .card.is-flipped ~ .flip-btn {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .card.is-flipped ~ .flip-btn { opacity: 1; pointer-events: auto; }
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
     
     video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
     canvas { z-index: 10; }
+    
     .panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
     .left { top: 0; left: 0; }
     .right { top: 0; right: 0; align-items: flex-end; }
     .counter-box { padding: 10px 20px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; backdrop-filter: blur(8px); border: 1px solid; min-width: 150px; text-shadow: 0 0 5px currentColor; transition: all 0.3s ease; }
+    
     #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
     #total-counter { background: rgba(0, 255, 255, 0.15); color: #00FFFF; border-color: #00FFFF; }
     #time-counter { background: rgba(255, 255, 0, 0.15); color: #FFFF00; border-color: #FFFF00; }
     #avg-counter { background: rgba(255, 0, 255, 0.15); color: #FF00FF; border-color: #FF00FF; }
-    #barcode-counter { background: rgba(255, 165, 0, 0.15); color: #FFA500; border-color: #FFA500; display: none; }
+    #barcode-counter { background: rgba(255, 165, 0, 0.25); color: #FFA500; border-color: #FFA500; display: none; transform: scale(1.1); }
+    
+    /* Retícula de Escaneo para obligar al usuario a alejar el producto */
+    #scan-guide {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: 30%;
+      border: 2px dashed rgba(255, 165, 0, 0.5);
+      border-radius: 10px;
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      padding-bottom: 10px;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #scan-guide span {
+      color: rgba(255, 165, 0, 0.8);
+      font-size: 0.9rem;
+      font-weight: bold;
+      text-shadow: 0 0 5px black;
+      background: rgba(0,0,0,0.5);
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
     #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 40; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid #00FFFF; color: #00FFFF; font-weight: bold; font-size: 1.2rem; }
   </style>
-  
+
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-  
-  <script type="text/javascript" src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 </head>
 <body>
   <div class="scene">
-    
     <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
 
     <div id="card" class="card">
@@ -77,6 +102,7 @@
       
       <div class="face face-back">
         <div id="loading">SISTEMA INICIANDO...</div>
+        
         <div class="panel left">
           <div id="face-counter" class="counter-box">ACTUAL: 0</div>
           <div id="total-counter" class="counter-box">HISTÓRICO: 0</div>
@@ -86,6 +112,11 @@
           <div id="avg-counter" class="counter-box">PROMEDIO: 0.0s</div>
           <div id="barcode-counter" class="counter-box">CÓDIGO: ---</div>
         </div>
+        
+        <div id="scan-guide">
+          <span>ALEJE EL CÓDIGO AQUÍ</span>
+        </div>
+
         <video id="video" autoplay playsinline muted></video>
         <canvas id="canvas"></canvas>
       </div>
@@ -126,55 +157,36 @@
       }
     });
 
-    // --- SISTEMA DE AUDIO (BIP) ---
+    // --- AUDIO (BIP) ---
     let audioCtx;
     function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
     function playBeep() {
       if (!audioCtx) return;
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(2000, audioCtx.currentTime);
-      
-      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1);
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      oscillator.start(audioCtx.currentTime);
-      oscillator.stop(audioCtx.currentTime + 0.1);
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(2200, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.1);
     }
 
-    // --- CONFIGURACIÓN DE ZXING (Ruta 2) ---
-    const hints = new Map();
-    // Filtramos solo formatos de productos comerciales para mejorar la velocidad
-    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-      ZXing.BarcodeFormat.EAN_13,
-      ZXing.BarcodeFormat.EAN_8,
-      ZXing.BarcodeFormat.UPC_A,
-      ZXing.BarcodeFormat.UPC_E,
-      ZXing.BarcodeFormat.CODE_128,
-      ZXing.BarcodeFormat.CODE_39
-    ]);
-    // TRY_HARDER fuerza algoritmos matemáticos más pesados para leer códigos borrosos
-    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-
-    const zxingReader = new ZXing.MultiFormatReader();
-    zxingReader.setHints(hints);
-
-    // Canvas interno en memoria usado para pasar la imagen a ZXing limpiamente
-    const scanCanvas = document.createElement('canvas');
-    const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+    // --- DETECTOR NATIVO CON ML KIT ---
+    let barcodeDetector;
+    try {
+      if ('BarcodeDetector' in window) {
+        barcodeDetector = new BarcodeDetector();
+      } else {
+        console.warn('BarcodeDetector no soportado.');
+      }
+    } catch (e) { console.error('Error init BarcodeDetector:', e); }
 
     // --- MANEJO DE INTERFAZ ---
     const fullscreenBtn = document.getElementById('fullscreen-btn');
@@ -183,11 +195,9 @@
       if (!document.fullscreenElement) {
         if (elem.requestFullscreen) elem.requestFullscreen();
         else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
       } else {
         if (document.exitFullscreen) document.exitFullscreen();
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.msExitFullscreen) document.msExitFullscreen();
       }
     });
 
@@ -195,29 +205,22 @@
     const card = document.getElementById('card');
     const frontVideo = document.getElementById('front-video');
     let isPlayingVideo = false;
-    
     let systemReady = false;
     setTimeout(() => { systemReady = true; }, 2000);
     
-    btnFlip.addEventListener('click', () => { 
-        card.classList.remove('is-flipped'); 
-    });
+    btnFlip.addEventListener('click', () => { card.classList.remove('is-flipped'); });
 
     let clickCount = 0;
     let clickTimeout;
     document.addEventListener('click', (e) => {
-      initAudio(); // Inicializa audio al primer toque
-
+      initAudio();
       if (card.classList.contains('is-flipped')) return;
-
       if (e.target !== fullscreenBtn && e.target !== btnFlip) {
         clickCount++;
         clearTimeout(clickTimeout);
-        
         if (clickCount >= 5) {
           card.classList.add('is-flipped');
           clickCount = 0;
-          
           if (isPlayingVideo) {
             frontVideo.pause();
             frontVideo.currentTime = 0;
@@ -226,7 +229,6 @@
           }
           inicioSesionActual = null;
           tiempoSesionActual = 0;
-          
         } else {
           clickTimeout = setTimeout(() => { clickCount = 0; }, 500);
         }
@@ -236,7 +238,6 @@
     const videoElement = document.getElementById('video');
     const canvasElement = document.getElementById('canvas');
     const canvasCtx = canvasElement.getContext('2d');
-    
     const faceElement = document.getElementById('face-counter');
     const totalElement = document.getElementById('total-counter');
     const timeElement = document.getElementById('time-counter');
@@ -244,16 +245,12 @@
     const barcodeBox = document.getElementById('barcode-counter');
 
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
-    let currentFacesCount = 0;
-
-    let lastLoggedFaceCount = 0;
-    let pendingFaceCount = 0;
-    let stabilityTimer = null;
+    let currentFacesCount = 0, lastLoggedFaceCount = 0, pendingFaceCount = 0, stabilityTimer = null;
 
     frontVideo.addEventListener('ended', () => {
       if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
         frontVideo.currentTime = 0;
-        frontVideo.play().catch(e => console.error("Error reproduciendo:", e));
+        frontVideo.play().catch(e => console.error(e));
       } else {
         frontVideo.style.display = 'none';
         isPlayingVideo = false;
@@ -267,25 +264,16 @@
         canvasElement.width = results.image.width; 
         canvasElement.height = results.image.height; 
       }
-
       const rostrosActuales = results.multiFaceLandmarks ? results.multiFaceLandmarks.length : 0;
       const ahora = Date.now();
-      
       currentFacesCount = rostrosActuales;
 
       if (rostrosActuales !== pendingFaceCount) {
         pendingFaceCount = rostrosActuales;
         clearTimeout(stabilityTimer); 
-        
         stabilityTimer = setTimeout(() => {
           if (pendingFaceCount !== lastLoggedFaceCount) {
-            push(eventosRef, {
-              timestamp: Date.now(),
-              fecha: new Date().toISOString(),
-              conteoAnterior: lastLoggedFaceCount,
-              conteoActual: pendingFaceCount
-            });
-
+            push(eventosRef, { timestamp: Date.now(), fecha: new Date().toISOString(), conteoAnterior: lastLoggedFaceCount, conteoActual: pendingFaceCount });
             set(statusRef, 'ONLINE');
             lastLoggedFaceCount = pendingFaceCount;
           }
@@ -293,7 +281,7 @@
       }
 
       if (rostrosActuales > 0) {
-        if (!inicioSesionActual) { inicioSesionActual = ahora; }
+        if (!inicioSesionActual) inicioSesionActual = ahora;
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
       } else {
         if (inicioSesionActual) {
@@ -305,12 +293,12 @@
       if (systemReady && currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo && !card.classList.contains('is-flipped')) {
         isPlayingVideo = true;
         frontVideo.style.display = 'block';
-        frontVideo.play().catch(e => console.log("Autoplay bloqueado:", e));
+        frontVideo.play().catch(e => console.log(e));
       }
 
       if (rostrosActuales > rostrosActivos.length) {
         const nuevosRostros = rostrosActuales - rostrosActivos.length;
-        for (let i = 0; i < nuevosRostros; i++) { rostrosActivos.push({ startTime: ahora, contado: false }); }
+        for (let i = 0; i < nuevosRostros; i++) rostrosActivos.push({ startTime: ahora, contado: false });
       } else if (rostrosActuales < rostrosActivos.length) { rostrosActivos.splice(rostrosActuales); }
 
       for (let i = 0; i < rostrosActivos.length; i++) {
@@ -319,20 +307,16 @@
         }
       }
 
-      let tiempoTotalParaCalculo = tiempoAcumuladoTotal + tiempoSesionActual;
-      let promedio = totalHistorico > 0 ? (tiempoTotalParaCalculo / totalHistorico) : 0;
-
+      let promedio = totalHistorico > 0 ? ((tiempoAcumuladoTotal + tiempoSesionActual) / totalHistorico) : 0;
       faceElement.innerText = `ACTUAL: ${rostrosActuales}`;
       totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
       timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
       avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
 
-      canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      canvasCtx.restore();
     }
 
-    const faceMesh = new window.FaceMesh({locateFile: (file) => { return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`; }});
+    const faceMesh = new window.FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
     faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
     faceMesh.onResults(onResults);
 
@@ -340,59 +324,64 @@
     let lastScannedCode = null;
     let codeCooldownTimer = null;
 
-    // --- CÁMARA (MediaPipe + ZXing) ---
+    // --- CANVAS PARA ZOOM DIGITAL ---
+    const zoomCanvas = document.createElement('canvas');
+    const zoomCtx = zoomCanvas.getContext('2d', { willReadFrequently: true });
+
     const camera = new window.Camera(videoElement, { 
       onFrame: async () => { 
-        // 1. Envía el cuadro para la malla facial de forma asíncrona
         await faceMesh.send({image: videoElement}); 
         
         const ahora = Date.now();
-        // 2. Procesar con ZXing limitando la ejecución a 1 vez cada 600ms para evitar congelar la tablet
-        if (ahora - lastScanTime > 600) {
+        // Procesamos el código de barras 2 veces por segundo usando el detector Nativo (ML Kit)
+        if (barcodeDetector && (ahora - lastScanTime > 500)) {
           lastScanTime = ahora;
           
-          if (scanCanvas.width !== videoElement.videoWidth) {
-            scanCanvas.width = videoElement.videoWidth;
-            scanCanvas.height = videoElement.videoHeight;
-          }
-          
-          // Captura el fotograma actual del video a nuestro canvas en memoria
-          scanCtx.drawImage(videoElement, 0, 0, scanCanvas.width, scanCanvas.height);
-          
-          try {
-            // Conversión estricta síncrona para ZXing
-            const luminanceSource = new ZXing.HTMLCanvasElementLuminanceSource(scanCanvas);
-            const binaryBitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminanceSource));
+          if (videoElement.videoWidth > 0) {
+            // HACK DE ENFOQUE: Tomamos el centro del video (50% del área) y lo escalamos al tamaño completo.
+            // Esto actúa como un "Zoom Digital 2x", permitiendo alejar el producto para que la lente enfoque.
+            zoomCanvas.width = videoElement.videoWidth;
+            zoomCanvas.height = videoElement.videoHeight;
             
-            // Intenta decodificar el frame (arrojará una excepción si no hay código)
-            const result = zxingReader.decode(binaryBitmap);
-            const code = result.getText();
-            
-            if (code !== lastScannedCode) {
-              lastScannedCode = code;
-              playBeep(); // Llama a la señal auditiva
+            const sx = videoElement.videoWidth * 0.25;
+            const sy = videoElement.videoHeight * 0.25;
+            const sWidth = videoElement.videoWidth * 0.5;
+            const sHeight = videoElement.videoHeight * 0.5;
 
-              // Muestra en la UI posterior
-              barcodeBox.style.display = 'block';
-              barcodeBox.innerText = `CÓDIGO: ${code}`;
+            // Dibujamos ese cuadrante central expandido en el canvas
+            zoomCtx.drawImage(videoElement, sx, sy, sWidth, sHeight, 0, 0, zoomCanvas.width, zoomCanvas.height);
+
+            try {
+              // Le pasamos la imagen procesada y aumentada a la poderosa API Nativa
+              const barcodes = await barcodeDetector.detect(zoomCanvas);
               
-              // Enviar a Firebase
-              push(codigosRef, {
-                codigo: code,
-                timestamp: ahora,
-                fecha: new Date().toISOString(),
-                metodo: 'zxing_software'
-              });
+              if (barcodes.length > 0) {
+                const code = barcodes[0].rawValue;
+                
+                if (code !== lastScannedCode) {
+                  lastScannedCode = code;
+                  playBeep(); 
 
-              // Reinicia el bloqueo de este código específico tras 4 segundos
-              clearTimeout(codeCooldownTimer);
-              codeCooldownTimer = setTimeout(() => {
-                lastScannedCode = null;
-                barcodeBox.innerText = `ÚLTIMO: ${code}`;
-              }, 4000);
+                  barcodeBox.style.display = 'block';
+                  barcodeBox.innerText = `CÓDIGO: ${code}`;
+                  
+                  push(codigosRef, {
+                    codigo: code,
+                    timestamp: ahora,
+                    fecha: new Date().toISOString(),
+                    metodo: 'ml_kit_zoomed'
+                  });
+
+                  clearTimeout(codeCooldownTimer);
+                  codeCooldownTimer = setTimeout(() => {
+                    lastScannedCode = null;
+                    barcodeBox.innerText = `ÚLTIMO: ${code}`;
+                  }, 4000);
+                }
+              }
+            } catch (err) {
+              // Fallo silencioso de lectura
             }
-          } catch (err) {
-            // "NotFoundException" es lo que arroja ZXing en el 99% de los cuadros, se ignora por completo.
           }
         }
       }, 
