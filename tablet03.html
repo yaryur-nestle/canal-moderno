@@ -86,7 +86,7 @@
       </div>
     </div>
     
-    <button id="flip-btn" class="flip-btn" title="Alternar Vista">
+    <button id="flip-btn" class="flip-btn" title="Regresar al Frente">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="17 11 21 7 17 3"></polyline><line x1="21" y1="7" x2="9" y2="7"></line><polyline points="7 13 3 17 7 21"></polyline><line x1="3" y1="17" x2="15" y2="17"></line>
       </svg>
@@ -137,24 +137,31 @@
 
     const btnFlip = document.getElementById('flip-btn');
     const card = document.getElementById('card');
+    const frontVideo = document.getElementById('front-video');
+    let isPlayingVideo = false;
     
     btnFlip.addEventListener('click', () => { 
-        card.classList.toggle('is-flipped'); 
+        card.classList.remove('is-flipped'); 
     });
 
-    // Lógica para voltear con 5 toques seguidos
     let clickCount = 0;
     let clickTimeout;
     document.addEventListener('click', (e) => {
+      if (card.classList.contains('is-flipped')) return;
+
       if (e.target !== fullscreenBtn && e.target !== btnFlip) {
         clickCount++;
         clearTimeout(clickTimeout);
         
         if (clickCount >= 5) {
-          card.classList.toggle('is-flipped');
-          clickCount = 0; // Reiniciar contador tras voltear
+          card.classList.add('is-flipped');
+          clickCount = 0;
+          
+          if (isPlayingVideo) {
+            frontVideo.pause();
+            isPlayingVideo = false;
+          }
         } else {
-          // Si pasa más de medio segundo (500ms) sin otro toque, se reinicia la cuenta
           clickTimeout = setTimeout(() => { clickCount = 0; }, 500);
         }
       }
@@ -169,13 +176,10 @@
     const avgElement = document.getElementById('avg-counter');
 
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0, lastFirebaseUpdate = 0; 
-
-    const frontVideo = document.getElementById('front-video');
-    let isPlayingVideo = false;
     let currentFacesCount = 0;
 
     frontVideo.addEventListener('ended', () => {
-      if (currentFacesCount > 0) {
+      if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
         frontVideo.currentTime = 0;
         frontVideo.play().catch(e => console.error("Error reproduciendo:", e));
       } else {
@@ -205,7 +209,6 @@
       
       currentFacesCount = rostrosActuales;
 
-      // Calcular tiempo de sesión actual antes de disparar el video
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) { inicioSesionActual = ahora; }
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
@@ -216,8 +219,7 @@
         }
       }
 
-      // Lógica del Video: Solo se reproduce si hay al menos 1 segundo de visualización continua
-      if (currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo) {
+      if (currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo && !card.classList.contains('is-flipped')) {
         isPlayingVideo = true;
         frontVideo.style.display = 'block';
         frontVideo.play().catch(e => {
@@ -244,15 +246,12 @@
       timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
       avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
 
-      // Actualización a Firebase cada 1 segundo (1000ms en lugar de 3000ms)
       if (ahora - lastFirebaseUpdate >= 1000) {
-        // Enviar datos
         set(muebleRef, {
           actual: rostrosActuales, historico: totalHistorico, tiempo: tiempoSesionActual.toFixed(1),
           promedio: promedio.toFixed(1), tiempoAcumuladoTotal: tiempoAcumuladoTotal
         });
         
-        // Forzar latido de ONLINE constante siempre que haya envío de datos exitoso
         set(statusRef, 'ONLINE');
 
         lastFirebaseUpdate = ahora;
@@ -260,12 +259,6 @@
 
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      
-      if (results.multiFaceLandmarks) {
-        for (const landmarks of results.multiFaceLandmarks) {
-          window.drawConnectors(canvasCtx, landmarks, window.FACEMESH_TESSELATION, {color: '#00FF00', lineWidth: 1.5});
-        }
-      }
       canvasCtx.restore();
     }
 
