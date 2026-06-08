@@ -90,7 +90,7 @@
       opacity: 1;
     }
 
-    /* Zonas interactivas */
+    /* Zonas interactivas frontales */
     .click-zone {
       position: absolute;
       top: 0;
@@ -113,7 +113,6 @@
       justify-content: center;
       padding: 40px;
       box-sizing: border-box;
-      cursor: pointer; /* Toda la pantalla es un botón de regreso */
     }
 
     .back-content {
@@ -125,7 +124,7 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.1);
       border: 1px solid #e0e0e0;
       text-align: center;
-      pointer-events: none; /* Que el clic atraviese esto hacia el .back */
+      /* Se eliminó pointer-events: none para permitir hover en el gráfico y clic en el texto */
     }
 
     h1 {
@@ -156,6 +155,16 @@
       font-size: 0.9rem;
       letter-spacing: 1px;
       animation: pulse 2s infinite;
+      cursor: pointer; /* Ahora este es el único botón para regresar */
+      padding: 10px 20px;
+      display: inline-block;
+      border-radius: 8px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .hint:hover {
+      background-color: rgba(0,0,0,0.05);
+      color: #333;
     }
 
     @keyframes pulse {
@@ -198,14 +207,14 @@
         <div class="click-zone right" onclick="flipToChart(3)"></div>
       </div>
 
-      <div class="back" onclick="flipToFront()">
+      <div class="back">
         <div class="back-content">
           <h1 id="chart-title">YAR-YUR SYSTEM</h1>
           <div id="chart-subtitle" class="subtitle">Tráfico de personas</div>
           <div class="chart-container">
             <canvas id="main-chart"></canvas>
           </div>
-          <div class="hint">Toca en cualquier parte para volver al exhibidor interactivo</div>
+          <div class="hint" onclick="flipToFront()">Toca aquí para volver al exhibidor interactivo</div>
         </div>
       </div>
 
@@ -248,17 +257,18 @@
     const startTimestamp = startOfHourDate.getTime();
     const labelsMinutos = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
 
+    // Títulos y colores actualizados
     const configTablets = {
-      1: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 206, 86, 0.8)', colorBorder: 'rgb(255, 206, 86)', name: 'TABLET 01 (AMARILLO)' },
-      2: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(54, 162, 235, 0.8)', colorBorder: 'rgb(54, 162, 235)', name: 'TABLET 02 (AZUL)' },
-      3: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 99, 132, 0.8)', colorBorder: 'rgb(255, 99, 132)', name: 'TABLET 03 (ROJO)' }
+      1: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 206, 86, 0.8)', colorBorder: 'rgb(255, 206, 86)', name: 'MUEBLE NIDO' },
+      2: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(54, 162, 235, 0.8)', colorBorder: 'rgb(54, 162, 235)', name: 'MUEBLE MULTICATEGORÍA' },
+      3: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 99, 132, 0.8)', colorBorder: 'rgb(255, 99, 132)', name: 'MUEBLE RECETAS' }
     };
 
     const estadoVisual = { 1: [], 2: [], 3: [] }; 
     const dataHistogramas = { 1: new Array(60).fill(0), 2: new Array(60).fill(0), 3: new Array(60).fill(0) };
     let tabletActualEnGrafico = null; 
 
-    // --- CONFIGURACIÓN DEL TOOLTIP PERSONALIZADO (Chart.js) ---
+    // --- CONFIGURACIÓN DEL TOOLTIP PERSONALIZADO ---
     const ctx = document.getElementById('main-chart').getContext('2d');
     const mainChart = new Chart(ctx, {
       type: 'bar',
@@ -292,19 +302,16 @@
             titleFont: { size: 16, family: "'Segoe UI', sans-serif" },
             bodyFont: { size: 14, family: "'Segoe UI', sans-serif" },
             padding: 12,
-            displayColors: false, // Oculta el cuadrito de color en el tooltip
+            displayColors: false,
             callbacks: {
-              // Formatear la hora (ej. 07:41pm)
               title: function(context) {
                 const minuto = context[0].label;
                 let hr = currentHour;
                 const ampm = hr >= 12 ? 'pm' : 'am';
                 hr = hr % 12;
-                hr = hr ? hr : 12; // la hora 0 debe ser 12
-                const hrStr = hr.toString().padStart(2, '0');
-                return `${hrStr}:${minuto}${ampm}`;
+                hr = hr ? hr : 12; // Formato 12 horas (la hora 0 es 12)
+                return `${hr}:${minuto}${ampm}`;
               },
-              // Formatear el texto (ej. 4 personas)
               label: function(context) {
                 const cantidad = context.raw;
                 if(cantidad === 1) return cantidad + ' persona';
@@ -318,10 +325,15 @@
 
     window.flipToChart = function(tabletId) {
       tabletActualEnGrafico = tabletId;
-      const hourStr = currentHour.toString().padStart(2, '0');
+      
+      // Cálculo del formato de hora (ej. 8:00pm - 8:59pm)
+      let hr = currentHour % 12;
+      hr = hr ? hr : 12;
+      const ampm = currentHour >= 12 ? 'pm' : 'am';
+      const formatTime = `${hr}:00${ampm} - ${hr}:59${ampm}`;
       
       document.getElementById('chart-title').innerText = configTablets[tabletId].name;
-      document.getElementById('chart-subtitle').innerText = `Hora: ${hourStr}:00 - ${hourStr}:59`;
+      document.getElementById('chart-subtitle').innerText = `Hora: ${formatTime}`;
       
       mainChart.data.datasets[0].data = dataHistogramas[tabletId];
       mainChart.data.datasets[0].backgroundColor = configTablets[tabletId].colorBg;
