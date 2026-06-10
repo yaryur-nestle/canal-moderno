@@ -3,189 +3,228 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Facial Pro - Pantalla Completa</title>
+  <title>Yar-Yur System - Monitor Interactivo</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
-    body {
+    body, html {
       margin: 0;
-      overflow: hidden; 
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-color: #000;
-      color: white;
-      font-family: 'Courier New', Courier, monospace;
-    }
-
-    /* --- ESCENA A PANTALLA COMPLETA --- */
-    .scene {
-      position: relative;
-      width: 100vw; 
-      height: 100vh; 
-      perspective: 1000px; 
-    }
-
-    .card {
+      padding: 0;
       width: 100%;
       height: 100%;
-      position: relative;
-      transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-      transform-style: preserve-3d;
+      background-color: #000000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden; 
     }
 
-    .card.is-flipped {
+    /* --- Botón Pantalla Completa --- */
+    .fullscreen-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 1000;
+      transition: background 0.3s;
+    }
+    .fullscreen-btn:hover { background: rgba(255, 255, 255, 0.5); }
+
+    /* --- Contenedor Principal (Efecto Flip 3D) --- */
+    .flip-container {
+      perspective: 1500px;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .flipper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 1s cubic-bezier(0.68, -0.15, 0.265, 1.15); 
+    }
+
+    .flip-container.flipped .flipper {
       transform: rotateY(180deg);
     }
 
-    .face {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden; 
-      background-color: #000;
-    }
-
-    .face-back {
-      transform: rotateY(180deg); 
-      background-image: url('imagen.jpg'); 
-      background-size: cover; 
-      background-position: center;
-      background-repeat: no-repeat;
-    }
-
-    /* Botón Flotante */
-    .flip-btn {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      z-index: 50; 
-      background: rgba(0, 255, 255, 0.15);
-      border: 1px solid #00FFFF;
-      color: #00FFFF;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      backdrop-filter: blur(5px);
-      box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
-      transition: all 0.3s ease;
-    }
-    
-    .flip-btn:hover {
-      background: rgba(0, 255, 255, 0.4);
-      transform: scale(1.1);
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-    }
-
-    .flip-btn.invisible {
-      opacity: 0 !important; 
-      box-shadow: none !important;
-      background: transparent !important;
-      transform: none !important; 
-    }
-
-    video, canvas {
+    /* Caras del interactivo */
+    .front, .back {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1); 
+      backface-visibility: hidden; 
     }
-    canvas { z-index: 10; }
 
-    /* Paneles de datos */
-    .panel {
+    /* Lógica de interacciones táctiles segura */
+    .front { pointer-events: auto; background-color: #ffffff; }
+    .back { pointer-events: none; } /* Desactivado mientras estamos en el frente */
+    
+    .flip-container.flipped .front { pointer-events: none; } /* Desactivado al girar */
+    .flip-container.flipped .back { pointer-events: auto; } /* Activado al girar */
+
+    /* Imágenes */
+    .base-img, .person-img {
       position: absolute;
-      z-index: 30;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover; 
+      pointer-events: none; /* Asegura que no tapen los clics de las zonas */
+    }
+
+    .person-img {
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+    }
+
+    .person-img.active {
+      opacity: 1;
+    }
+
+    /* Zonas interactivas frontales */
+    .click-zone {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 33.33%;
+      cursor: pointer;
+      z-index: 50;
+    }
+    .click-zone.left { left: 0; }
+    .click-zone.center { left: 33.33%; }
+    .click-zone.right { left: 66.66%; }
+
+    /* Cara trasera */
+    .back {
+      transform: rotateY(180deg); 
+      background-color: #ffffff;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      padding: 20px; 
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      box-sizing: border-box;
     }
-    .left { top: 0; left: 0; }
-    .right { top: 0; right: 0; align-items: flex-end; }
 
-    .counter-box {
+    .back-content {
+      background: #f8f9fa;
+      padding: 40px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 1200px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0;
+      text-align: center;
+      /* Se eliminó pointer-events: none para permitir hover en el gráfico y clic en el texto */
+    }
+
+    h1 {
+      color: #111;
+      letter-spacing: 3px;
+      margin-top: 0;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 50vh;
+      width: 100%;
+    }
+
+    .hint {
+      margin-top: 30px;
+      color: #888;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      animation: pulse 2s infinite;
+      cursor: pointer; /* Ahora este es el único botón para regresar */
       padding: 10px 20px;
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 1.1rem; 
-      backdrop-filter: blur(8px);
-      border: 1px solid;
-      min-width: 150px;
-      text-shadow: 0 0 5px currentColor;
+      display: inline-block;
+      border-radius: 8px;
+      transition: background-color 0.3s, color 0.3s;
     }
 
-    #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
-    #total-counter { background: rgba(0, 255, 255, 0.15); color: #00FFFF; border-color: #00FFFF; }
-    #time-counter { background: rgba(255, 255, 0, 0.15); color: #FFFF00; border-color: #FFFF00; }
-    #avg-counter { background: rgba(255, 0, 255, 0.15); color: #FF00FF; border-color: #FF00FF; }
+    .hint:hover {
+      background-color: rgba(0,0,0,0.05);
+      color: #333;
+    }
 
-    #loading {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 40;
-      background: rgba(0,0,0,0.9);
-      padding: 20px;
-      border: 1px solid #00FFFF;
-      color: #00FFFF;
-      font-weight: bold;
-      font-size: 1.2rem;
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
     }
   </style>
-
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
-  <div class="scene">
-    <div id="card" class="card">
-      <div class="face face-front">
-        <div id="loading">SISTEMA INICIANDO...</div>
+  <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
+
+  <div class="flip-container" id="flip-container">
+    <div class="flipper">
+      
+      <div class="front">
+        <img src="fondo.jpg" class="base-img" alt="Exhibidores Yar-Yur">
         
-        <div class="panel left">
-          <div id="face-counter" class="counter-box">ACTUAL: 0</div>
-          <div id="total-counter" class="counter-box">HISTÓRICO: 0</div>
-        </div>
+        <img src="1-1.png" class="person-img" id="img-1-1">
+        <img src="1-2.png" class="person-img" id="img-1-2">
+        <img src="1-3.png" class="person-img" id="img-1-3">
+        <img src="1-4.png" class="person-img" id="img-1-4">
+        <img src="1-5.png" class="person-img" id="img-1-5">
 
-        <div class="panel right">
-          <div id="time-counter" class="counter-box">TIEMPO: 0.0s</div>
-          <div id="avg-counter" class="counter-box">PROMEDIO: 0.0s</div>
-        </div>
+        <img src="2-1.png" class="person-img" id="img-2-1">
+        <img src="2-2.png" class="person-img" id="img-2-2">
+        <img src="2-3.png" class="person-img" id="img-2-3">
+        <img src="2-4.png" class="person-img" id="img-2-4">
+        <img src="2-5.png" class="person-img" id="img-2-5">
 
-        <video id="video" autoplay playsinline></video>
-        <canvas id="canvas"></canvas>
+        <img src="3-1.png" class="person-img" id="img-3-1">
+        <img src="3-2.png" class="person-img" id="img-3-2">
+        <img src="3-3.png" class="person-img" id="img-3-3">
+        <img src="3-4.png" class="person-img" id="img-3-4">
+        <img src="3-5.png" class="person-img" id="img-3-5">
+
+        <div class="click-zone left" onclick="flipToChart(1)"></div>
+        <div class="click-zone center" onclick="flipToChart(2)"></div>
+        <div class="click-zone right" onclick="flipToChart(3)"></div>
       </div>
 
-      <div class="face face-back">
+      <div class="back">
+        <div class="back-content">
+          <h1 id="chart-title">YAR-YUR SYSTEM</h1>
+          <div id="chart-subtitle" class="subtitle">Tráfico de personas</div>
+          <div class="chart-container">
+            <canvas id="main-chart"></canvas>
+          </div>
+          <div class="hint" onclick="flipToFront()">Toca aquí para volver al exhibidor interactivo</div>
+        </div>
       </div>
+
     </div>
-
-    <button id="flip-btn" class="flip-btn" title="Alternar Vista">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="17 11 21 7 17 3"></polyline>
-        <line x1="21" y1="7" x2="9" y2="7"></line>
-        <polyline points="7 13 3 17 7 21"></polyline>
-        <line x1="3" y1="17" x2="15" y2="17"></line>
-      </svg>
-    </button>
   </div>
 
   <script type="module">
-    // 1. IMPORTACIONES DE FIREBASE (Actualizadas con onValue)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, set, onDisconnect, get, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, onValue, query, orderByChild, startAt, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // 2. CONFIGURACIÓN DE FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
       authDomain: "canal-moderno-2655e.firebaseapp.com",
@@ -199,177 +238,177 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Referencias a las carpetas en la base de datos
-    const muebleRef = ref(db, 'muebles/exhibicion_01/metricas');
-    const statusRef = ref(db, 'muebles/exhibicion_01/status');
-
-    // 3. SISTEMA DE PRESENCIA MEJORADO (A prueba de micro-cortes de internet)
-    const connectedRef = ref(db, ".info/connected");
-    
-    onValue(connectedRef, (snap) => {
-      if (snap.val() === true) {
-        // Establecer el onDisconnect ANTES de cambiar el estado a ONLINE
-        onDisconnect(statusRef).set('OFFLINE').then(() => {
-          set(statusRef, 'ONLINE');
-        });
-      }
-    });
-
-    // --- LÓGICA DE LA TRANSICIÓN 3D ---
-    const btnFlip = document.getElementById('flip-btn');
-    const card = document.getElementById('card');
-
-    btnFlip.addEventListener('click', () => {
-      card.classList.toggle('is-flipped');
-      btnFlip.classList.toggle('invisible');
-    });
-
-    const videoElement = document.getElementById('video');
-    const canvasElement = document.getElementById('canvas');
-    const canvasCtx = canvasElement.getContext('2d');
-    
-    const faceElement = document.getElementById('face-counter');
-    const totalElement = document.getElementById('total-counter');
-    const timeElement = document.getElementById('time-counter');
-    const avgElement = document.getElementById('avg-counter');
-
-    let totalHistorico = 0;
-    let tiempoAcumuladoTotal = 0;
-    let rostrosActivos = []; 
-    let inicioSesionActual = null;
-    let tiempoSesionActual = 0;
-    
-    // Controlador para no saturar Firebase
-    let lastFirebaseUpdate = 0; 
-
-    // 4. RECUPERAR DATOS AL RECARGAR
-    get(muebleRef).then((snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        totalHistorico = data.historico || 0;
-        tiempoAcumuladoTotal = data.tiempoAcumuladoTotal || 0;
-        
-        totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
-      }
-    });
-
-    // PRE-RENDERIZADO DEL PUNTO BRILLANTE
-    const glowCanvas = document.createElement('canvas');
-    const glowCtx = glowCanvas.getContext('2d');
-    const glowSize = 20; 
-    const puntoRadius = 2.5;
-    const centro = glowSize / 2;
-
-    glowCanvas.width = glowSize;
-    glowCanvas.height = glowSize;
-
-    glowCtx.shadowColor = '#00FFFF';
-    glowCtx.shadowBlur = 10;
-    glowCtx.fillStyle = '#00FFFF';
-    glowCtx.beginPath();
-    glowCtx.arc(centro, centro, puntoRadius, 0, 2 * Math.PI);
-    glowCtx.fill();
-
-    function onResults(results) {
-      document.getElementById('loading').style.display = 'none';
-
-      if (results.image) {
-        canvasElement.width = results.image.width;
-        canvasElement.height = results.image.height;
-      }
-
-      const rostrosActuales = results.multiFaceLandmarks ? results.multiFaceLandmarks.length : 0;
-      const ahora = Date.now();
-
-      // LÓGICA DE CONTEO HISTÓRICO
-      if (rostrosActuales > rostrosActivos.length) {
-        const nuevosRostros = rostrosActuales - rostrosActivos.length;
-        for (let i = 0; i < nuevosRostros; i++) {
-          rostrosActivos.push({ startTime: ahora, contado: false });
-        }
-      } else if (rostrosActuales < rostrosActivos.length) {
-        rostrosActivos.splice(rostrosActuales);
-      }
-
-      for (let i = 0; i < rostrosActivos.length; i++) {
-        if (!rostrosActivos[i].contado && (ahora - rostrosActivos[i].startTime >= 2000)) {
-          totalHistorico++;
-          rostrosActivos[i].contado = true;
-        }
-      }
-
-      // LÓGICA DE TIEMPO
-      if (rostrosActuales > 0) {
-        if (!inicioSesionActual) { inicioSesionActual = ahora; }
-        tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
+    document.getElementById('fullscreen-btn').addEventListener('click', () => {
+      const elem = document.documentElement;
+      if (!document.fullscreenElement) {
+        elem.requestFullscreen?.() || elem.webkitRequestFullscreen?.() || elem.msRequestFullscreen?.();
       } else {
-        if (inicioSesionActual) {
-          tiempoAcumuladoTotal += (ahora - inicioSesionActual) / 1000;
-          inicioSesionActual = null;
-          tiempoSesionActual = 0;
-        }
+        document.exitFullscreen?.() || document.webkitExitFullscreen?.() || document.msExitFullscreen?.();
       }
+    });
 
-      // CALCULAR PROMEDIO
-      let tiempoTotalParaCalculo = tiempoAcumuladoTotal + tiempoSesionActual;
-      let promedio = totalHistorico > 0 ? (tiempoTotalParaCalculo / totalHistorico) : 0;
+    const currentHour = new Date().getHours();
+    setInterval(() => {
+      if (new Date().getHours() !== currentHour) location.reload(); 
+    }, 60000);
 
-      // ACTUALIZAR INTERFAZ LOCAL
-      faceElement.innerText = `ACTUAL: ${rostrosActuales}`;
-      totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
-      timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
-      avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
+    const startOfHourDate = new Date();
+    startOfHourDate.setMinutes(0, 0, 0);
+    const startTimestamp = startOfHourDate.getTime();
+    const labelsMinutos = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
 
-      // ENVÍO A FIREBASE (CADA 3 SEGUNDOS)
-      if (ahora - lastFirebaseUpdate >= 3000) {
-        set(muebleRef, {
-          actual: rostrosActuales,
-          historico: totalHistorico,
-          tiempo: tiempoSesionActual.toFixed(1),
-          promedio: promedio.toFixed(1),
-          tiempoAcumuladoTotal: tiempoAcumuladoTotal
-        });
-        lastFirebaseUpdate = ahora;
-      }
+    // Títulos y colores actualizados
+    const configTablets = {
+      1: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 206, 86, 0.8)', colorBorder: 'rgb(255, 206, 86)', name: 'MUEBLE NIDO' },
+      2: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(54, 162, 235, 0.8)', colorBorder: 'rgb(54, 162, 235)', name: 'MUEBLE MULTICATEGORÍA' },
+      3: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 99, 132, 0.8)', colorBorder: 'rgb(255, 99, 132)', name: 'MUEBLE RECETAS' }
+    };
 
-      // DIBUJAR 
-      canvasCtx.save();
-      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      canvasCtx.globalCompositeOperation = "lighter"; 
-      
-      if (results.multiFaceLandmarks) {
-        for (const landmarks of results.multiFaceLandmarks) {
-          window.drawConnectors(canvasCtx, landmarks, window.FACEMESH_TESSELATION, {color: '#00FF0050', lineWidth: 0.8});
+    const estadoVisual = { 1: [], 2: [], 3: [] }; 
+    const dataHistogramas = { 1: new Array(60).fill(0), 2: new Array(60).fill(0), 3: new Array(60).fill(0) };
+    let tabletActualEnGrafico = null; 
 
-          for (let i = 0; i < landmarks.length; i++) {
-            const px = landmarks[i].x * canvasElement.width;
-            const py = landmarks[i].y * canvasElement.height;
-            canvasCtx.drawImage(glowCanvas, px - centro, py - centro);
+    // --- CONFIGURACIÓN DEL TOOLTIP PERSONALIZADO ---
+    const ctx = document.getElementById('main-chart').getContext('2d');
+    const mainChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labelsMinutos,
+        datasets: [{
+          label: 'Personas',
+          data: [],
+          backgroundColor: '#000',
+          borderColor: '#000',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 500, easing: 'easeOutQuart' },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#eaeaea' } },
+          x: { grid: { display: false } }
+        },
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: { size: 16, family: "'Segoe UI', sans-serif" },
+            bodyFont: { size: 14, family: "'Segoe UI', sans-serif" },
+            padding: 12,
+            displayColors: false,
+            callbacks: {
+              title: function(context) {
+                const minuto = context[0].label;
+                let hr = currentHour;
+                const ampm = hr >= 12 ? 'pm' : 'am';
+                hr = hr % 12;
+                hr = hr ? hr : 12; // Formato 12 horas (la hora 0 es 12)
+                return `${hr}:${minuto}${ampm}`;
+              },
+              label: function(context) {
+                const cantidad = context.raw;
+                if(cantidad === 1) return cantidad + ' persona';
+                return cantidad + ' personas';
+              }
+            }
           }
         }
       }
-      canvasCtx.restore();
+    });
+
+    window.flipToChart = function(tabletId) {
+      tabletActualEnGrafico = tabletId;
+      
+      // Cálculo del formato de hora (ej. 8:00pm - 8:59pm)
+      let hr = currentHour % 12;
+      hr = hr ? hr : 12;
+      const ampm = currentHour >= 12 ? 'pm' : 'am';
+      const formatTime = `${hr}:00${ampm} - ${hr}:59${ampm}`;
+      
+      document.getElementById('chart-title').innerText = configTablets[tabletId].name;
+      document.getElementById('chart-subtitle').innerText = `Hora: ${formatTime}`;
+      
+      mainChart.data.datasets[0].data = dataHistogramas[tabletId];
+      mainChart.data.datasets[0].backgroundColor = configTablets[tabletId].colorBg;
+      mainChart.data.datasets[0].borderColor = configTablets[tabletId].colorBorder;
+      mainChart.update();
+
+      document.getElementById('flip-container').classList.add('flipped');
     }
 
-    const faceMesh = new window.FaceMesh({locateFile: (file) => {
-      return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-    }});
+    window.flipToFront = function() {
+      document.getElementById('flip-container').classList.remove('flipped');
+      tabletActualEnGrafico = null;
+    }
 
-    faceMesh.setOptions({
-      maxNumFaces: 5,
-      refineLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5
-    });
+    function actualizarSiluetas(tabletId, nuevoConteo) {
+      const objetivo = Math.min(nuevoConteo, 5); 
+      let activasActuales = estadoVisual[tabletId];
 
-    faceMesh.onResults(onResults);
+      if (objetivo > activasActuales.length) {
+        const cantidadAEncender = objetivo - activasActuales.length;
+        let inactivas = configTablets[tabletId].ids.filter(id => !activasActuales.includes(id));
+        inactivas = inactivas.sort(() => Math.random() - 0.5);
 
-    const camera = new window.Camera(videoElement, {
-      onFrame: async () => { await faceMesh.send({image: videoElement}); },
-      width: 1280, 
-      height: 720
-    });
-    camera.start();
+        for (let j = 0; j < cantidadAEncender; j++) {
+          const imgId = inactivas[j];
+          if (imgId) {
+            document.getElementById(`img-${tabletId}-${imgId}`).classList.add('active');
+            activasActuales.push(imgId);
+          }
+        }
+      } else if (objetivo < activasActuales.length) {
+        const cantidadAApagar = activasActuales.length - objetivo;
+        activasActuales = activasActuales.sort(() => Math.random() - 0.5);
+        const paraApagar = activasActuales.splice(0, cantidadAApagar); 
+        
+        for (let j = 0; j < paraApagar.length; j++) {
+          const imgId = paraApagar[j];
+          document.getElementById(`img-${tabletId}-${imgId}`).classList.remove('active');
+        }
+      }
+      
+      estadoVisual[tabletId] = activasActuales; 
+    }
+
+    for (let i = 1; i <= 3; i++) {
+      const numFormat = i.toString().padStart(2, '0'); 
+      
+      const eventosQuery = query(
+        ref(db, `muebles/tablet_${numFormat}/eventos`), 
+        orderByChild('timestamp'), 
+        startAt(startTimestamp)
+      );
+
+      onChildAdded(eventosQuery, (snapshot) => {
+        const data = snapshot.val();
+        
+        if (data && data.timestamp && data.conteoActual !== undefined) {
+          
+          actualizarSiluetas(i, data.conteoActual);
+
+          const conteoAnterior = data.conteoAnterior || 0;
+          if (data.conteoActual > conteoAnterior) {
+            const eventDate = new Date(data.timestamp);
+            const minutoDelEvento = eventDate.getMinutes();
+            
+            const nuevasDetecciones = data.conteoActual - conteoAnterior;
+            dataHistogramas[i][minutoDelEvento] += nuevasDetecciones;
+            
+            if (tabletActualEnGrafico === i) {
+              mainChart.update(); 
+            }
+          }
+        }
+      });
+    }
   </script>
 </body>
 </html>
