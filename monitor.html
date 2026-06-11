@@ -123,17 +123,16 @@
                 attributionControl: false 
             });
 
-            /* 2. MAPA BASE: GRIS OSCURO SIN LETRAS (DARK MATTER NO LABELS)
-             * Este mapa dibuja todo el planeta en tonos oscuros y elimina los nombres 
-             * de países, ciudades y océanos, resolviendo tu problema de raíz.
-             */
+            /* 2. MAPA BASE: GRIS OSCURO SIN LETRAS (DARK MATTER NO LABELS) */
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
                 subdomains: 'abcd',
                 maxZoom: 19
             }).addTo(map);
 
-            /* 3. SUPERPOSICIÓN DE VENEZUELA (GEOJSON CLARO) */
-            const geojsonEndpoint = 'https://cdn.jsdelivr.net/gh/Veneu/venezuela-geojson@master/estados.geojson';
+            /* 3. SUPERPOSICIÓN DE VENEZUELA (GEOJSON CLARO)
+             * Enlace infalible al repositorio global de GeoBoundaries. 
+             */
+            const geojsonEndpoint = 'https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/VEN/ADM1/geoBoundaries-VEN-ADM1_simplified.geojson';
 
             fetch(geojsonEndpoint)
                 .then(response => {
@@ -143,20 +142,20 @@
                 .then(data => {
                     /*
                      * Dibujamos la silueta de los estados de Venezuela sobre el mapa oscuro.
-                     * Le damos un relleno blanco puro (#ffffff) para que contraste
-                     * y trazamos las líneas de los estados en negro.
+                     * El color blanco ocultará el mapa gris subyacente.
                      */
                     L.geoJSON(data, {
                         style: (feature) => ({
                             color: "#000000",      // Línea divisoria de los estados (Negra)
                             weight: 1,             // Línea delgada y continua
-                            fillColor: "#ffffff",  // Relleno de Venezuela (Blanco)
-                            fillOpacity: 1         // Totalmente opaco para tapar el gris oscuro de fondo
+                            fillColor: "#ffffff",  // Relleno de Venezuela (Blanco puro)
+                            fillOpacity: 1         // 100% opaco
                         })
                     }).addTo(map);
                 })
                 .catch(err => {
                     console.error('No se pudo cargar el archivo de las fronteras:', err);
+                    alert("No se pudieron cargar las fronteras. Verifica tu conexión a internet o posibles bloqueos de red.");
                 });
 
             /* 4. MARCADORES DE LAS SUCURSALES */
@@ -175,7 +174,6 @@
                     iconAnchor: [0, 0] 
                 });
 
-                // Se inyectan los pines
                 const marker = L.marker([node.lat, node.lng], { icon: customPin }).addTo(map);
 
                 marker.bindTooltip(node.sucursal, {
