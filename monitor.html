@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapa Interactivo Minimalista: Red Comercial Venezuela</title>
     
-    <!-- Integración de la biblioteca principal de Leaflet.js (CSS) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     
     <style>
-        /* 
-         * NORMALIZACIÓN Y ESTILIZACIÓN GLOBAL
+        /* * NORMALIZACIÓN Y ESTILIZACIÓN GLOBAL
          * Reseteo de márgenes para asegurar el uso total del área de visualización.
          */
         * {
@@ -19,8 +17,7 @@
             padding: 0;
         }
 
-        /* 
-         * ESTÉTICA DEL LIENZO BASE
+        /* * ESTÉTICA DEL LIENZO BASE
          * El fondo blanco puro responde al requerimiento de minimalismo extremo.
          * La tipografía cursiva/informal establece el tono "caricaturesco".
          */
@@ -34,8 +31,7 @@
             overflow: hidden;
         }
 
-        /* 
-         * CONTENEDOR DEL MAPA (VIÑETA DE CÓMIC)
+        /* * CONTENEDOR DEL MAPA (VIÑETA DE CÓMIC)
          * El área cartográfica se enmarca con un borde masivo y una sombra no difuminada
          * (solid drop-shadow) típica de la impresión de tiras cómicas de mediados de siglo.
          */
@@ -58,8 +54,7 @@
             background-color: transparent;
         }
 
-        /* 
-         * INGENIERÍA DE MARCADORES PERSONALIZADOS (L.divIcon)
+        /* * INGENIERÍA DE MARCADORES PERSONALIZADOS (L.divIcon)
          * Se purgan los fondos automáticos que Leaflet impone a las capas de iconos div.
          */
         .leaflet-div-icon {
@@ -86,8 +81,7 @@
             top: -14px;
         }
 
-        /* 
-         * MICRO-INTERACCIONES (HOVER STATE)
+        /* * MICRO-INTERACCIONES (HOVER STATE)
          * Al interactuar, el marcador se expande, rota levemente y altera su color,
          * transmitiendo una retroalimentación visual elástica e informal.
          */
@@ -97,8 +91,7 @@
             z-index: 1000 !important;
         }
 
-        /* 
-         * REESCRITURA DE LA HERRAMIENTA EMERGENTE (TOOLTIP)
+        /* * REESCRITURA DE LA HERRAMIENTA EMERGENTE (TOOLTIP)
          * Se asalta el bloque de clases nativo de Leaflet para imponer el estilo de la interfaz.
          */
         .leaflet-tooltip.comic-speech-bubble {
@@ -116,8 +109,7 @@
             text-transform: uppercase;
         }
 
-        /* 
-         * SUPRESIÓN DE LA FLECHA NATIVA DEL TOOLTIP
+        /* * SUPRESIÓN DE LA FLECHA NATIVA DEL TOOLTIP
          * Las especificaciones exigen una burbuja flotante pura; los bordes direccionales
          * generados por pseudo-elementos arruinan la ilusión de la tinta sólida negra.
          */
@@ -136,34 +128,28 @@
 </head>
 <body>
 
-    <!-- Marco principal que encapsula el escenario cartográfico -->
     <div id="map-container">
         <div id="map"></div>
     </div>
 
-    <!-- Carga del motor JavaScript de Leaflet -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             
-            /* 
-             * 1. INICIALIZACIÓN DEL SISTEMA DE REFERENCIA DE COORDENADAS (CRS)
-             * Construcción del objeto mapa. Se posiciona el centro de la cámara
-             * en un vector promedio que abarca la extensión latitudinal y longitudinal
-             * de Venezuela. Se desactivan los controles predeterminados.
+            /* * 1. INICIALIZACIÓN DEL SISTEMA DE REFERENCIA DE COORDENADAS (CRS)
+             * Se ajusta el centro y el zoom para abarcar Nueva Esparta (norte) 
+             * y la extensión de la Guayana Esequiba (este/sur).
              */
             const map = L.map('map', {
-                center: [7.5, -66.0],     // Epicentro aproximado del país
-                zoom: 6,                  // Nivel de escala inicial
+                center: [6.5, -64.5],     // Epicentro ajustado para encuadrar todo el territorio
+                zoom: 5.5,                // Nivel de escala inicial ajustado
                 zoomControl: false,       // Inhabilitación de botones interactivos de zoom
                 attributionControl: false // Eliminación de hipervínculos de atribución
             });
 
-            /* 
-             * 2. MODELADO DE DATOS DE LOS NODOS COMERCIALES
-             * Matriz de objetos que representa las cinco localizaciones dictaminadas.
-             * Las coordenadas geodésicas han sido previamente auditadas y estructuradas.
+            /* * 2. MODELADO DE DATOS DE LOS NODOS COMERCIALES
+             * Nodos originales preservados sin alteraciones.
              */
             const retailNodes = [
                 { id: 1, sucursal: "Kromi Market", lat: 10.2225, lng: -68.0160 },
@@ -173,12 +159,13 @@
                 { id: 5, sucursal: "Luxor Círculo Militar", lat: 10.2670, lng: -67.5950 }
             ];
 
-            /* 
-             * 3. ADQUISICIÓN DE LA GEOMETRÍA NACIONAL (GEOJSON ASÍNCRONO)
-             * Se realiza una petición de red a un repositorio público que provee
-             * un mapeo poligonal altamente simplificado de los bordes nacionales.
+            /* * 3. ADQUISICIÓN DE LA GEOMETRÍA NACIONAL (GEOJSON ASÍNCRONO)
+             * Se cambió el endpoint por uno que contiene los estados de Venezuela.
+             * IMPORTANTE: Si este endpoint público omite el Esequibo por razones internacionales, 
+             * debes reemplazar este string por la ruta de un archivo local (ej: './venezuela_completa.geojson')
+             * que contenga la cartografía política exacta que necesitas.
              */
-            const geojsonEndpoint = 'https://raw.githubusercontent.com/glynnbird/countriesgeojson/master/venezuela.geojson';
+            const geojsonEndpoint = 'https://raw.githubusercontent.com/Veneu/venezuela-geojson/master/estados.geojson';
 
             fetch(geojsonEndpoint)
                 .then(response => {
@@ -188,32 +175,29 @@
                 .then(data => {
                     /*
                      * 4. ESTILIZACIÓN Y PROYECCIÓN VECTORIAL
-                     * La conversión del JSON en rutas SVG inyectadas directamente en el DOM.
-                     * El trazado se define con bordes gruesos e interiores vacíos para
-                     * amalgamar el territorio con el lienzo blanco.
+                     * Nueva especificación: línea delgada, continua, dibujando divisiones estatales.
                      */
                     L.geoJSON(data, {
                         style: (feature) => ({
                             color: "#000000",       // Contorno negro carbón
-                            weight: 4,              // Ancho exagerado del trazo fronterizo
-                            fillColor: "#ffffff",   // Mantenimiento estricto del minimalismo (relleno blanco)
-                            fillOpacity: 1,         // Máxima opacidad
-                            dashArray: "15 10"      // Alternancia de trazo discontínuo estilo costura/dibujo
+                            weight: 1,              // Línea continua DELGADA (reducción de 4 a 1)
+                            fillColor: "#ffffff",   // Mantenimiento estricto del minimalismo
+                            fillOpacity: 1          // Máxima opacidad
+                            // Se eliminó dashArray para asegurar la línea sólida
                         })
                     }).addTo(map);
 
                     /*
                      * 5. INYECCIÓN DEL ECOSISTEMA DE MARCADORES
-                     * Iteración sobre la base de datos de sucursales para instanciar
-                     * los componentes visuales y vincular los eventos de interacción.
+                     * Iteración sobre la base de datos de sucursales.
                      */
                     retailNodes.forEach(node => {
                         
                         // Creación del envoltorio HTML que actuará como marcador espacial
                         const customPin = L.divIcon({
                             html: '<div class="comic-marker-pin"></div>',
-                            iconSize: [0, 0], // El tamaño real se maneja por la clase CSS asignada al div interno
-                            iconAnchor: [0, 0] // Anclaje centrado para garantizar precisión trigonométrica
+                            iconSize: [0, 0], 
+                            iconAnchor: [0, 0] 
                         });
 
                         // Despliegue del marcador en la proyección Web Mercator subyacente
@@ -221,20 +205,17 @@
 
                         /*
                          * 6. DESPLIEGUE EXCLUSIVO DE LA MARCA (TOOLTIP)
-                         * Satisfaciendo el requerimiento explícito, el tooltip exhibirá
-                         * estrictamente el string correspondiente a la denominación de la sucursal.
                          */
                         marker.bindTooltip(node.sucursal, {
-                            className: 'comic-speech-bubble', // Aplicación de la hoja de estilos personalizada
-                            direction: 'top',                 // Elevación de la burbuja por encima del pin
-                            offset: [0, -25],                 // Distancia de separación en el eje vertical
-                            permanent: false,                 // Ocultamiento garantizado hasta que ocurra el evento hover
+                            className: 'comic-speech-bubble', 
+                            direction: 'top',                 
+                            offset: [0, -25],                 
+                            permanent: false,                 
                             opacity: 1
                         });
                     });
                 })
                 .catch(err => {
-                    // Gestión de errores de transferencia para evitar un fallo catastrófico del renderizado
                     console.error('Interrupción del flujo de datos GeoJSON:', err);
                     alert("Aviso Técnico: El polígono geográfico de Venezuela no pudo ser procesado por problemas de red. Sin embargo, el motor continuará inyectando los nodos comerciales en sus coordenadas geodésicas respectivas.");
                 });
