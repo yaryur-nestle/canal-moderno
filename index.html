@@ -26,7 +26,7 @@
             overflow: hidden;
         }
 
-        /* * CONTENEDOR DEL MAPA (VIÑETA DE CÓMIC) */
+        /* * CONTENEDOR DEL MAPA */
         #map-container {
             width: 90vw;
             height: 90vh;
@@ -36,11 +36,9 @@
             box-shadow: 15px 15px 0px #000000;
             position: relative;
             z-index: 1;
-            /* Necesario para contener la CAPA superior */
             overflow: hidden; 
         }
 
-        /* Instancia interna donde el motor SVG operará */
         #map {
             width: 100%;
             height: 100%;
@@ -48,26 +46,26 @@
             background-color: transparent;
         }
 
-        /* * CAPA SUPERIOR (Overlay no interactivo) */
+        /* * CAPA SUPERIOR (No interactiva) */
         #capa-superior {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 9999; /* Por encima de todo, incluyendo popups de Leaflet */
-            pointer-events: none; /* Magia: hace que la imagen no sea clicable ni estorbe */
-            user-select: none; /* Evita que se seleccione por accidente */
-            object-fit: cover; /* Asegura que cubra todo el contenedor */
+            z-index: 9999; 
+            pointer-events: none; /* Ignora clics, permite interactuar con lo de abajo */
+            user-select: none; 
+            object-fit: cover; 
         }
 
-        /* * INGENIERÍA DE MARCADORES PERSONALIZADOS (L.divIcon) */
+        /* * INGENIERÍA DE MARCADORES (L.divIcon) */
         .custom-leaflet-icon {
             background: transparent !important;
             border: none !important;
         }
 
-        /* * DISEÑO DEL PIN (GOTA INVERTIDA SIN SOMBRA DE CÓMIC) */
+        /* * DISEÑO DE LA GOTA DE UBICACIÓN (SIN SOMBRA) */
         .comic-marker-pin {
             width: 32px;
             height: 32px;
@@ -75,13 +73,13 @@
             border: 4px solid #000000; 
             border-radius: 50% 50% 50% 0; 
             transform: rotate(-45deg);
-            /* Sombra eliminada según solicitud */
+            /* Se eliminó la sombra a petición (filter: drop-shadow...) */
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
         }
 
-        /* Círculo interior blanco del pin */
+        /* Círculo interior blanco */
         .comic-marker-pin::after {
             content: '';
             position: absolute;
@@ -95,14 +93,14 @@
             transform: translate(-50%, -50%);
         }
 
-        /* * MICRO-INTERACCIONES (HOVER STATE DEL PIN) */
+        /* * MICRO-INTERACCIONES (HOVER DEL PIN) */
         .custom-leaflet-icon:hover .comic-marker-pin {
             transform: rotate(-45deg) scale(1.3);
             background-color: #ffd700; 
             z-index: 1000 !important;
         }
 
-        /* * ESTILIZACIÓN DEL POPUP */
+        /* * ESTILIZACIÓN BASE DEL POPUP */
         .leaflet-popup-content-wrapper {
             background-color: #ffffff;
             border: 4px solid #000000;
@@ -113,9 +111,8 @@
             padding: 0;
         }
 
-        .leaflet-popup-tip-container {
-            display: none;
-        }
+        /* Ocultamos las puntas y cierres nativos */
+        .leaflet-popup-tip-container,
         .leaflet-popup-close-button {
             display: none !important;
         }
@@ -125,11 +122,25 @@
             text-align: center;
         }
 
-        /* * ESTRUCTURA INTERNA DEL POPUP (IMÁGENES FIJAS Y PROTAGONISTAS) */
+        /* * LÓGICA DE INVERSIÓN GRAVITACIONAL DEL POPUP 
+         * Esta clase se inyectará dinámicamente con JS si el pin está arriba
+         */
+        .popup-opens-down {
+            bottom: auto !important; /* Anulamos el comportamiento de flotar hacia arriba */
+            top: 0 !important;       /* Anclamos el borde superior del popup al pin */
+            margin-bottom: 0 !important;
+            margin-top: 55px !important; /* Empujamos 55px hacia abajo para que se ubique por debajo de la gota */
+        }
+        
+        .popup-opens-up {
+            /* Clase neutra para cuando abre hacia arriba (comportamiento nativo Leaflet) */
+        }
+
+        /* * ESTRUCTURA DEL CONTENIDO (IMÁGENES PROTAGONISTAS) */
         .popup-images-grid {
             display: flex;
             justify-content: center;
-            gap: 15px; /* Espacio entre las imágenes si hay varias */
+            gap: 15px; 
             margin-bottom: 12px;
         }
 
@@ -138,7 +149,7 @@
         }
 
         .popup-images-grid img {
-            width: 150px; /* Tamaño fijo, grande y protagonista para todas las imágenes */
+            width: 150px; /* Tamaño enorme garantizado para todas las imágenes */
             height: 150px; 
             object-fit: cover;
             border: 4px solid #000000;
@@ -158,7 +169,7 @@
             font-weight: 900;
             text-transform: uppercase;
             white-space: nowrap;
-            text-align: center; /* Aseguramos que el texto esté siempre centrado */
+            text-align: center; 
         }
     </style>
 </head>
@@ -166,7 +177,7 @@
 
     <div id="map-container">
         <div id="map"></div>
-        <img src="CAPA.png" id="capa-superior" alt="Capa Superior Decorativa">
+        <img src="CAPA.png" id="capa-superior" alt="Capa Decorativa Superior">
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -182,13 +193,13 @@
                 attributionControl: false 
             });
 
-            /* * 2. MOTOR DE RENDERIZADO (TILE LAYER) */
+            /* * 2. TILE LAYER */
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 subdomains: 'abcd',
                 maxZoom: 19
             }).addTo(map);
 
-            /* * 3. MODELADO DE DATOS */
+            /* * 3. DATOS */
             const retailNodes = [
                 { 
                     id: 1, 
@@ -233,7 +244,7 @@
                 }
             ];
 
-            /* * 4. INYECCIÓN DEL ECOSISTEMA DE MARCADORES Y POPUPS */
+            /* * 4. INYECCIÓN DEL ECOSISTEMA Y LOGICA ESPACIAL */
             retailNodes.forEach(node => {
                 
                 const customPin = L.divIcon({
@@ -265,12 +276,36 @@
 
                 marker.bindPopup(popupContent, {
                     offset: [0, -10],
-                    maxWidth: 600 // Aumentamos el maxWidth para que no colapse si hay 2 o más imágenes
+                    maxWidth: 600, 
+                    autoPanPadding: [20, 20] // Añade un ligero margen de respiro al auto-scroll
                 });
                 
-                marker.on('mouseover', function (e) {
+                /*
+                 * 5. FUNCIÓN CENTRAL PARA DECIDIR DÓNDE SE ABRE LA VENTANA
+                 * Evaluamos si se acciona por hover o click.
+                 */
+                const evaluarPosicionEspacial = function() {
+                    // Obtenemos los píxeles (X,Y) del marcador relativos al visor actual del mapa
+                    const puntoPantalla = map.latLngToContainerPoint(this.getLatLng());
+                    // Obtenemos la altura total del visor del mapa en píxeles
+                    const alturaMapa = map.getSize().y;
+                    
+                    const popupAsociado = this.getPopup();
+                    
+                    // Si el punto 'Y' es menor a la mitad (está de la mitad hacia arriba)
+                    if (puntoPantalla.y < (alturaMapa / 2)) {
+                        popupAsociado.options.className = 'popup-opens-down';
+                    } else {
+                        // Si está de la mitad hacia abajo
+                        popupAsociado.options.className = 'popup-opens-up';
+                    }
+                    
                     this.openPopup();
-                });
+                };
+
+                // Suscribimos la función inteligente a los eventos
+                marker.on('mouseover', evaluarPosicionEspacial);
+                marker.on('click', evaluarPosicionEspacial);
             });
             
         });
