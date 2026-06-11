@@ -98,7 +98,6 @@
             display: none !important;
         }
 
-        /* Fuerza la opacidad total */
         .leaflet-tooltip {
             opacity: 1 !important;
         }
@@ -123,39 +122,36 @@
                 attributionControl: false 
             });
 
-            /* 2. MAPA BASE: GRIS OSCURO SIN LETRAS (DARK MATTER NO LABELS) */
+            /* 2. MAPA BASE: GRIS OSCURO SIN LETRAS */
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
                 subdomains: 'abcd',
                 maxZoom: 19
             }).addTo(map);
 
             /* 3. SUPERPOSICIÓN DE VENEZUELA (GEOJSON CLARO)
-             * Enlace infalible al repositorio global de GeoBoundaries. 
+             * Servidor de Highcharts (extremadamente estable y rara vez bloqueado en LATAM).
+             * Contiene los estados y la Isla de Margarita.
              */
-            const geojsonEndpoint = 'https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/VEN/ADM1/geoBoundaries-VEN-ADM1_simplified.geojson';
+            const geojsonEndpoint = 'https://code.highcharts.com/mapdata/countries/ve/ve-all.geo.json';
 
             fetch(geojsonEndpoint)
                 .then(response => {
-                    if (!response.ok) throw new Error("Fallo en la red al cargar las fronteras.");
+                    if (!response.ok) throw new Error("Fallo en la red.");
                     return response.json();
                 })
                 .then(data => {
-                    /*
-                     * Dibujamos la silueta de los estados de Venezuela sobre el mapa oscuro.
-                     * El color blanco ocultará el mapa gris subyacente.
-                     */
                     L.geoJSON(data, {
                         style: (feature) => ({
                             color: "#000000",      // Línea divisoria de los estados (Negra)
                             weight: 1,             // Línea delgada y continua
-                            fillColor: "#ffffff",  // Relleno de Venezuela (Blanco puro)
-                            fillOpacity: 1         // 100% opaco
+                            fillColor: "#ffffff",  // Relleno de Venezuela (Blanco)
+                            fillOpacity: 1         // Opacidad total
                         })
                     }).addTo(map);
                 })
                 .catch(err => {
-                    console.error('No se pudo cargar el archivo de las fronteras:', err);
-                    alert("No se pudieron cargar las fronteras. Verifica tu conexión a internet o posibles bloqueos de red.");
+                    console.error('Error:', err);
+                    alert("Aún hay problemas de red. Lee la instrucción debajo del código para la solución local extrema.");
                 });
 
             /* 4. MARCADORES DE LAS SUCURSALES */
