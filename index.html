@@ -36,6 +36,8 @@
             box-shadow: 15px 15px 0px #000000;
             position: relative;
             z-index: 1;
+            /* Necesario para contener la CAPA superior */
+            overflow: hidden; 
         }
 
         /* Instancia interna donde el motor SVG operará */
@@ -46,23 +48,34 @@
             background-color: transparent;
         }
 
+        /* * CAPA SUPERIOR (Overlay no interactivo) */
+        #capa-superior {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999; /* Por encima de todo, incluyendo popups de Leaflet */
+            pointer-events: none; /* Magia: hace que la imagen no sea clicable ni estorbe */
+            user-select: none; /* Evita que se seleccione por accidente */
+            object-fit: cover; /* Asegura que cubra todo el contenedor */
+        }
+
         /* * INGENIERÍA DE MARCADORES PERSONALIZADOS (L.divIcon) */
         .custom-leaflet-icon {
             background: transparent !important;
             border: none !important;
         }
 
-        /* * DISEÑO DEL PIN CARICATURESCO (GOTA INVERTIDA) */
+        /* * DISEÑO DEL PIN (GOTA INVERTIDA SIN SOMBRA DE CÓMIC) */
         .comic-marker-pin {
             width: 32px;
             height: 32px;
             background-color: #ff2a2a; 
             border: 4px solid #000000; 
-            /* Esto crea la forma de gota: 3 esquinas redondeadas y 1 puntiaguda */
             border-radius: 50% 50% 50% 0; 
-            /* Rotamos para que la punta apunte hacia abajo */
             transform: rotate(-45deg);
-            filter: drop-shadow(4px 4px 0px rgba(0,0,0,1));
+            /* Sombra eliminada según solicitud */
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
@@ -79,7 +92,6 @@
             border-radius: 50%;
             top: 50%;
             left: 50%;
-            /* Ajuste de centrado tomando en cuenta la rotación del padre */
             transform: translate(-50%, -50%);
         }
 
@@ -101,7 +113,6 @@
             padding: 0;
         }
 
-        /* Ocultar la flecha nativa y el botón de cierre */
         .leaflet-popup-tip-container {
             display: none;
         }
@@ -112,28 +123,23 @@
         .leaflet-popup-content {
             margin: 15px;
             text-align: center;
-            /* Asegura que el popup tenga un ancho mínimo generoso para las imágenes */
-            min-width: 220px !important; 
         }
 
-        /* * ESTRUCTURA INTERNA DEL CONTENIDO DEL POPUP (IMÁGENES MÁS GRANDES) */
+        /* * ESTRUCTURA INTERNA DEL POPUP (IMÁGENES FIJAS Y PROTAGONISTAS) */
         .popup-images-grid {
             display: flex;
             justify-content: center;
-            gap: 12px;
+            gap: 15px; /* Espacio entre las imágenes si hay varias */
             margin-bottom: 12px;
-            width: 100%;
         }
 
         .popup-images-grid a {
             display: block;
-            flex: 1 1 auto; /* Permite que las imágenes se expandan a lo ancho */
-            width: 100%;
         }
 
         .popup-images-grid img {
-            width: 100%;
-            aspect-ratio: 1 / 1; /* Fuerza a que sean perfectamente cuadradas */
+            width: 150px; /* Tamaño fijo, grande y protagonista para todas las imágenes */
+            height: 150px; 
             object-fit: cover;
             border: 4px solid #000000;
             border-radius: 8px;
@@ -143,7 +149,7 @@
         }
 
         .popup-images-grid img:hover {
-            transform: translateY(-4px); /* Pequeño salto hacia arriba */
+            transform: translateY(-4px); 
             box-shadow: 6px 8px 0px rgba(0,0,0,1);
         }
 
@@ -152,6 +158,7 @@
             font-weight: 900;
             text-transform: uppercase;
             white-space: nowrap;
+            text-align: center; /* Aseguramos que el texto esté siempre centrado */
         }
     </style>
 </head>
@@ -159,6 +166,7 @@
 
     <div id="map-container">
         <div id="map"></div>
+        <img src="CAPA.png" id="capa-superior" alt="Capa Superior Decorativa">
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -180,7 +188,7 @@
                 maxZoom: 19
             }).addTo(map);
 
-            /* * 3. MODELADO DE DATOS: INTEGRANDO IMÁGENES Y ENLACES (Corrección "Redvital") */
+            /* * 3. MODELADO DE DATOS */
             const retailNodes = [
                 { 
                     id: 1, 
@@ -228,18 +236,16 @@
             /* * 4. INYECCIÓN DEL ECOSISTEMA DE MARCADORES Y POPUPS */
             retailNodes.forEach(node => {
                 
-                // Nueva configuración del Icono para la forma de Gota
                 const customPin = L.divIcon({
                     className: 'custom-leaflet-icon',
                     html: '<div class="comic-marker-pin"></div>',
                     iconSize: [32, 32], 
-                    iconAnchor: [16, 32], // Ancla en la punta inferior central
-                    popupAnchor: [0, -36] // El popup nace justo por encima de la punta
+                    iconAnchor: [16, 32], 
+                    popupAnchor: [0, -36] 
                 });
 
                 const marker = L.marker([node.lat, node.lng], { icon: customPin }).addTo(map);
 
-                // Construcción dinámica de la cuadrícula de imágenes interactiva
                 let imagesHtml = '<div class="popup-images-grid">';
                 node.images.forEach(img => {
                     imagesHtml += `
@@ -250,7 +256,6 @@
                 });
                 imagesHtml += '</div>';
 
-                // Ensamblaje del contenido HTML del Popup
                 const popupContent = `
                     <div>
                         ${imagesHtml}
@@ -258,12 +263,11 @@
                     </div>
                 `;
 
-                // Configuración del Popup
                 marker.bindPopup(popupContent, {
-                    offset: [0, -10]
+                    offset: [0, -10],
+                    maxWidth: 600 // Aumentamos el maxWidth para que no colapse si hay 2 o más imágenes
                 });
                 
-                // Opcional: Hacer que el popup también se abra al pasar el cursor
                 marker.on('mouseover', function (e) {
                     this.openPopup();
                 });
