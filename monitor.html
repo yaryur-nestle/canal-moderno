@@ -1,180 +1,414 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa Interactivo Minimalista: Red Comercial Venezuela</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yar-Yur System - Monitor Interactivo</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden; 
+    }
+
+    /* --- Botón Pantalla Completa --- */
+    .fullscreen-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 1000;
+      transition: background 0.3s;
+    }
+    .fullscreen-btn:hover { background: rgba(255, 255, 255, 0.5); }
+
+    /* --- Contenedor Principal (Efecto Flip 3D) --- */
+    .flip-container {
+      perspective: 1500px;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .flipper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 1s cubic-bezier(0.68, -0.15, 0.265, 1.15); 
+    }
+
+    .flip-container.flipped .flipper {
+      transform: rotateY(180deg);
+    }
+
+    /* Caras del interactivo */
+    .front, .back {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden; 
+    }
+
+    /* Lógica de interacciones táctiles segura */
+    .front { pointer-events: auto; background-color: #ffffff; }
+    .back { pointer-events: none; } /* Desactivado mientras estamos en el frente */
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-    
-    <style>
-        /* * NORMALIZACIÓN Y ESTILIZACIÓN GLOBAL
-         */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    .flip-container.flipped .front { pointer-events: none; } /* Desactivado al girar */
+    .flip-container.flipped .back { pointer-events: auto; } /* Activado al girar */
 
-        /* * ESTÉTICA DEL LIENZO BASE
-         */
-        body {
-            background-color: #ffffff;
-            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
+    /* Imágenes */
+    .base-img, .person-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover; 
+      pointer-events: none; /* Asegura que no tapen los clics de las zonas */
+    }
 
-        /* * CONTENEDOR DEL MAPA (VIÑETA DE CÓMIC)
-         */
-        #map-container {
-            width: 90vw;
-            height: 90vh;
-            background-color: #ffffff;
-            border: 6px solid #000000;
-            border-radius: 20px;
-            box-shadow: 15px 15px 0px #000000;
-            position: relative;
-            z-index: 1;
-        }
+    .person-img {
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+    }
 
-        /* Instancia interna donde el motor SVG operará */
-        #map {
-            width: 100%;
-            height: 100%;
-            border-radius: 14px; 
-            background-color: transparent;
-        }
+    .person-img.active {
+      opacity: 1;
+    }
 
-        /* * INGENIERÍA DE MARCADORES PERSONALIZADOS (L.divIcon)
-         */
-        .leaflet-div-icon {
-            background: transparent !important;
-            border: none !important;
-        }
+    /* Zonas interactivas frontales */
+    .click-zone {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 33.33%;
+      cursor: pointer;
+      z-index: 50;
+    }
+    .click-zone.left { left: 0; }
+    .click-zone.center { left: 33.33%; }
+    .click-zone.right { left: 66.66%; }
 
-        /*
-         * DISEÑO DEL PIN CARICATURESCO
-         */
-        .comic-marker-pin {
-            width: 28px;
-            height: 28px;
-            background-color: #ff2a2a; 
-            border: 4px solid #000000; 
-            border-radius: 50%; 
-            filter: drop-shadow(5px 5px 0px rgba(0,0,0,1));
-            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer;
-            position: relative;
-            left: -14px; 
-            top: -14px;
-        }
+    /* Cara trasera */
+    .back {
+      transform: rotateY(180deg); 
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      box-sizing: border-box;
+    }
 
-        /* * MICRO-INTERACCIONES (HOVER STATE)
-         */
-        .comic-marker-pin:hover {
-            transform: scale(1.4) rotate(-15deg);
-            background-color: #ffd700; 
-            z-index: 1000 !important;
-        }
+    .back-content {
+      background: #f8f9fa;
+      padding: 40px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 1200px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0;
+      text-align: center;
+      /* Se eliminó pointer-events: none para permitir hover en el gráfico y clic en el texto */
+    }
 
-        /* * REESCRITURA DE LA HERRAMIENTA EMERGENTE (TOOLTIP)
-         */
-        .leaflet-tooltip.comic-speech-bubble {
-            background-color: #ffffff;
-            border: 4px solid #000000;
-            border-radius: 15px;
-            color: #000000;
-            font-family: inherit;
-            font-size: 20px; 
-            font-weight: 900;
-            padding: 12px 20px;
-            box-shadow: 8px 8px 0px #000000; 
-            white-space: nowrap;
-            text-align: center;
-            text-transform: uppercase;
-        }
+    h1 {
+      color: #111;
+      letter-spacing: 3px;
+      margin-top: 0;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
 
-        /* * SUPRESIÓN DE LA FLECHA NATIVA DEL TOOLTIP
-         */
-        .leaflet-tooltip-left.comic-speech-bubble::before,
-        .leaflet-tooltip-right.comic-speech-bubble::before,
-        .leaflet-tooltip-top.comic-speech-bubble::before,
-        .leaflet-tooltip-bottom.comic-speech-bubble::before {
-            display: none !important;
-        }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
 
-        /* Fuerza la opacidad total */
-        .leaflet-tooltip {
-            opacity: 1 !important;
-        }
-    </style>
+    .chart-container {
+      position: relative;
+      height: 50vh;
+      width: 100%;
+    }
+
+    .hint {
+      margin-top: 30px;
+      color: #888;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      animation: pulse 2s infinite;
+      cursor: pointer; /* Ahora este es el único botón para regresar */
+      padding: 10px 20px;
+      display: inline-block;
+      border-radius: 8px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .hint:hover {
+      background-color: rgba(0,0,0,0.05);
+      color: #333;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+  </style>
 </head>
 <body>
 
-    <div id="map-container">
-        <div id="map"></div>
+  <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
+
+  <div class="flip-container" id="flip-container">
+    <div class="flipper">
+      
+      <div class="front">
+        <img src="fondo.jpg" class="base-img" alt="Exhibidores Yar-Yur">
+        
+        <img src="1-1.png" class="person-img" id="img-1-1">
+        <img src="1-2.png" class="person-img" id="img-1-2">
+        <img src="1-3.png" class="person-img" id="img-1-3">
+        <img src="1-4.png" class="person-img" id="img-1-4">
+        <img src="1-5.png" class="person-img" id="img-1-5">
+
+        <img src="2-1.png" class="person-img" id="img-2-1">
+        <img src="2-2.png" class="person-img" id="img-2-2">
+        <img src="2-3.png" class="person-img" id="img-2-3">
+        <img src="2-4.png" class="person-img" id="img-2-4">
+        <img src="2-5.png" class="person-img" id="img-2-5">
+
+        <img src="3-1.png" class="person-img" id="img-3-1">
+        <img src="3-2.png" class="person-img" id="img-3-2">
+        <img src="3-3.png" class="person-img" id="img-3-3">
+        <img src="3-4.png" class="person-img" id="img-3-4">
+        <img src="3-5.png" class="person-img" id="img-3-5">
+
+        <div class="click-zone left" onclick="flipToChart(1)"></div>
+        <div class="click-zone center" onclick="flipToChart(2)"></div>
+        <div class="click-zone right" onclick="flipToChart(3)"></div>
+      </div>
+
+      <div class="back">
+        <div class="back-content">
+          <h1 id="chart-title">YAR-YUR SYSTEM</h1>
+          <div id="chart-subtitle" class="subtitle">Tráfico de personas</div>
+          <div class="chart-container">
+            <canvas id="main-chart"></canvas>
+          </div>
+          <div class="hint" onclick="flipToFront()">Toca aquí para volver al exhibidor interactivo</div>
+        </div>
+      </div>
+
     </div>
+  </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, onValue, query, orderByChild, startAt, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
+      authDomain: "canal-moderno-2655e.firebaseapp.com",
+      databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
+      projectId: "canal-moderno-2655e",
+      storageBucket: "canal-moderno-2655e.firebasestorage.app",
+      messagingSenderId: "947512040134",
+      appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    document.getElementById('fullscreen-btn').addEventListener('click', () => {
+      const elem = document.documentElement;
+      if (!document.fullscreenElement) {
+        elem.requestFullscreen?.() || elem.webkitRequestFullscreen?.() || elem.msRequestFullscreen?.();
+      } else {
+        document.exitFullscreen?.() || document.webkitExitFullscreen?.() || document.msExitFullscreen?.();
+      }
+    });
+
+    const currentHour = new Date().getHours();
+    setInterval(() => {
+      if (new Date().getHours() !== currentHour) location.reload(); 
+    }, 60000);
+
+    const startOfHourDate = new Date();
+    startOfHourDate.setMinutes(0, 0, 0);
+    const startTimestamp = startOfHourDate.getTime();
+    const labelsMinutos = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
+
+    // Títulos y colores actualizados
+    const configTablets = {
+      1: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 206, 86, 0.8)', colorBorder: 'rgb(255, 206, 86)', name: 'MUEBLE NIDO' },
+      2: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(54, 162, 235, 0.8)', colorBorder: 'rgb(54, 162, 235)', name: 'MUEBLE MULTICATEGORÍA' },
+      3: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 99, 132, 0.8)', colorBorder: 'rgb(255, 99, 132)', name: 'MUEBLE RECETAS' }
+    };
+
+    const estadoVisual = { 1: [], 2: [], 3: [] }; 
+    const dataHistogramas = { 1: new Array(60).fill(0), 2: new Array(60).fill(0), 3: new Array(60).fill(0) };
+    let tabletActualEnGrafico = null; 
+
+    // --- CONFIGURACIÓN DEL TOOLTIP PERSONALIZADO ---
+    const ctx = document.getElementById('main-chart').getContext('2d');
+    const mainChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labelsMinutos,
+        datasets: [{
+          label: 'Personas',
+          data: [],
+          backgroundColor: '#000',
+          borderColor: '#000',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 500, easing: 'easeOutQuart' },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#eaeaea' } },
+          x: { grid: { display: false } }
+        },
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleFont: { size: 16, family: "'Segoe UI', sans-serif" },
+            bodyFont: { size: 14, family: "'Segoe UI', sans-serif" },
+            padding: 12,
+            displayColors: false,
+            callbacks: {
+              title: function(context) {
+                const minuto = context[0].label;
+                let hr = currentHour;
+                const ampm = hr >= 12 ? 'pm' : 'am';
+                hr = hr % 12;
+                hr = hr ? hr : 12; // Formato 12 horas (la hora 0 es 12)
+                return `${hr}:${minuto}${ampm}`;
+              },
+              label: function(context) {
+                const cantidad = context.raw;
+                if(cantidad === 1) return cantidad + ' persona';
+                return cantidad + ' personas';
+              }
+            }
+          }
+        }
+      }
+    });
+
+    window.flipToChart = function(tabletId) {
+      tabletActualEnGrafico = tabletId;
+      
+      // Cálculo del formato de hora (ej. 8:00pm - 8:59pm)
+      let hr = currentHour % 12;
+      hr = hr ? hr : 12;
+      const ampm = currentHour >= 12 ? 'pm' : 'am';
+      const formatTime = `${hr}:00${ampm} - ${hr}:59${ampm}`;
+      
+      document.getElementById('chart-title').innerText = configTablets[tabletId].name;
+      document.getElementById('chart-subtitle').innerText = `Hora: ${formatTime}`;
+      
+      mainChart.data.datasets[0].data = dataHistogramas[tabletId];
+      mainChart.data.datasets[0].backgroundColor = configTablets[tabletId].colorBg;
+      mainChart.data.datasets[0].borderColor = configTablets[tabletId].colorBorder;
+      mainChart.update();
+
+      document.getElementById('flip-container').classList.add('flipped');
+    }
+
+    window.flipToFront = function() {
+      document.getElementById('flip-container').classList.remove('flipped');
+      tabletActualEnGrafico = null;
+    }
+
+    function actualizarSiluetas(tabletId, nuevoConteo) {
+      const objetivo = Math.min(nuevoConteo, 5); 
+      let activasActuales = estadoVisual[tabletId];
+
+      if (objetivo > activasActuales.length) {
+        const cantidadAEncender = objetivo - activasActuales.length;
+        let inactivas = configTablets[tabletId].ids.filter(id => !activasActuales.includes(id));
+        inactivas = inactivas.sort(() => Math.random() - 0.5);
+
+        for (let j = 0; j < cantidadAEncender; j++) {
+          const imgId = inactivas[j];
+          if (imgId) {
+            document.getElementById(`img-${tabletId}-${imgId}`).classList.add('active');
+            activasActuales.push(imgId);
+          }
+        }
+      } else if (objetivo < activasActuales.length) {
+        const cantidadAApagar = activasActuales.length - objetivo;
+        activasActuales = activasActuales.sort(() => Math.random() - 0.5);
+        const paraApagar = activasActuales.splice(0, cantidadAApagar); 
+        
+        for (let j = 0; j < paraApagar.length; j++) {
+          const imgId = paraApagar[j];
+          document.getElementById(`img-${tabletId}-${imgId}`).classList.remove('active');
+        }
+      }
+      
+      estadoVisual[tabletId] = activasActuales; 
+    }
+
+    for (let i = 1; i <= 3; i++) {
+      const numFormat = i.toString().padStart(2, '0'); 
+      
+      const eventosQuery = query(
+        ref(db, `muebles/tablet_${numFormat}/eventos`), 
+        orderByChild('timestamp'), 
+        startAt(startTimestamp)
+      );
+
+      onChildAdded(eventosQuery, (snapshot) => {
+        const data = snapshot.val();
+        
+        if (data && data.timestamp && data.conteoActual !== undefined) {
+          
+          actualizarSiluetas(i, data.conteoActual);
+
+          const conteoAnterior = data.conteoAnterior || 0;
+          if (data.conteoActual > conteoAnterior) {
+            const eventDate = new Date(data.timestamp);
+            const minutoDelEvento = eventDate.getMinutes();
             
-            /* * 1. INICIALIZACIÓN DEL MAPA
-             */
-            const map = L.map('map', {
-                center: [7.5, -66.0],     // Centro geográfico de Venezuela
-                zoom: 6,                  // Nivel de zoom inicial
-                zoomControl: true,        // Rehabilitamos el zoom por si el usuario necesita acercarse
-                attributionControl: false 
-            });
-
-            /* * 2. NUEVO MOTOR DE RENDERIZADO (TILE LAYER)
-             * Sustituye al problemático GeoJSON. Usamos el mapa "Light" de CartoDB 
-             * para mantener el minimalismo extremo (fondos blancos/grises, líneas sutiles).
-             */
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(map);
-
-            /* * 3. MODELADO DE DATOS DE LOS NODOS COMERCIALES
-             */
-            const retailNodes = [
-                { id: 1, sucursal: "Kromi Market", lat: 10.2225, lng: -68.0160 },
-                { id: 2, sucursal: "Red Vital San Diego", lat: 10.2540, lng: -67.9510 },
-                { id: 3, sucursal: "Red Vital La Yaguara", lat: 10.4772, lng: -66.9597 },
-                { id: 4, sucursal: "Garzón Hiperahorro", lat: 7.7669, lng: -72.2250 },
-                { id: 5, sucursal: "Luxor Círculo Militar", lat: 10.2670, lng: -67.5950 }
-            ];
-
-            /*
-             * 4. INYECCIÓN DEL ECOSISTEMA DE MARCADORES
-             */
-            retailNodes.forEach(node => {
-                
-                const customPin = L.divIcon({
-                    html: '<div class="comic-marker-pin"></div>',
-                    iconSize: [0, 0], 
-                    iconAnchor: [0, 0] 
-                });
-
-                const marker = L.marker([node.lat, node.lng], { icon: customPin }).addTo(map);
-
-                marker.bindTooltip(node.sucursal, {
-                    className: 'comic-speech-bubble', 
-                    direction: 'top',                 
-                    offset: [0, -25],                 
-                    permanent: false,                 
-                    opacity: 1
-                });
-            });
+            const nuevasDetecciones = data.conteoActual - conteoAnterior;
+            dataHistogramas[i][minutoDelEvento] += nuevasDetecciones;
             
-        });
-    </script>
+            if (tabletActualEnGrafico === i) {
+              mainChart.update(); 
+            }
+          }
+        }
+      });
+    }
+  </script>
 </body>
 </html>
