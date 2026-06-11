@@ -8,16 +8,12 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     
     <style>
-        /* * NORMALIZACIÓN Y ESTILIZACIÓN GLOBAL
-         */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
-        /* * ESTÉTICA DEL LIENZO BASE
-         */
         body {
             background-color: #ffffff;
             font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive, sans-serif;
@@ -28,8 +24,6 @@
             overflow: hidden;
         }
 
-        /* * CONTENEDOR DEL MAPA (VIÑETA DE CÓMIC)
-         */
         #map-container {
             width: 90vw;
             height: 90vh;
@@ -41,7 +35,6 @@
             z-index: 1;
         }
 
-        /* Instancia interna donde el motor SVG operará */
         #map {
             width: 100%;
             height: 100%;
@@ -49,16 +42,11 @@
             background-color: transparent;
         }
 
-        /* * INGENIERÍA DE MARCADORES PERSONALIZADOS (L.divIcon)
-         */
         .leaflet-div-icon {
             background: transparent !important;
             border: none !important;
         }
 
-        /*
-         * DISEÑO DEL PIN CARICATURESCO
-         */
         .comic-marker-pin {
             width: 28px;
             height: 28px;
@@ -73,16 +61,12 @@
             top: -14px;
         }
 
-        /* * MICRO-INTERACCIONES (HOVER STATE)
-         */
         .comic-marker-pin:hover {
             transform: scale(1.4) rotate(-15deg);
             background-color: #ffd700; 
             z-index: 1000 !important;
         }
 
-        /* * REESCRITURA DE LA HERRAMIENTA EMERGENTE (TOOLTIP)
-         */
         .leaflet-tooltip.comic-speech-bubble {
             background-color: #ffffff;
             border: 4px solid #000000;
@@ -98,8 +82,6 @@
             text-transform: uppercase;
         }
 
-        /* * SUPRESIÓN DE LA FLECHA NATIVA DEL TOOLTIP
-         */
         .leaflet-tooltip-left.comic-speech-bubble::before,
         .leaflet-tooltip-right.comic-speech-bubble::before,
         .leaflet-tooltip-top.comic-speech-bubble::before,
@@ -107,7 +89,6 @@
             display: none !important;
         }
 
-        /* Fuerza la opacidad total */
         .leaflet-tooltip {
             opacity: 1 !important;
         }
@@ -124,26 +105,69 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             
-            /* * 1. INICIALIZACIÓN DEL MAPA
-             */
+            /* 1. INICIALIZACIÓN DEL MAPA */
             const map = L.map('map', {
-                center: [7.5, -66.0],     // Centro geográfico de Venezuela
-                zoom: 6,                  // Nivel de zoom inicial
-                zoomControl: true,        // Rehabilitamos el zoom por si el usuario necesita acercarse
+                center: [6.5, -64.5],     
+                zoom: 5.5,                
+                zoomControl: true,        
                 attributionControl: false 
             });
 
-            /* * 2. NUEVO MOTOR DE RENDERIZADO (TILE LAYER)
-             * Sustituye al problemático GeoJSON. Usamos el mapa "Light" de CartoDB 
-             * para mantener el minimalismo extremo (fondos blancos/grises, líneas sutiles).
-             */
+            /* 2. MAPA BASE (TILE LAYER) */
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 subdomains: 'abcd',
                 maxZoom: 19
             }).addTo(map);
 
-            /* * 3. MODELADO DE DATOS DE LOS NODOS COMERCIALES
-             */
+            /* 3. LÓGICA DE LA MÁSCARA (POLÍGONO INVERTIDO) */
+            // Usamos CDN jsDelivr para mayor estabilidad de red
+            const geojsonEndpoint = 'https://cdn.jsdelivr.net/gh/Veneu/venezuela-geojson@master/estados.geojson';
+
+            fetch(geojsonEndpoint)
+                .then(response => {
+                    if (!response.ok) throw new Error("Fallo en la red al cargar las fronteras.");
+                    return response.json();
+                })
+                .then(data => {
+                    // a. Creamos las coordenadas de un cuadrado gigante que tapa todo el mundo
+                    const worldCoords = [
+                        [90, -180], [90, 180], [-90, 180], [-90, -180], [90, -180]
+                    ];
+                    
+                    // b. Iniciamos el arreglo que contendrá el mundo + los "huecos" de Venezuela
+                    let maskCoords = [worldCoords];
+
+                    // c. Iteramos sobre cada estado de Venezuela para recortarlo de la sábana blanca
+                    data.features.forEach(feature => {
+                        const type = feature.geometry.type;
+                        const coords = feature.geometry.coordinates;
+
+                        if (type === 'Polygon') {
+                            // Leaflet usa [Lat, Lng] pero GeoJSON viene en [Lng, Lat], así que lo invertimos
+                            let hole = coords[0].map(c => [c[1], c[0]]);
+                            maskCoords.push(hole);
+                        } else if (type === 'MultiPolygon') {
+                            coords.forEach(poly => {
+                                let hole = poly[0].map(c => [c[1], c[0]]);
+                                maskCoords.push(hole);
+                            });
+                        }
+                    });
+
+                    // d. Renderizamos la sábana blanca gigante sobre el mapa
+                    L.polygon(maskCoords, {
+                        color: "#000000",      // Color de las líneas que dividen los estados (el borde del hueco)
+                        weight: 1,             // Línea delgada y continua
+                        fillColor: "#ffffff",  // El color que tapará a los demás países (blanco puro)
+                        fillOpacity: 1         // 100% de opacidad para que no se vea nada a través de la máscara
+                    }).addTo(map);
+                })
+                .catch(err => {
+                    console.error('No se pudo aplicar la máscara de países:', err);
+                    // Si esto falla por red, simplemente se verán los demás países, pero el mapa no se romperá.
+                });
+
+            /* 4. MARCADORES DE LAS SUCURSALES */
             const retailNodes = [
                 { id: 1, sucursal: "Kromi Market", lat: 10.2225, lng: -68.0160 },
                 { id: 2, sucursal: "Red Vital San Diego", lat: 10.2540, lng: -67.9510 },
@@ -152,11 +176,7 @@
                 { id: 5, sucursal: "Luxor Círculo Militar", lat: 10.2670, lng: -67.5950 }
             ];
 
-            /*
-             * 4. INYECCIÓN DEL ECOSISTEMA DE MARCADORES
-             */
             retailNodes.forEach(node => {
-                
                 const customPin = L.divIcon({
                     html: '<div class="comic-marker-pin"></div>',
                     iconSize: [0, 0], 
