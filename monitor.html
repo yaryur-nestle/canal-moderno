@@ -9,7 +9,6 @@
     
     <style>
         /* * NORMALIZACIÓN Y ESTILIZACIÓN GLOBAL
-         * Reseteo de márgenes para asegurar el uso total del área de visualización.
          */
         * {
             box-sizing: border-box;
@@ -18,8 +17,6 @@
         }
 
         /* * ESTÉTICA DEL LIENZO BASE
-         * El fondo blanco puro responde al requerimiento de minimalismo extremo.
-         * La tipografía cursiva/informal establece el tono "caricaturesco".
          */
         body {
             background-color: #ffffff;
@@ -32,8 +29,6 @@
         }
 
         /* * CONTENEDOR DEL MAPA (VIÑETA DE CÓMIC)
-         * El área cartográfica se enmarca con un borde masivo y una sombra no difuminada
-         * (solid drop-shadow) típica de la impresión de tiras cómicas de mediados de siglo.
          */
         #map-container {
             width: 90vw;
@@ -55,7 +50,6 @@
         }
 
         /* * INGENIERÍA DE MARCADORES PERSONALIZADOS (L.divIcon)
-         * Se purgan los fondos automáticos que Leaflet impone a las capas de iconos div.
          */
         .leaflet-div-icon {
             background: transparent !important;
@@ -64,8 +58,6 @@
 
         /*
          * DISEÑO DEL PIN CARICATURESCO
-         * Círculo con relleno vibrante, contorno pesado y sombra dura proyectada
-         * generada mediante el procesamiento de filtros SVG en el navegador.
          */
         .comic-marker-pin {
             width: 28px;
@@ -77,13 +69,11 @@
             transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
             position: relative;
-            left: -14px; /* Centrado absoluto respecto al ancla espacial */
+            left: -14px; 
             top: -14px;
         }
 
         /* * MICRO-INTERACCIONES (HOVER STATE)
-         * Al interactuar, el marcador se expande, rota levemente y altera su color,
-         * transmitiendo una retroalimentación visual elástica e informal.
          */
         .comic-marker-pin:hover {
             transform: scale(1.4) rotate(-15deg);
@@ -92,7 +82,6 @@
         }
 
         /* * REESCRITURA DE LA HERRAMIENTA EMERGENTE (TOOLTIP)
-         * Se asalta el bloque de clases nativo de Leaflet para imponer el estilo de la interfaz.
          */
         .leaflet-tooltip.comic-speech-bubble {
             background-color: #ffffff;
@@ -100,18 +89,16 @@
             border-radius: 15px;
             color: #000000;
             font-family: inherit;
-            font-size: 20px; /* Tamaño maximizado para legibilidad inmediata */
+            font-size: 20px; 
             font-weight: 900;
             padding: 12px 20px;
-            box-shadow: 8px 8px 0px #000000; /* Sombra sólida desplazada */
+            box-shadow: 8px 8px 0px #000000; 
             white-space: nowrap;
             text-align: center;
             text-transform: uppercase;
         }
 
         /* * SUPRESIÓN DE LA FLECHA NATIVA DEL TOOLTIP
-         * Las especificaciones exigen una burbuja flotante pura; los bordes direccionales
-         * generados por pseudo-elementos arruinan la ilusión de la tinta sólida negra.
          */
         .leaflet-tooltip-left.comic-speech-bubble::before,
         .leaflet-tooltip-right.comic-speech-bubble::before,
@@ -120,7 +107,7 @@
             display: none !important;
         }
 
-        /* Fuerza la opacidad total independientemente de la transición del motor de Leaflet */
+        /* Fuerza la opacidad total */
         .leaflet-tooltip {
             opacity: 1 !important;
         }
@@ -137,19 +124,25 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             
-            /* * 1. INICIALIZACIÓN DEL SISTEMA DE REFERENCIA DE COORDENADAS (CRS)
-             * Se ajusta el centro y el zoom para abarcar Nueva Esparta (norte) 
-             * y la extensión de la Guayana Esequiba (este/sur).
+            /* * 1. INICIALIZACIÓN DEL MAPA
              */
             const map = L.map('map', {
-                center: [6.5, -64.5],     // Epicentro ajustado para encuadrar todo el territorio
-                zoom: 5.5,                // Nivel de escala inicial ajustado
-                zoomControl: false,       // Inhabilitación de botones interactivos de zoom
-                attributionControl: false // Eliminación de hipervínculos de atribución
+                center: [7.5, -66.0],     // Centro geográfico de Venezuela
+                zoom: 6,                  // Nivel de zoom inicial
+                zoomControl: true,        // Rehabilitamos el zoom por si el usuario necesita acercarse
+                attributionControl: false 
             });
 
-            /* * 2. MODELADO DE DATOS DE LOS NODOS COMERCIALES
-             * Nodos originales preservados sin alteraciones.
+            /* * 2. NUEVO MOTOR DE RENDERIZADO (TILE LAYER)
+             * Sustituye al problemático GeoJSON. Usamos el mapa "Light" de CartoDB 
+             * para mantener el minimalismo extremo (fondos blancos/grises, líneas sutiles).
+             */
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+
+            /* * 3. MODELADO DE DATOS DE LOS NODOS COMERCIALES
              */
             const retailNodes = [
                 { id: 1, sucursal: "Kromi Market", lat: 10.2225, lng: -68.0160 },
@@ -159,66 +152,28 @@
                 { id: 5, sucursal: "Luxor Círculo Militar", lat: 10.2670, lng: -67.5950 }
             ];
 
-            /* * 3. ADQUISICIÓN DE LA GEOMETRÍA NACIONAL (GEOJSON ASÍNCRONO)
-             * Se cambió el endpoint por uno que contiene los estados de Venezuela.
-             * IMPORTANTE: Si este endpoint público omite el Esequibo por razones internacionales, 
-             * debes reemplazar este string por la ruta de un archivo local (ej: './venezuela_completa.geojson')
-             * que contenga la cartografía política exacta que necesitas.
+            /*
+             * 4. INYECCIÓN DEL ECOSISTEMA DE MARCADORES
              */
-            const geojsonEndpoint = 'https://raw.githubusercontent.com/Veneu/venezuela-geojson/master/estados.geojson';
-
-            fetch(geojsonEndpoint)
-                .then(response => {
-                    if (!response.ok) throw new Error("Fallo en la adquisición de la topología nacional.");
-                    return response.json();
-                })
-                .then(data => {
-                    /*
-                     * 4. ESTILIZACIÓN Y PROYECCIÓN VECTORIAL
-                     * Nueva especificación: línea delgada, continua, dibujando divisiones estatales.
-                     */
-                    L.geoJSON(data, {
-                        style: (feature) => ({
-                            color: "#000000",       // Contorno negro carbón
-                            weight: 1,              // Línea continua DELGADA (reducción de 4 a 1)
-                            fillColor: "#ffffff",   // Mantenimiento estricto del minimalismo
-                            fillOpacity: 1          // Máxima opacidad
-                            // Se eliminó dashArray para asegurar la línea sólida
-                        })
-                    }).addTo(map);
-
-                    /*
-                     * 5. INYECCIÓN DEL ECOSISTEMA DE MARCADORES
-                     * Iteración sobre la base de datos de sucursales.
-                     */
-                    retailNodes.forEach(node => {
-                        
-                        // Creación del envoltorio HTML que actuará como marcador espacial
-                        const customPin = L.divIcon({
-                            html: '<div class="comic-marker-pin"></div>',
-                            iconSize: [0, 0], 
-                            iconAnchor: [0, 0] 
-                        });
-
-                        // Despliegue del marcador en la proyección Web Mercator subyacente
-                        const marker = L.marker([node.lat, node.lng], { icon: customPin }).addTo(map);
-
-                        /*
-                         * 6. DESPLIEGUE EXCLUSIVO DE LA MARCA (TOOLTIP)
-                         */
-                        marker.bindTooltip(node.sucursal, {
-                            className: 'comic-speech-bubble', 
-                            direction: 'top',                 
-                            offset: [0, -25],                 
-                            permanent: false,                 
-                            opacity: 1
-                        });
-                    });
-                })
-                .catch(err => {
-                    console.error('Interrupción del flujo de datos GeoJSON:', err);
-                    alert("Aviso Técnico: El polígono geográfico de Venezuela no pudo ser procesado por problemas de red. Sin embargo, el motor continuará inyectando los nodos comerciales en sus coordenadas geodésicas respectivas.");
+            retailNodes.forEach(node => {
+                
+                const customPin = L.divIcon({
+                    html: '<div class="comic-marker-pin"></div>',
+                    iconSize: [0, 0], 
+                    iconAnchor: [0, 0] 
                 });
+
+                const marker = L.marker([node.lat, node.lng], { icon: customPin }).addTo(map);
+
+                marker.bindTooltip(node.sucursal, {
+                    className: 'comic-speech-bubble', 
+                    direction: 'top',                 
+                    offset: [0, -25],                 
+                    permanent: false,                 
+                    opacity: 1
+                });
+            });
+            
         });
     </script>
 </body>
