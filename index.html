@@ -47,7 +47,7 @@
             background-color: transparent;
         }
 
-        /* * CAPA SUPERIOR (Mantenemos si se necesita, pero sin estilo cómic) */
+        /* * CAPA SUPERIOR (No interactiva, decorativa) */
         #capa-superior {
             position: absolute;
             top: 0;
@@ -66,17 +66,23 @@
             width: 32px;
             height: 32px;
             background-color: #ff2a2a; 
-            border: 2px solid #ffffff; /* Borde sutil y limpio */
+            border: 2px solid #ffffff; 
             border-radius: 50% 50% 50% 0; 
             transform: rotate(-45deg);
             cursor: pointer;
             position: relative;
-            /* Centrar visualmente el punto de anclaje */
+            /* Centrar visualmente el punto de anclaje de la gota */
             top: -16px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
         }
 
-        /* Círculo interior blanco */
+        /* Micro-interacción al pasar el mouse sobre el contenedor del punto */
+        .highcharts-point:hover .custom-marker-pin {
+            transform: rotate(-45deg) scale(1.1);
+        }
+
+        /* Círculo interior blanco de la gota */
         .custom-marker-pin::after {
             content: '';
             position: absolute;
@@ -90,24 +96,24 @@
             transform: translate(-50%, -50%);
         }
 
-        /* No hay hover de escala o color en el pin para mantenerlo sutil */
-
         /* * ESTILIZACIÓN DEL POPUP (Sutil, borde fino, sin estilo cómic) */
         .highcharts-tooltip-box {
             fill: none !important; /* Oculta la caja nativa de Highcharts */
             stroke: none !important;
         }
 
+        /* Contenedor principal de la ventana emergente */
         .custom-hc-popup {
             background-color: #ffffff;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             color: #333333;
             font-family: inherit;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
             padding: 15px;
             text-align: center;
-            pointer-events: auto; /* Permite hacer clic en los enlaces */
+            pointer-events: auto; /* Permite hacer clic en los enlaces internos */
+            min-width: 180px;
         }
 
         /* * ESTRUCTURA DEL CONTENIDO (IMÁGENES PROTAGONISTAS) */
@@ -120,28 +126,30 @@
 
         .popup-images-grid a {
             display: block;
+            text-decoration: none;
         }
 
         .popup-images-grid img {
             width: 150px; 
             height: 150px; 
             object-fit: cover;
-            border: 1px solid #e0e0e0; /* Borde fino */
+            border: 1px solid #e0e0e0; 
             border-radius: 6px;
-            transition: transform 0.1s ease;
-            box-shadow: none; /* Sin sombra gruesa */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: none; 
             cursor: pointer;
         }
 
         .popup-images-grid img:hover {
-            transform: translateY(-2px); /* Ligera microinteracción */
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .popup-text-label {
             font-size: 18px; 
             font-weight: 600;
             color: #333333;
-            text-transform: none; /* Sin mayúsculas agresivas */
+            text-transform: none; 
             white-space: nowrap;
             text-align: center; 
         }
@@ -209,23 +217,24 @@
                     buttonOptions: { verticalAlign: 'bottom' }
                 },
                 
-                // Configuración de la ventana inteligente (Tooltip sutil)
+                // Configuración de la ventana inteligente (Comportamiento tipo Leaflet Popup)
                 tooltip: {
                     useHTML: true,
                     padding: 0,
-                    backgroundColor: 'transparent',
+                    backgroundColor: 'rgba(255,255,255,0)', // Transparente para usar nuestro propio CSS
                     borderWidth: 0,
                     shadow: false,
-                    distance: 20, // Distancia del popup respecto al pin
-                    stickOnContact: true, // Permite interactuar con el popup
+                    distance: 15, // Distancia del popup respecto al pin
+                    stickOnContact: true, // Permite interactuar con el popup (clics en hipervínculos)
                     hideDelay: 300,
+                    followPointer: false, // CLAVE: Evita que persiga el mouse, anclándose al marcador
                     formatter: function() {
-                        // Si el usuario pasa el mouse por un estado (fondo del mapa)
+                        // Si el usuario interactúa con un estado (fondo del mapa)
                         if (this.series.name === 'Estado') {
-                            return null; // No mostrar nada para estados
+                            return false; // Retorna false para no mostrar nada
                         }
 
-                        // Si el usuario pasa el mouse por un PIN (Sucursal)
+                        // Si el usuario interactúa con un PIN (Sucursal)
                         let imagesHtml = '<div class="popup-images-grid">';
                         this.point.images.forEach(img => {
                             imagesHtml += `
@@ -247,7 +256,7 @@
 
                 /* * 4. INYECCIÓN DEL ECOSISTEMA (Capas) */
                 series: [
-                    // Capa 1: Los estados de Venezuela (Sin interactividad naranja)
+                    // Capa 1: Los estados de Venezuela (Plano base)
                     {
                         data: baseData,
                         name: 'Estado',
@@ -271,16 +280,25 @@
                         name: 'Sucursales',
                         data: retailNodes,
                         marker: {
-                            radius: 16, // Área invisible de detección del mouse del tamaño del pin
+                            radius: 18, // Área invisible de detección de clic/hover alrededor de la gota
                             fillColor: 'transparent',
-                            lineColor: 'transparent'
+                            lineColor: 'transparent',
+                            states: {
+                                hover: {
+                                    radius: 18,
+                                    fillColor: 'transparent',
+                                    lineColor: 'transparent'
+                                }
+                            }
                         },
                         dataLabels: {
                             useHTML: true,
                             enabled: true,
                             allowOverlap: true,
+                            // Alineación para que la punta de la gota coincida con la coordenada real
+                            y: -10, 
                             formatter: function() {
-                                // Aquí inyectamos el HTML de tu marcador sutil
+                                // Aquí inyectamos el HTML de la gota invertida
                                 return '<div class="custom-marker-pin"></div>';
                             }
                         }
