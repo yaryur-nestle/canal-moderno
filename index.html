@@ -68,7 +68,7 @@
             width: 32px;
             height: 22px;
             cursor: pointer;
-            z-index: 10002; /* Por encima de los paneles */
+            z-index: 10002; 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -81,26 +81,25 @@
             display: block;
             height: 3px;
             width: 100%;
-            background-color: #b39c6e; /* Beige oscuro para que se vea bien */
+            background-color: #b39c6e; 
             border-radius: 3px;
             transition: all 0.3s ease-in-out;
             transform-origin: right center;
         }
 
-        /* Animación a Flecha (->) */
         #hamburger-btn.open span:nth-child(1) {
             transform: rotate(-45deg) translateY(-2px);
             width: 16px;
         }
         #hamburger-btn.open span:nth-child(2) {
-            transform: scaleX(1); /* Mantiene el centro como el palo de la flecha */
+            transform: scaleX(1); 
         }
         #hamburger-btn.open span:nth-child(3) {
             transform: rotate(45deg) translateY(2px);
             width: 16px;
         }
 
-        /* * PANELES LATERALES (Clase compartida) */
+        /* * PANELES LATERALES */
         .side-panel {
             position: absolute;
             top: 0;
@@ -114,13 +113,11 @@
             display: flex;
             flex-direction: column;
             padding: 20px;
-            padding-top: 60px; /* Espacio para el botón hamburguesa */
+            padding-top: 60px; 
             overflow-y: auto;
         }
 
-        .side-panel.active {
-            right: 0;
-        }
+        .side-panel.active { right: 0; }
 
         /* * PANEL DE INFORMACIÓN (Puntos Rojos) */
         #close-info-btn {
@@ -145,11 +142,12 @@
         }
 
         #panel-subtitle {
-            font-size: 15px;
-            font-weight: bold;
+            font-size: 18px;
+            font-weight: 900; /* Negrita */
             color: #daccaa; 
             letter-spacing: 0.5px;
             margin-bottom: 15px; 
+            text-transform: uppercase;
         }
 
         #panel-title {
@@ -165,12 +163,7 @@
             align-items: center;
         }
 
-        .panel-images-container a {
-            display: block;
-            text-decoration: none;
-            width: 100%;
-            text-align: center;
-        }
+        .panel-images-container a { display: block; text-decoration: none; width: 100%; text-align: center; }
 
         .panel-images-container img {
             width: 200px;
@@ -188,18 +181,13 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
 
-        /* Footer del Logo del Aliado Comercial */
         .panel-footer-logo {
-            margin-top: auto; /* Empuja el footer siempre hacia el fondo */
+            margin-top: auto; 
             padding-top: 25px;
             text-align: center;
         }
 
-        #panel-logo-img {
-            max-width: 180px;
-            max-height: 80px;
-            object-fit: contain;
-        }
+        #panel-logo-img { max-width: 180px; max-height: 80px; object-fit: contain; }
 
         /* * PANEL DE MENÚ (Hamburguesa / Filtros) */
         .accordion-btn {
@@ -208,7 +196,7 @@
             border-bottom: 2px solid #f0f0f0;
             font-size: 20px;
             font-weight: 600;
-            color: #daccaa; /* Color beige del mapa */
+            color: #daccaa; 
             width: 100%;
             text-align: left;
             padding: 15px 5px;
@@ -231,33 +219,69 @@
 
         .accordion-content.open { display: flex; }
 
-        /* Botones de las imágenes en el menú */
+        /* Contenedor del Botón + Lista Dinámica */
+        .filter-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
         .filter-img-btn {
             border: 2px solid transparent;
             border-radius: 8px;
             padding: 10px;
             cursor: pointer;
-            text-align: center;
             transition: all 0.2s ease;
             background-color: #fcfcfc;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
-        .filter-img-btn img {
-            max-width: 100%;
-            height: 60px;
-            object-fit: contain;
+        .filter-img-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(0,0,0,0.1); }
+        .filter-img-btn.active-filter { border-color: #b39c6e; background-color: #fdfbf7; }
+
+        /* Estilo Cuadrado Especial para Marcas */
+        .marca-btn {
+            aspect-ratio: 1 / 1;
+            width: 180px;
+            margin: 0 auto; /* Centrado */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        .filter-img-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+        .marca-btn img { max-width: 90%; max-height: 90%; object-fit: contain; }
+
+        /* Estilo Rectangular para Sucursales */
+        .sucursal-btn { text-align: center; }
+        .sucursal-btn img { max-width: 100%; height: 60px; object-fit: contain; }
+
+        /* * LISTA DE RESULTADOS DINÁMICOS */
+        .filter-results {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px 10px;
+            background-color: #fafafa;
+            border-radius: 8px;
+            border-left: 4px solid #daccaa;
+            margin-top: 10px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
         }
 
-        .filter-img-btn.active-filter {
-            border-color: #b39c6e;
-            background-color: #fdfbf7;
+        .filter-results.active { display: flex; }
+
+        .filter-results a {
+            color: #daccaa;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+            display: block;
+            padding: 4px 0;
         }
+
+        .filter-results a:hover { color: #b39c6e; text-decoration: underline; }
 
     </style>
 </head>
@@ -279,33 +303,63 @@
             <div class="accordion-item">
                 <button class="accordion-btn">Marcas <span>+</span></button>
                 <div class="accordion-content">
-                    <div class="filter-img-btn" data-type="marca" data-val="NIDO.png">
-                        <img src="NIDO.png" alt="NIDO">
+                    
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn marca-btn" data-type="marca" data-val="NIDO.png">
+                            <img src="NIDO.png" alt="NIDO">
+                        </div>
+                        <div class="filter-results"></div>
                     </div>
-                    <div class="filter-img-btn" data-type="marca" data-val="RECETAS.png">
-                        <img src="RECETAS.png" alt="RECETAS">
+
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn marca-btn" data-type="marca" data-val="RECETAS.png">
+                            <img src="RECETAS.png" alt="RECETAS">
+                        </div>
+                        <div class="filter-results"></div>
                     </div>
-                    <div class="filter-img-btn" data-type="marca" data-val="MULTIMARCA.png">
-                        <img src="MULTIMARCA.png" alt="Multimarca">
+
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn marca-btn" data-type="marca" data-val="MULTIMARCA.png">
+                            <img src="MULTIMARCA.png" alt="Multimarca">
+                        </div>
+                        <div class="filter-results"></div>
                     </div>
+
                 </div>
             </div>
 
             <div class="accordion-item">
                 <button class="accordion-btn">Sucursales <span>+</span></button>
                 <div class="accordion-content">
-                    <div class="filter-img-btn" data-type="sucursal" data-val="logo-REDVITAL.jpg">
-                        <img src="logo-REDVITAL.jpg" alt="REDVITAL">
+                    
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-REDVITAL.jpg">
+                            <img src="logo-REDVITAL.jpg" alt="REDVITAL">
+                        </div>
+                        <div class="filter-results"></div>
                     </div>
-                    <div class="filter-img-btn" data-type="sucursal" data-val="logo-LUXOR.jpg">
-                        <img src="logo-LUXOR.jpg" alt="LUXOR">
+
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-LUXOR.jpg">
+                            <img src="logo-LUXOR.jpg" alt="LUXOR">
+                        </div>
+                        <div class="filter-results"></div>
                     </div>
-                    <div class="filter-img-btn" data-type="sucursal" data-val="logo-KROMI.jpg">
-                        <img src="logo-KROMI.jpg" alt="KROMI">
+
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-KROMI.jpg">
+                            <img src="logo-KROMI.jpg" alt="KROMI">
+                        </div>
+                        <div class="filter-results"></div>
                     </div>
-                    <div class="filter-img-btn" data-type="sucursal" data-val="logo-GARZON.jpg">
-                        <img src="logo-GARZON.jpg" alt="Garzón">
+
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-GARZON.jpg">
+                            <img src="logo-GARZON.jpg" alt="Garzón">
+                        </div>
+                        <div class="filter-results"></div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -313,11 +367,10 @@
         <div id="info-panel" class="side-panel">
             <button id="close-info-btn">&times;</button>
             <div class="panel-header">
-                <div id="panel-subtitle">Estado: </div>
+                <div id="panel-subtitle">ESTADO</div>
                 <h2 id="panel-title">Nombre Sucursal</h2>
             </div>
-            <div id="panel-images" class="panel-images-container">
-                </div>
+            <div id="panel-images" class="panel-images-container"></div>
             <div class="panel-footer-logo">
                 <img id="panel-logo-img" src="" alt="Logo Aliado">
             </div>
@@ -329,34 +382,29 @@
         document.addEventListener("DOMContentLoaded", () => {
             
             let chartInstance = null;
-            
-            // Referencias DOM
             const navPanel = document.getElementById('nav-panel');
             const infoPanel = document.getElementById('info-panel');
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const closeInfoBtn = document.getElementById('close-info-btn');
 
-            /* * 1. DATOS DE LOS NODOS (¡Ahora con Logo Integrado!) */
+            /* * DATOS DE LOS NODOS */
             const retailNodes = [
                 { 
                     id: 1, sucursal: "Kromi Market", 
                     estadoNombre: "Carabobo", estadoId: "ve-ca", 
-                    lat: 10.2225, lon: -68.0160,
-                    logo: "logo-KROMI.jpg",
+                    lat: 10.2225, lon: -68.0160, logo: "logo-KROMI.jpg",
                     images: [ { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Kromi_Market_Valencia.html" } ]
                 },
                 { 
                     id: 2, sucursal: "Redvital San Diego", 
                     estadoNombre: "Carabobo", estadoId: "ve-ca",
-                    lat: 10.2540, lon: -67.9510,
-                    logo: "logo-REDVITAL.jpg",
+                    lat: 10.2540, lon: -67.9510, logo: "logo-REDVITAL.jpg",
                     images: [ { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Redvital_San_Diego_Valencia.html" } ]
                 },
                 { 
                     id: 3, sucursal: "Redvital La Yaguara", 
                     estadoNombre: "Distrito Capital", estadoId: "ve-df",
-                    lat: 10.4772, lon: -66.9597,
-                    logo: "logo-REDVITAL.jpg",
+                    lat: 10.4772, lon: -66.9597, logo: "logo-REDVITAL.jpg",
                     images: [
                         { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Redvital_La_Yaguara.html" },
                         { src: "RECETAS.png", link: "https://yaryur-nestle.github.io/canal-moderno/RECETAS_Redvital_La_Yaguara.html" }
@@ -365,34 +413,29 @@
                 { 
                     id: 4, sucursal: "Garzón Hiperahorro", 
                     estadoNombre: "Táchira", estadoId: "ve-ta",
-                    lat: 7.7669, lon: -72.2250,
-                    logo: "logo-GARZON.jpg",
+                    lat: 7.7669, lon: -72.2250, logo: "logo-GARZON.jpg",
                     images: [ { src: "MULTIMARCA.png", link: "https://yaryur-nestle.github.io/canal-moderno/MULTIMARCA_Garzon_Hiperahorro_San_Cristobal.html" } ]
                 },
                 { 
                     id: 5, sucursal: "Luxor Círculo Militar", 
                     estadoNombre: "Aragua", estadoId: "ve-ar",
-                    lat: 10.2670, lon: -67.5950,
-                    logo: "logo-LUXOR.jpg",
+                    lat: 10.2670, lon: -67.5950, logo: "logo-LUXOR.jpg",
                     images: [ { src: "MULTIMARCA.png", link: "https://yaryur-nestle.github.io/canal-moderno/MULTIMARCA_Luxor_Circulo_Militar_Maracay.html" } ]
                 }
             ];
 
-            /* * CONTROLADOR CENTRAL DE LUCES DEL MAPA */
+            /* * ILUMINAR ESTADOS EN EL MAPA */
             function iluminarEstados(arrayDeEstadosActivos) {
                 if (!chartInstance) return;
                 const stateSeries = chartInstance.get('capa-estados');
                 if (stateSeries) {
                     stateSeries.points.forEach(p => {
                         if (arrayDeEstadosActivos.length === 0) {
-                            // Si el arreglo está vacío, APAGAMOS EL FILTRO (Mapa Normal)
                             p.update({ color: '#daccaa', opacity: 1, borderWidth: 1, borderColor: '#ffffff' }, false);
                         } else {
                             if (arrayDeEstadosActivos.includes(p['hc-key'])) {
-                                // ESTADOS QUE COINCIDEN CON EL FILTRO
                                 p.update({ color: '#b39c6e', opacity: 1, borderWidth: 3, borderColor: '#000000' }, false);
                             } else {
-                                // ESTADOS RESTANTES: Efecto teatro 10%
                                 p.update({ color: '#daccaa', opacity: 0.1, borderWidth: 1, borderColor: '#ffffff' }, false);
                             }
                         }
@@ -401,10 +444,11 @@
                 }
             }
 
-            /* * LÓGICA DE APERTURA/CIERRE DE PANELES */
+            /* * LÓGICA PANELES */
             function abrirMenuFiltros() {
-                infoPanel.classList.remove('active'); // Oculta info si estaba abierta
+                infoPanel.classList.remove('active'); 
                 navPanel.classList.add('active');
+                hamburgerBtn.style.display = 'flex'; // Asegurarnos de que el botón esté visible
                 hamburgerBtn.classList.add('open');
             }
 
@@ -413,22 +457,28 @@
                 infoPanel.classList.remove('active');
                 hamburgerBtn.classList.remove('open');
                 
-                // Quitamos bordes visuales de los botones de filtro
-                document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
+                // Mostrar siempre el botón cuando los paneles están cerrados o en menú
+                hamburgerBtn.style.display = 'flex'; 
                 
-                // Reseteamos el mapa a su estado original
+                document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
+                document.querySelectorAll('.filter-results').forEach(r => {
+                    r.classList.remove('active');
+                    r.innerHTML = '';
+                });
+                
                 iluminarEstados([]);
             }
 
             function abrirPanelInfo(sucursal, images, estadoNombre, logo) {
-                // Cerramos menú de filtros si estaba abierto
                 navPanel.classList.remove('active');
                 hamburgerBtn.classList.remove('open');
+                
+                // OCULTAMOS EL BOTÓN HAMBURGUESA AL ABRIR LA INFO
+                hamburgerBtn.style.display = 'none'; 
 
-                // Inyectamos textos e imágenes
-                document.getElementById('panel-subtitle').textContent = `Estado: ${estadoNombre}`;
+                document.getElementById('panel-subtitle').textContent = estadoNombre;
                 document.getElementById('panel-title').textContent = sucursal;
-                document.getElementById('panel-logo-img').src = logo; // Inyecta el logo en el footer
+                document.getElementById('panel-logo-img').src = logo; 
                 
                 const panelImages = document.getElementById('panel-images');
                 panelImages.innerHTML = ''; 
@@ -442,70 +492,96 @@
                     panelImages.appendChild(enlace);
                 });
 
-                // Mostramos el panel de info
                 infoPanel.classList.add('active');
             }
 
-            // EVENTOS DE LOS BOTONES DE CIERRE/APERTURA
             hamburgerBtn.addEventListener('click', () => {
                 if (hamburgerBtn.classList.contains('open')) {
-                    cerrarPanelesYResetear(); // Si era flechita, cierra y resetea
+                    cerrarPanelesYResetear(); 
                 } else {
-                    abrirMenuFiltros(); // Si eran 3 rayas, abre menú
+                    abrirMenuFiltros(); 
                 }
             });
 
             closeInfoBtn.addEventListener('click', cerrarPanelesYResetear);
 
-            /* * LÓGICA DEL ACORDEÓN DE MENÚ */
+            /* * LÓGICA ACORDEÓN ÚNICO */
             document.querySelectorAll('.accordion-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const content = this.nextElementSibling;
                     const span = this.querySelector('span');
-                    
-                    if (content.classList.contains('open')) {
-                        content.classList.remove('open');
-                        span.textContent = '+';
-                    } else {
+                    const isOpen = content.classList.contains('open');
+
+                    // 1. Cerrar TODOS los acordeones
+                    document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
+                    document.querySelectorAll('.accordion-btn span').forEach(s => s.textContent = '+');
+
+                    // 2. Si el que toqué NO estaba abierto, lo abro
+                    if (!isOpen) {
                         content.classList.add('open');
                         span.textContent = '-';
                     }
                 });
             });
 
-            /* * LÓGICA DE FILTRADO POR MARCA O SUCURSAL */
+            /* * FILTRADO DINÁMICO + LISTA DE LINKS */
             document.querySelectorAll('.filter-img-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    // Quitar estilo activo de todos y ponérselo al seleccionado
-                    document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
-                    this.classList.add('active-filter');
-
-                    const type = this.getAttribute('data-type'); // "marca" o "sucursal"
-                    const val = this.getAttribute('data-val');   // ej: "NIDO.png" o "logo-REDVITAL.jpg"
                     
-                    let estadosAEncender = new Set(); // Set evita duplicados automáticamente
+                    document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
+                    document.querySelectorAll('.filter-results').forEach(r => {
+                        r.classList.remove('active');
+                        r.innerHTML = ''; // Limpiar resultados anteriores
+                    });
+
+                    this.classList.add('active-filter');
+                    
+                    const type = this.getAttribute('data-type'); 
+                    const val = this.getAttribute('data-val');   
+                    const resultsContainer = this.nextElementSibling; // El div class="filter-results"
+                    
+                    let estadosAEncender = new Set(); 
+                    let matchingLinks = []; // Arreglo para guardar los hipervínculos dinámicos
 
                     retailNodes.forEach(node => {
                         if (type === 'marca') {
-                            // Busca si alguna imagen de la sucursal coincide con la marca seleccionada
-                            if (node.images.some(img => img.src === val)) {
+                            const matchedImg = node.images.find(img => img.src === val);
+                            if (matchedImg) {
                                 estadosAEncender.add(node.estadoId);
+                                matchingLinks.push({ title: node.sucursal, link: matchedImg.link });
                             }
                         } else if (type === 'sucursal') {
-                            // Busca si el logo de la sucursal coincide
                             if (node.logo === val) {
                                 estadosAEncender.add(node.estadoId);
+                                // Si filtramos por sucursal, agregamos todas sus imágenes/marcas
+                                node.images.forEach(img => {
+                                    // Extraemos el nombre de la marca del archivo de imagen
+                                    let brandName = img.src.replace('.png', '').replace('.jpg', '');
+                                    matchingLinks.push({ title: `${node.sucursal} (${brandName})`, link: img.link });
+                                });
                             }
                         }
                     });
 
-                    // Mandamos la orden a las luces del mapa
+                    // Construimos la lista en el DOM
+                    matchingLinks.forEach(item => {
+                        const a = document.createElement('a');
+                        a.href = item.link;
+                        a.target = '_blank';
+                        a.innerHTML = `&bull; ${item.title}`; // Viñeta y título
+                        resultsContainer.appendChild(a);
+                    });
+
+                    if (matchingLinks.length > 0) {
+                        resultsContainer.classList.add('active'); // Mostrar la cajita
+                    }
+
                     iluminarEstados(Array.from(estadosAEncender));
                 });
             });
 
 
-            /* * PREPARACIÓN DEL MAPA BASE DE HIGHCHARTS */
+            /* * MAPA DE HIGHCHARTS */
             const mapData = Highcharts.maps['countries/ve/ve-all'];
             const baseData = mapData.features.map(function(feature, index) {
                 return [feature.properties['hc-key'], index];
@@ -516,9 +592,7 @@
                     map: 'countries/ve/ve-all',
                     backgroundColor: 'transparent',
                     events: {
-                        click: function () {
-                            cerrarPanelesYResetear(); // Si toca el agua o un espacio vacío, resetea todo.
-                        }
+                        click: function () { cerrarPanelesYResetear(); }
                     }
                 },
                 title: { text: null },
@@ -536,18 +610,14 @@
                             events: {
                                 click: function () {
                                     if (this.options && this.options.images) {
-                                        // 1. Abrimos el panel de información pasando también el LOGO
                                         abrirPanelInfo(
                                             this.options.sucursal, 
                                             this.options.images, 
                                             this.options.estadoNombre,
-                                            this.options.logo // <- AQUÍ ENVIAMOS EL LOGO AL PANEL
+                                            this.options.logo
                                         );
-                                        
-                                        // 2. Iluminamos SOLAMENTE el estado del punto rojo que se tocó
                                         iluminarEstados([this.options.estadoId]);
                                     } else {
-                                        // Tocó un estado de la tierra directamente
                                         cerrarPanelesYResetear();
                                     }
                                 }
@@ -568,9 +638,7 @@
                         borderWidth: 1,
                         states: { hover: { enabled: false } },
                         dataLabels: {
-                            enabled: true,
-                            format: '{point.name}',
-                            style: { fontSize: '10px', fontWeight: 'normal', textOutline: 'none', color: '#666' }
+                            enabled: false // <--- ETIQUETAS DE ESTADOS OCULTAS
                         }
                     },
                     {
