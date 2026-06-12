@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa Interactivo Minimalista: Red Comercial Venezuela</title>
+    <title>Yar-Yur System Canal Moderno Nestle</title>
     
     <script src="https://code.highcharts.com/maps/highmaps.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.1/proj4.js"></script>
@@ -37,7 +37,14 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             position: relative; 
             overflow: hidden; 
+            transition: width 0.3s, height 0.3s, border-radius 0.3s; /* Transición suave para pantalla completa */
         }
+
+        /* Estilos cuando está en Pantalla Completa */
+        :fullscreen #app-container { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        :-webkit-full-screen #app-container { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        :-moz-full-screen #app-container { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        :-ms-fullscreen #app-container { width: 100vw; height: 100vh; border-radius: 0; border: none; }
 
         #map {
             width: 100%;
@@ -99,6 +106,31 @@
         #hamburger-btn.open span:nth-child(3) {
             transform: rotate(45deg) translateY(2px);
             width: 16px;
+        }
+
+        /* * BOTÓN DE PANTALLA COMPLETA */
+        #fullscreen-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            background-color: #ffffff;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 10002;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        #fullscreen-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            border-color: #b39c6e;
         }
 
         /* * PANELES LATERALES */
@@ -297,6 +329,17 @@
             <span></span>
             <span></span>
             <span></span>
+        </button>
+
+        <button id="fullscreen-btn" title="Pantalla Completa">
+            <!-- Icono Entrar a Pantalla Completa -->
+            <svg id="icon-enter-fs" viewBox="0 0 24 24" width="22" height="22" stroke="#b39c6e" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+            </svg>
+            <!-- Icono Salir de Pantalla Completa -->
+            <svg id="icon-exit-fs" viewBox="0 0 24 24" width="22" height="22" stroke="#b39c6e" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+            </svg>
         </button>
 
         <div id="nav-panel" class="side-panel">
@@ -576,6 +619,39 @@
             });
 
 
+            /* * LÓGICA DE PANTALLA COMPLETA */
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const iconEnter = document.getElementById('icon-enter-fs');
+            const iconExit = document.getElementById('icon-exit-fs');
+
+            fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.warn(`No se pudo activar el modo pantalla completa: ${err.message}`);
+                    });
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+
+            document.addEventListener('fullscreenchange', () => {
+                if (document.fullscreenElement) {
+                    iconEnter.style.display = 'none';
+                    iconExit.style.display = 'block';
+                    fullscreenBtn.title = "Salir de Pantalla Completa";
+                } else {
+                    iconEnter.style.display = 'block';
+                    iconExit.style.display = 'none';
+                    fullscreenBtn.title = "Pantalla Completa";
+                }
+                
+                // Forzar el redibujado de Highcharts para que llene el nuevo espacio de pantalla
+                if (chartInstance) {
+                    setTimeout(() => chartInstance.reflow(), 150);
+                }
+            });
+
+
             /* * MAPA DE HIGHCHARTS */
             const mapData = Highcharts.maps['countries/ve/ve-all'];
             const baseData = mapData.features.map(function(feature, index) {
@@ -598,7 +674,7 @@
                     buttonOptions: { verticalAlign: 'bottom' }
                 },
 
-                /* *** NUEVO EVENTO: SENSOR DE ZOOM PARA LA CAPA SUPERIOR *** */
+                /* *** EVENTO: SENSOR DE ZOOM PARA LA CAPA SUPERIOR *** */
                 xAxis: {
                     events: {
                         afterSetExtremes: function (e) {
