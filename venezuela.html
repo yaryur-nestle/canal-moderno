@@ -1,1 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Venezuela</title>
+    
+    <script src="https://code.highcharts.com/maps/highmaps.js"></script>
+    <script src="https://code.highcharts.com/mapdata/countries/ve/ve-all.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        #container {
+            height: 600px;
+            width: 100%;
+            max-width: 800px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container"></div>
+
+    <script>
+        // Extraemos los datos del mapa de Venezuela cargado desde el script superior
+        const mapData = Highcharts.maps['countries/ve/ve-all'];
+
+        // Preparamos la data. Mapeamos cada estado a un valor para que el mapa
+        // los reconozca como áreas individuales interactivas.
+        const data = mapData.features.map(function(feature, index) {
+            return [feature.properties['hc-key'], index];
+        });
+
+        // Inicializamos y configuramos el mapa
+        Highcharts.mapChart('container', {
+            chart: {
+                map: 'countries/ve/ve-all'
+            },
+            title: {
+                text: 'Mapa de Venezuela'
+            },
+            subtitle: {
+                text: 'División político-territorial interactiva'
+            },
+            // Activa los controles de zoom y navegación (+ / -)
+            mapNavigation: {
+                enabled: true,
+                buttonOptions: {
+                    verticalAlign: 'bottom'
+                }
+            },
+            // Configuración visual de los estados
+            series: [{
+                data: data,
+                name: 'Estado',
+                color: '#daccaa', // Color base de los estados
+                borderColor: '#ffffff', // Color de las líneas divisorias
+                borderWidth: 1,
+                states: {
+                    hover: {
+                        color: '#f39c12' // Color naranja al pasar el mouse por un estado
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    format: '{point.name}', // Muestra el nombre exacto de cada estado
+                    style: {
+                        fontSize: '10px',
+                        fontWeight: 'normal',
+                        textOutline: 'none'
+                    }
+                },
+                tooltip: {
+                    headerFormat: '',
+                    pointFormat: '<b>{point.name}</b>'
+                }
+            }]
+        });
+    </script>
+</body>
+</html>
 
