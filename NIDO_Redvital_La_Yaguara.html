@@ -429,10 +429,9 @@
       3: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 99, 132, 0.8)', colorBorder: 'rgb(255, 99, 132)', name: 'MUEBLE RECETAS' }
     };
 
-    // --- VARIABLES GLOBALES DEL HISTORIAL Y CÁLCULO FIFO ---
-    let tabletActualEnGrafico = null; 
+    // Almacena todos los eventos en orden cronológico puro
     const todosLosEventos = { 1: [], 2: [], 3: [] }; 
-    const llegadasPendientes = { 1: [], 2: [], 3: [] }; 
+    let tabletActualEnGrafico = null; 
     
     const VIEW_LEVELS = ['hour', 'day', 'month', 'year'];
     let currentViewLevel = 'hour'; 
@@ -499,7 +498,6 @@
       if (!tabletActualEnGrafico) return;
 
       const events = todosLosEventos[tabletActualEnGrafico];
-      const colaActiva = llegadasPendientes[tabletActualEnGrafico];
       const date = new Date(currentViewDate);
       let labels = [];
       let dataBuckets = [];
@@ -507,6 +505,7 @@
       let titlePrefix = "";
       let titleSuffix = "";
 
+      // Definir rangos
       if (currentViewLevel === 'hour') {
         titlePrefix = "HORA:";
         titleSuffix = `${formatHourAMPM(date, true).replace(/:\d+/, ':00')} - ${formatHourAMPM(date, true).replace(/:\d+/, ':59')} (${date.toLocaleDateString('es-ES')})`;
@@ -543,9 +542,42 @@
         countBuckets = new Array(12).fill(0);
       }
 
+      // --- 1. SIMULACIÓN EXACTA PARA AISLAR TIEMPOS ESTÁTICOS ---
+      // Calculamos dinámicamente las duraciones para bloquear los tiempos del pasado sin usar Date.now()
+      const duracionesRealesMap = new Map(); 
+      let colaSimulada = [];
+      
+      events.forEach(ev => {
+        const prev = ev.conteoAnterior || 0;
+        const act = ev.conteoActual;
+        
+        if (act > prev) {
+          for(let k = 0; k < (act - prev); k++) colaSimulada.push(ev);
+        } else if (act < prev) {
+          for(let k = 0; k < (prev - act); k++) {
+            if (colaSimulada.length > 0) {
+              const llegada = colaSimulada.shift();
+              if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
+              // Se graba la diferencia de tiempo en piedra de forma inmutable
+              duracionesRealesMap.get(llegada).push((ev.timestamp - llegada.timestamp) / 1000);
+            }
+          }
+        }
+      });
+
+      // --- 2. DETERMINAR SI EL GRÁFICO ES EL "PRESENTE" ---
+      const now = new Date();
+      let isCurrentView = false;
+      if (currentViewLevel === 'hour') isCurrentView = (date.getHours() === now.getHours() && date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
+      if (currentViewLevel === 'day') isCurrentView = (date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
+      if (currentViewLevel === 'month') isCurrentView = (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
+      if (currentViewLevel === 'year') isCurrentView = (date.getFullYear() === now.getFullYear());
+
+      // --- 3. RELLENAR LAS BARRAS CON LOS DATOS ---
       events.forEach(ev => {
         const evDate = new Date(ev.timestamp);
         
+        // Filtros de fecha y visualización
         if (currentViewLevel === 'hour' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate() || evDate.getHours() !== date.getHours())) return;
         if (currentViewLevel === 'day' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate())) return;
         if (currentViewLevel === 'month' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth())) return;
@@ -565,19 +597,26 @@
           if (currentMetric === 'count') {
             dataBuckets[idx] += nuevasDetecciones;
           } else {
+            // Evaluamos el tiempo de cada persona que llegó en este evento
+            const tiemposCompletados = duracionesRealesMap.get(ev) || [];
+            
             for (let k = 0; k < nuevasDetecciones; k++) {
               let duracion = 0;
               
-              if (ev.duracionesReales && ev.duracionesReales[k] !== undefined) {
-                // Evento histórico finalizado: usa su tiempo estático registrado.
-                duracion = ev.duracionesReales[k];
-              } else if (colaActiva.includes(ev)) {
-                // Evento en progreso AHORA mismo: usa el tiempo actual.
-                // Esta es la ÚNICA forma de que el tiempo actual intervenga.
-                duracion = (Date.now() - ev.timestamp) / 1000;
+              if (k < tiemposCompletados.length) {
+                // LA PERSONA YA SE FUE: Usar su tiempo exacto e inmutable.
+                duracion = tiemposCompletados[k];
+              } else {
+                // LA PERSONA NO HA SALIDO AÚN:
+                // Solo si estamos viendo la hora y día actual, calculamos el tiempo vivo.
+                // Si es un gráfico del pasado, se ignora para evitar bugs fantasma.
+                if (isCurrentView) {
+                  duracion = (Date.now() - ev.timestamp) / 1000;
+                } else {
+                  duracion = 0; 
+                }
               }
               
-              // Si no tiene duración ni está en la cola, queda en 0 (evita que errores de red corrompan la gráfica)
               dataBuckets[idx] += duracion;
               countBuckets[idx] += 1;
             }
@@ -585,30 +624,26 @@
         }
       });
 
+      // Cálculo del Promedio
       if (currentMetric === 'time') {
-        for(let i=0; i<dataBuckets.length; i++) {
+        for(let i = 0; i < dataBuckets.length; i++) {
           if (countBuckets[i] > 0) {
             dataBuckets[i] = Math.round(dataBuckets[i] / countBuckets[i]);
           }
         }
       }
 
+      // Actualizar Títulos de la UI
       document.getElementById('chart-title').innerText = configTablets[tabletActualEnGrafico].name;
       document.getElementById('chart-subtitle').innerText = `${titlePrefix} ${titleSuffix}`;
 
+      // Configuración de botones (Lupas y Flechas)
       const idxLevel = VIEW_LEVELS.indexOf(currentViewLevel);
       document.getElementById('btn-zoom-in').style.display = idxLevel > 0 ? 'flex' : 'none';
       document.getElementById('btn-zoom-out').style.display = idxLevel < VIEW_LEVELS.length - 1 ? 'flex' : 'none';
+      document.getElementById('btn-next').disabled = isCurrentView;
 
-      const now = new Date();
-      let isCurrent = false;
-      if (currentViewLevel === 'hour') isCurrent = (date.getHours() === now.getHours() && date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
-      if (currentViewLevel === 'day') isCurrent = (date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
-      if (currentViewLevel === 'month') isCurrent = (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
-      if (currentViewLevel === 'year') isCurrent = (date.getFullYear() === now.getFullYear());
-      
-      document.getElementById('btn-next').disabled = isCurrent;
-
+      // Colores de Gráfico
       const colorAmarillo = configTablets[tabletActualEnGrafico].colorBg || '#FFCE56';
       const colorVerde = 'rgba(42, 161, 42, 0.8)'; 
       
@@ -623,6 +658,7 @@
       mainChart.options.animation = { duration: 400, easing: 'easeOutQuart' }; 
     }
 
+    // --- CONTROLES DE INTERFAZ ---
     document.getElementById('btn-metric').addEventListener('click', () => {
       currentMetric = currentMetric === 'count' ? 'time' : 'count';
       document.getElementById('icon-chrono').style.display = currentMetric === 'count' ? 'block' : 'none';
@@ -688,6 +724,7 @@
       setTimeout(() => { tabletActualEnGrafico = null; }, 500); 
     }
 
+    // --- LÓGICA OVERLAY Y SILUETAS ---
     function renderTimer() {
       const now = Date.now();
       const diff = now - overlayStartTime;
@@ -764,6 +801,7 @@
       estadoVisual[tabletId] = activasActuales; 
     }
 
+    // --- CONEXIÓN A FIREBASE SIMPLE Y LIMPIA ---
     for (let i = 1; i <= 3; i++) {
       const numFormat = i.toString().padStart(2, '0'); 
       const eventosQuery = query(ref(db, `muebles/tablet_${numFormat}/eventos`), orderByChild('timestamp'));
@@ -773,28 +811,13 @@
         
         if (data && data.timestamp && data.conteoActual !== undefined) {
           
-          data.duracionesReales = [];
+          // Solo insertamos el evento al arreglo limpio. 
+          // Ya no calculamos las duraciones aquí, para evitar corrupciones.
           todosLosEventos[i].push(data);
 
-          const conteoAnterior = data.conteoAnterior || 0;
           const conteoActual = data.conteoActual;
 
-          if (conteoActual > conteoAnterior) {
-            const diferencia = conteoActual - conteoAnterior;
-            for (let k = 0; k < diferencia; k++) {
-              llegadasPendientes[i].push(data);
-            }
-          } else if (conteoActual < conteoAnterior) {
-            const diferencia = conteoAnterior - conteoActual;
-            for (let k = 0; k < diferencia; k++) {
-              if (llegadasPendientes[i].length > 0) {
-                const eventoLlegada = llegadasPendientes[i].shift(); 
-                const duracionSegundos = (data.timestamp - eventoLlegada.timestamp) / 1000;
-                eventoLlegada.duracionesReales.push(duracionSegundos);
-              }
-            }
-          }
-
+          // Lógica en VIVO para el Monitor Frontal
           actualizarSiluetas(i, conteoActual);
           conteosActuales[i] = conteoActual;
           
