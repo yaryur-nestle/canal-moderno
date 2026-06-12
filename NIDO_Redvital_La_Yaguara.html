@@ -123,12 +123,10 @@
       letter-spacing: 2px;
       text-shadow: 0 0 10px #ff3333;
       box-shadow: 0 0 10px #ff3333, inset 0 0 10px #ff3333;
-      /* Modificado: Duración más larga para dar sensación de pausa */
       animation: heartbeat 2s infinite;
       margin-bottom: 10px;
     }
 
-    /* Modificado: Latido concentrado al principio y descanso al final */
     @keyframes heartbeat {
       0% { transform: scale(1); opacity: 1; }
       10% { transform: scale(1.1); opacity: 0.8; }
@@ -153,20 +151,23 @@
       font-variant-numeric: tabular-nums;
       text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
       transition: color 0.1s;
-      transform-origin: center; /* Asegura que el latido crezca desde el centro */
+      transform-origin: center;
+      transform: scale(1); /* Estado base */
     }
 
-    /* Modificado: Verde más oscuro y animación de latido */
+    /* Modificado: Se añade la animación de dos latidos que queda grande (forwards) */
     .live-timer.recorded {
       color: #2aa12a; /* Verde grama un poco más oscuro */
-      animation: timerPulse 0.5s infinite ease-in-out; 
+      animation: timerPulseTwice 0.8s forwards ease-in-out; 
     }
 
-    /* Nueva animación de latido para el temporizador verde */
-    @keyframes timerPulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.15); } /* Crece el número un 15% */
-      100% { transform: scale(1); }
+    /* Modificado: Exactamente dos rebotes y termina más grande (1.2) */
+    @keyframes timerPulseTwice {
+      0%   { transform: scale(1); }
+      30%  { transform: scale(1.3); }   /* Primer rebote alto */
+      50%  { transform: scale(1.05); }  /* Baja un poco */
+      75%  { transform: scale(1.3); }   /* Segundo rebote alto */
+      100% { transform: scale(1.2); }   /* Se estabiliza en un tamaño mayor */
     }
 
     .live-datetime {
@@ -374,7 +375,6 @@
       const now = Date.now();
       const diff = now - overlayStartTime;
       
-      // Modificado: Se formatea a 1 solo decimal
       document.getElementById('live-timer').innerText = (diff / 1000).toFixed(1);
       
       const dateObj = new Date();
@@ -411,7 +411,7 @@
           isOverlayActive = false;
           clearInterval(overlayTimerInterval);
           
-          // Se vuelve verde el contador (y empieza a latir por el CSS)
+          // Se vuelve verde el contador (y empieza a latir dos veces por el CSS)
           timerEl.classList.add('recorded'); 
           
           // Secuencia de salida "Guardado"
@@ -423,7 +423,7 @@
               overlayEl.classList.remove('fade-out-up');
             }, 500); 
             
-          }, 1500); // Mantiene los 1.5 segundos en pantalla latiendo en verde
+          }, 1500); // Mantiene los 1.5 segundos en pantalla antes de desaparecer
         }
       }
     }
