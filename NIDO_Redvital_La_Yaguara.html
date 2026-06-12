@@ -89,7 +89,7 @@
       opacity: 1;
     }
 
-    /* Zonas interactivas frontales (Modificado: Solo botón izquierdo) */
+    /* Zonas interactivas frontales (Solo botón izquierdo) */
     .click-zone {
       position: absolute;
       top: 0;
@@ -123,25 +123,26 @@
       letter-spacing: 2px;
       text-shadow: 0 0 10px #ff3333;
       box-shadow: 0 0 10px #ff3333, inset 0 0 10px #ff3333;
-      animation: heartbeat 1.2s infinite;
+      /* Modificado: Duración más larga para dar sensación de pausa */
+      animation: heartbeat 2s infinite;
       margin-bottom: 10px;
     }
 
+    /* Modificado: Latido concentrado al principio y descanso al final */
     @keyframes heartbeat {
       0% { transform: scale(1); opacity: 1; }
-      15% { transform: scale(1.1); opacity: 0.8; }
-      30% { transform: scale(1); opacity: 1; }
-      45% { transform: scale(1.1); opacity: 0.8; }
-      70% { transform: scale(1); opacity: 1; }
+      10% { transform: scale(1.1); opacity: 0.8; }
+      20% { transform: scale(1); opacity: 1; }
+      30% { transform: scale(1.1); opacity: 0.8; }
+      40% { transform: scale(1); opacity: 1; }
       100% { transform: scale(1); opacity: 1; }
     }
 
     .live-count {
       font-size: 4.5rem;
       font-weight: 900;
-      color: #000000; /* Modificado: Texto en negro */
+      color: #000000;
       margin-bottom: 0px;
-      /* Eliminada la sombra para que el texto negro no se vea como una mancha */
       text-transform: uppercase;
     }
 
@@ -152,17 +153,26 @@
       font-variant-numeric: tabular-nums;
       text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
       transition: color 0.1s;
+      transform-origin: center; /* Asegura que el latido crezca desde el centro */
     }
 
+    /* Modificado: Verde más oscuro y animación de latido */
     .live-timer.recorded {
-      color: #00ff00; /* Cambia a verde cuando se detiene */
+      color: #2aa12a; /* Verde grama un poco más oscuro */
+      animation: timerPulse 0.5s infinite ease-in-out; 
+    }
+
+    /* Nueva animación de latido para el temporizador verde */
+    @keyframes timerPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); } /* Crece el número un 15% */
+      100% { transform: scale(1); }
     }
 
     .live-datetime {
       font-size: 1.3rem;
       color: #bbbbbb;
       margin-top: 5px;
-      /* Modificado: Sombra eliminada */
       font-weight: 600;
     }
 
@@ -278,7 +288,7 @@
         <div class="live-overlay" id="live-overlay" style="display: none;">
           <div class="en-vivo-badge">EN VIVO</div>
           <div class="live-count" id="live-count">1 persona</div>
-          <div class="live-timer" id="live-timer">0.000</div>
+          <div class="live-timer" id="live-timer">0.0</div>
           <div class="live-datetime" id="live-datetime">--</div>
         </div>
 
@@ -357,16 +367,15 @@
     let isInitialLoad = true;
     setTimeout(() => { 
       isInitialLoad = false; 
-      updateLiveOverlay(); // Revisa el estado real una vez estabilizado
+      updateLiveOverlay(); 
     }, 1500);
 
     function renderTimer() {
       const now = Date.now();
       const diff = now - overlayStartTime;
-      const secs = Math.floor(diff / 1000);
-      const millis = diff % 1000;
       
-      document.getElementById('live-timer').innerText = `${secs}.${millis.toString().padStart(3, '0')}`;
+      // Modificado: Se formatea a 1 solo decimal
+      document.getElementById('live-timer').innerText = (diff / 1000).toFixed(1);
       
       const dateObj = new Date();
       const dateString = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -392,7 +401,7 @@
           timerEl.classList.remove('recorded');
           
           overlayStartTime = Date.now();
-          overlayTimerInterval = setInterval(renderTimer, 47); // Refresco rápido para milisegundos fluidos
+          overlayTimerInterval = setInterval(renderTimer, 47); // Refresco rápido
         }
         
         countEl.innerText = total === 1 ? "1 persona" : `${total} personas`;
@@ -402,19 +411,19 @@
           isOverlayActive = false;
           clearInterval(overlayTimerInterval);
           
-          // Se vuelve verde el contador
+          // Se vuelve verde el contador (y empieza a latir por el CSS)
           timerEl.classList.add('recorded'); 
           
           // Secuencia de salida "Guardado"
           stopTimeout1 = setTimeout(() => {
-            overlayEl.classList.add('fade-out-up'); // Inicia traslación hacia arriba
+            overlayEl.classList.add('fade-out-up'); 
             
             stopTimeout2 = setTimeout(() => {
               overlayEl.style.display = 'none';
               overlayEl.classList.remove('fade-out-up');
-            }, 500); // Espera a que termine la animación (esto se mantiene en 500ms)
+            }, 500); 
             
-          }, 1500); // Modificado: Se mantiene 1.5 segundos en pantalla antes de desaparecer
+          }, 1500); // Mantiene los 1.5 segundos en pantalla latiendo en verde
         }
       }
     }
