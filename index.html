@@ -106,12 +106,12 @@
         }
 
         #panel-subtitle {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: bold;
-            color: #ff2a2a; /* Rojo para resaltar el estado */
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
+            color: #daccaa; /* Mismo color base del mapa */
+            /* Se removió el text-transform: uppercase para respetar las mayúsculas/minúsculas */
+            letter-spacing: 0.5px;
+            margin-bottom: 15px; /* Más separación respecto al título */
         }
 
         #panel-title {
@@ -172,7 +172,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             
-            let chartInstance = null; // Guardará la referencia al mapa para poder limpiarlo
+            let chartInstance = null;
             const panel = document.getElementById('info-panel');
             const panelSubtitle = document.getElementById('panel-subtitle');
             const panelTitle = document.getElementById('panel-title');
@@ -202,30 +202,34 @@
                 panel.classList.add('active');
             }
 
-            // Función para cerrar el panel y restaurar los colores del mapa
+            // Función para cerrar el panel y restaurar TODA la estética del mapa
             function cerrarPanel() {
                 panel.classList.remove('active');
                 
-                // Si el mapa existe, devolvemos la opacidad de todos los estados a la normalidad
                 if (chartInstance) {
                     const stateSeries = chartInstance.get('capa-estados');
                     if (stateSeries) {
                         stateSeries.points.forEach(p => {
-                            // false al final es importante para no redibujar en cada iteración (mejora rendimiento)
-                            p.update({ opacity: 1, borderWidth: 1 }, false); 
+                            // Restauramos color base, opacidad y bordes finos blancos
+                            p.update({ 
+                                color: '#daccaa', 
+                                opacity: 1, 
+                                borderWidth: 1, 
+                                borderColor: '#ffffff' 
+                            }, false); 
                         });
-                        chartInstance.redraw(); // Redibuja todo de golpe
+                        chartInstance.redraw();
                     }
                 }
             }
 
             closeBtn.addEventListener('click', cerrarPanel);
 
-            /* * 1. DATOS DE LOS NODOS (SUCURSALES) - ¡Ahora con Estado y ID! */
+            /* * 1. DATOS DE LOS NODOS (SUCURSALES) */
             const retailNodes = [
                 { 
                     id: 1, sucursal: "Kromi Market", 
-                    estadoNombre: "Carabobo", estadoId: "ve-ca", // Clave para Highcharts
+                    estadoNombre: "Carabobo", estadoId: "ve-ca", 
                     lat: 10.2225, lon: -68.0160,
                     images: [ { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Kromi_Market_Valencia.html" } ]
                 },
@@ -237,7 +241,8 @@
                 },
                 { 
                     id: 3, sucursal: "Redvital La Yaguara", 
-                    estadoNombre: "Distrito Capital", estadoId: "ve-dc",
+                    estadoNombre: "Distrito Capital", 
+                    estadoId: "ve-df", // CORREGIDO: Highcharts usa "ve-df" para Distrito Federal/Capital
                     lat: 10.4772, lon: -66.9597,
                     images: [
                         { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Redvital_La_Yaguara.html" },
@@ -289,13 +294,12 @@
                         point: {
                             events: {
                                 click: function () {
-                                    // Comprueba si es una de nuestras sucursales (tienen 'images')
                                     if (this.options && this.options.images) {
                                         
                                         // 1. Abrimos el panel
                                         abrirPanel(this.options.sucursal, this.options.images, this.options.estadoNombre);
                                         
-                                        // 2. Aplicamos el efecto de enfoque (Dimming)
+                                        // 2. Aplicamos los nuevos efectos dramáticos
                                         const selectedEstadoId = this.options.estadoId;
                                         const chart = this.series.chart;
                                         const stateSeries = chart.get('capa-estados');
@@ -303,18 +307,27 @@
                                         if (stateSeries) {
                                             stateSeries.points.forEach(p => {
                                                 if (p['hc-key'] === selectedEstadoId) {
-                                                    // Estado seleccionado: opacidad 100% y borde ligeramente más grueso
-                                                    p.update({ opacity: 1, borderWidth: 2 }, false);
+                                                    // Estado Protagonista: Color más oscuro, sin transparencia, borde negro y grueso
+                                                    p.update({ 
+                                                        color: '#b39c6e', // Beige oscuro
+                                                        opacity: 1, 
+                                                        borderWidth: 3, 
+                                                        borderColor: '#000000' 
+                                                    }, false);
                                                 } else {
-                                                    // Resto de los estados: Claritos (opacidad 40%)
-                                                    p.update({ opacity: 0.4, borderWidth: 1 }, false);
+                                                    // Resto del mapa: Restauramos color original por si acaso y aplicamos 10% de opacidad
+                                                    p.update({ 
+                                                        color: '#daccaa',
+                                                        opacity: 0.1, 
+                                                        borderWidth: 1, 
+                                                        borderColor: '#ffffff' 
+                                                    }, false);
                                                 }
                                             });
                                             chart.redraw();
                                         }
 
                                     } else {
-                                        // Si hace clic en un Estado vacío, cierra el panel y reinicia luces
                                         cerrarPanel();
                                     }
                                 }
@@ -328,7 +341,7 @@
                 /* * 4. INYECCIÓN DEL ECOSISTEMA (Capas) */
                 series: [
                     {
-                        id: 'capa-estados', // IMPORTANTE: Identificador para poder buscar esta capa en JavaScript
+                        id: 'capa-estados',
                         data: baseData,
                         name: 'Estado',
                         color: '#daccaa',
