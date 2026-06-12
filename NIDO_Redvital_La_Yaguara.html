@@ -432,7 +432,7 @@
     // --- VARIABLES GLOBALES DEL HISTORIAL Y CÁLCULO FIFO ---
     let tabletActualEnGrafico = null; 
     const todosLosEventos = { 1: [], 2: [], 3: [] }; 
-    const llegadasPendientes = { 1: [], 2: [], 3: [] }; // Cola FIFO para calcular tiempos de permanencia reales
+    const llegadasPendientes = { 1: [], 2: [], 3: [] }; 
     
     const VIEW_LEVELS = ['hour', 'day', 'month', 'year'];
     let currentViewLevel = 'hour'; 
@@ -454,7 +454,6 @@
       updateLiveOverlay(); 
     }, 1500);
 
-    // Formateador Helper
     function formatHourAMPM(date, includeMinutes = false) {
       let hours = date.getHours();
       let minutes = date.getMinutes();
@@ -467,7 +466,6 @@
       return `${hours}${ampm}`;
     }
 
-    // Inicialización del Gráfico Chart.js
     const ctx = document.getElementById('main-chart').getContext('2d');
     const mainChart = new Chart(ctx, {
       type: 'bar',
@@ -497,11 +495,11 @@
       }
     });
 
-    // Función principal para procesar datos y actualizar gráfico
     function updateChartDisplay(skipAnimation = false) {
       if (!tabletActualEnGrafico) return;
 
       const events = todosLosEventos[tabletActualEnGrafico];
+      const colaActiva = llegadasPendientes[tabletActualEnGrafico];
       const date = new Date(currentViewDate);
       let labels = [];
       let dataBuckets = [];
@@ -509,7 +507,6 @@
       let titlePrefix = "";
       let titleSuffix = "";
 
-      // Definir rangos y etiquetas
       if (currentViewLevel === 'hour') {
         titlePrefix = "HORA:";
         titleSuffix = `${formatHourAMPM(date, true).replace(/:\d+/, ':00')} - ${formatHourAMPM(date, true).replace(/:\d+/, ':59')} (${date.toLocaleDateString('es-ES')})`;
@@ -546,10 +543,9 @@
         countBuckets = new Array(12).fill(0);
       }
 
-      // Procesar eventos para el gráfico actual
       events.forEach(ev => {
         const evDate = new Date(ev.timestamp);
-        // Filtros de fecha
+        
         if (currentViewLevel === 'hour' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate() || evDate.getHours() !== date.getHours())) return;
         if (currentViewLevel === 'day' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate())) return;
         if (currentViewLevel === 'month' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth())) return;
@@ -557,7 +553,6 @@
 
         const conteoPrevio = ev.conteoAnterior || 0;
         
-        // Solo analizamos las LLEGADAS (cuando el sistema sumó +1 o más a la barra amarilla)
         if (ev.conteoActual > conteoPrevio) {
           const nuevasDetecciones = ev.conteoActual - conteoPrevio;
           
@@ -568,24 +563,21 @@
           else if (currentViewLevel === 'year') idx = evDate.getMonth();
 
           if (currentMetric === 'count') {
-            // Métrica: Cantidad de Personas (Barra Amarilla)
             dataBuckets[idx] += nuevasDetecciones;
           } else {
-            // Métrica: Tiempo Promedio (Barra Verde)
-            // IMPORTANTE: Por cada persona detectada en este evento (nuevasDetecciones), debemos sumar un tiempo.
-            // Así garantizamos que si subió 1 la barra amarilla, obligatoriamente suba el contador de la verde.
             for (let k = 0; k < nuevasDetecciones; k++) {
               let duracion = 0;
               
               if (ev.duracionesReales && ev.duracionesReales[k] !== undefined) {
-                // Si la persona ya se fue (ya existe el salto 1 a 0 correspondiente)
+                // Evento histórico finalizado: usa su tiempo estático registrado.
                 duracion = ev.duracionesReales[k];
-              } else {
-                // Si la persona sigue frente al monitor (no ha habido salto de 1 a 0),
-                // Calculamos el tiempo desde que llegó hasta este preciso segundo.
+              } else if (colaActiva.includes(ev)) {
+                // Evento en progreso AHORA mismo: usa el tiempo actual.
+                // Esta es la ÚNICA forma de que el tiempo actual intervenga.
                 duracion = (Date.now() - ev.timestamp) / 1000;
               }
               
+              // Si no tiene duración ni está en la cola, queda en 0 (evita que errores de red corrompan la gráfica)
               dataBuckets[idx] += duracion;
               countBuckets[idx] += 1;
             }
@@ -593,7 +585,6 @@
         }
       });
 
-      // Calcular promedios matemáticos solo para la métrica de tiempo
       if (currentMetric === 'time') {
         for(let i=0; i<dataBuckets.length; i++) {
           if (countBuckets[i] > 0) {
@@ -602,7 +593,6 @@
         }
       }
 
-      // Actualizar UI
       document.getElementById('chart-title').innerText = configTablets[tabletActualEnGrafico].name;
       document.getElementById('chart-subtitle').innerText = `${titlePrefix} ${titleSuffix}`;
 
@@ -633,7 +623,6 @@
       mainChart.options.animation = { duration: 400, easing: 'easeOutQuart' }; 
     }
 
-    // --- CONTROLES DE INTERFAZ ---
     document.getElementById('btn-metric').addEventListener('click', () => {
       currentMetric = currentMetric === 'count' ? 'time' : 'count';
       document.getElementById('icon-chrono').style.display = currentMetric === 'count' ? 'block' : 'none';
@@ -699,7 +688,6 @@
       setTimeout(() => { tabletActualEnGrafico = null; }, 500); 
     }
 
-    // --- LÓGICA OVERLAY Y SILUETAS ---
     function renderTimer() {
       const now = Date.now();
       const diff = now - overlayStartTime;
@@ -776,7 +764,6 @@
       estadoVisual[tabletId] = activasActuales; 
     }
 
-    // --- CONEXIÓN FIREBASE Y PROCESAMIENTO FIFO DE TIEMPOS ---
     for (let i = 1; i <= 3; i++) {
       const numFormat = i.toString().padStart(2, '0'); 
       const eventosQuery = query(ref(db, `muebles/tablet_${numFormat}/eventos`), orderByChild('timestamp'));
@@ -786,56 +773,39 @@
         
         if (data && data.timestamp && data.conteoActual !== undefined) {
           
-          data.duracionesReales = []; // Aquí almacenaremos el tiempo de la visita cuando termine
+          data.duracionesReales = [];
           todosLosEventos[i].push(data);
 
           const conteoAnterior = data.conteoAnterior || 0;
           const conteoActual = data.conteoActual;
 
-          // LÓGICA FIFO PARA ESTAMPAS DE TIEMPO
           if (conteoActual > conteoAnterior) {
-            // Si llegan personas, las empujamos a la cola de "Llegadas Pendientes"
             const diferencia = conteoActual - conteoAnterior;
             for (let k = 0; k < diferencia; k++) {
               llegadasPendientes[i].push(data);
             }
           } else if (conteoActual < conteoAnterior) {
-            // Si se van personas, sacamos de la cola de pendientes y calculamos el tiempo
             const diferencia = conteoAnterior - conteoActual;
             for (let k = 0; k < diferencia; k++) {
               if (llegadasPendientes[i].length > 0) {
-                // Saca el primer evento de llegada que ocurrió
                 const eventoLlegada = llegadasPendientes[i].shift(); 
-                
-                // Resta de las estampas de tiempo (milisegundos a segundos)
                 const duracionSegundos = (data.timestamp - eventoLlegada.timestamp) / 1000;
-                
-                // Se lo asignamos al objeto original de llegada para que la gráfica lo lea
                 eventoLlegada.duracionesReales.push(duracionSegundos);
               }
             }
           }
 
-          // Lógica en VIVO para el Monitor Frontal
           actualizarSiluetas(i, conteoActual);
           conteosActuales[i] = conteoActual;
           
           if (!isInitialLoad) {
             updateLiveOverlay();
             if (tabletActualEnGrafico === i) {
-               // Si estamos viendo el gráfico en verde, forzamos un redibujado contínuo del último segundo
                updateChartDisplay(); 
             }
           }
         }
       });
-      
-      // Función extra para hacer "tictac" a los usuarios que siguen activos mientras vemos la gráfica verde
-      setInterval(() => {
-          if (tabletActualEnGrafico === i && currentMetric === 'time' && llegadasPendientes[i].length > 0) {
-              updateChartDisplay(true); // actualiza en vivo sin animación para ver crecer el tiempo
-          }
-      }, 1000);
     }
   </script>
 </body>
