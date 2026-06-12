@@ -89,7 +89,7 @@
       opacity: 1;
     }
 
-    /* Zonas interactivas frontales */
+    /* Zonas interactivas frontales (Modificado: Solo botón izquierdo) */
     .click-zone {
       position: absolute;
       top: 0;
@@ -99,14 +99,12 @@
       z-index: 50;
     }
     .click-zone.left { left: 0; }
-    .click-zone.center { left: 33.33%; }
-    .click-zone.right { left: 66.66%; }
 
     /* --- Interfaz Overlay EN VIVO --- */
     .live-overlay {
       position: absolute;
       top: 50%;
-      left: 65%; /* Descentrado hacia la derecha */
+      left: 40%; /* Descentrado hacia la derecha */
       transform: translateY(-50%);
       display: flex;
       flex-direction: column;
@@ -141,9 +139,9 @@
     .live-count {
       font-size: 4.5rem;
       font-weight: 900;
-      color: #ffffff;
+      color: #000000; /* Modificado: Texto en negro */
       margin-bottom: 0px;
-      text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+      /* Eliminada la sombra para que el texto negro no se vea como una mancha */
       text-transform: uppercase;
     }
 
@@ -164,7 +162,7 @@
       font-size: 1.3rem;
       color: #bbbbbb;
       margin-top: 5px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+      /* Modificado: Sombra eliminada */
       font-weight: 600;
     }
 
@@ -285,8 +283,6 @@
         </div>
 
         <div class="click-zone left" onclick="flipToChart(1)"></div>
-        <div class="click-zone center" onclick="flipToChart(2)"></div>
-        <div class="click-zone right" onclick="flipToChart(3)"></div>
       </div>
 
       <div class="back">
@@ -416,9 +412,9 @@
             stopTimeout2 = setTimeout(() => {
               overlayEl.style.display = 'none';
               overlayEl.classList.remove('fade-out-up');
-            }, 500); // Espera a que termine la animación
+            }, 500); // Espera a que termine la animación (esto se mantiene en 500ms)
             
-          }, 500); // Se mantiene medio segundo estático en verde
+          }, 1500); // Modificado: Se mantiene 1.5 segundos en pantalla antes de desaparecer
         }
       }
     }
