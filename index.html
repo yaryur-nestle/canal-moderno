@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canal Moderno Nestle</title>
+    <title>Mapa Interactivo Minimalista: Red Comercial Venezuela</title>
     
     <script src="https://code.highcharts.com/maps/highmaps.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.1/proj4.js"></script>
@@ -17,7 +17,6 @@
             padding: 0;
         }
 
-        /* * ESTÉTICA DEL LIENZO BASE */
         body {
             background-color: #f4f4f9;
             font-family: Arial, sans-serif;
@@ -28,7 +27,6 @@
             overflow: hidden;
         }
 
-        /* * CONTENEDOR DEL MAPA */
         #map-container {
             width: 90vw;
             height: 90vh;
@@ -47,7 +45,6 @@
             background-color: transparent;
         }
 
-        /* * CAPA SUPERIOR (No interactiva, decorativa) */
         #capa-superior {
             position: absolute;
             top: 0;
@@ -61,13 +58,12 @@
             opacity: 0.1;
         }
 
-        /* * ESTILIZACIÓN DEL POPUP (Sutil, borde fino) */
+        /* * ESTILIZACIÓN DEL POPUP */
         .highcharts-tooltip-box {
-            fill: none !important; /* Oculta la caja nativa de Highcharts */
+            fill: none !important; 
             stroke: none !important;
         }
 
-        /* Contenedor principal de la ventana emergente */
         .custom-hc-popup {
             background-color: #ffffff;
             border: 1px solid #e0e0e0;
@@ -77,11 +73,10 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
             padding: 15px;
             text-align: center;
-            pointer-events: auto; /* Permite hacer clic en los enlaces internos */
+            pointer-events: auto; /* IMPORTANTE para permitir clics */
             min-width: 180px;
         }
 
-        /* * ESTRUCTURA DEL CONTENIDO (IMÁGENES PROTAGONISTAS) */
         .popup-images-grid {
             display: flex;
             justify-content: center;
@@ -101,7 +96,6 @@
             border: 1px solid #e0e0e0; 
             border-radius: 6px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: none; 
             cursor: pointer;
         }
 
@@ -182,17 +176,13 @@
                     buttonOptions: { verticalAlign: 'bottom' }
                 },
                 
-                // Configuración Global para evitar que el mapa se ponga "clarito" (pálido)
                 plotOptions: {
                     series: {
-                        states: {
-                            inactive: {
-                                opacity: 1 // ESTA ES LA CLAVE: 1 significa 100% visible siempre
-                            }
-                        }
+                        states: { inactive: { opacity: 1 } }
                     }
                 },
                 
+                // LA MAGIA DE LA VENTANA INTERACTIVA ESTÁ AQUÍ
                 tooltip: {
                     useHTML: true,
                     padding: 0,
@@ -200,19 +190,27 @@
                     borderWidth: 0,
                     shadow: false,
                     distance: 15,
-                    stickOnContact: true,
-                    hideDelay: 300,
+                    stickOnContact: true, // Permite mover el mouse hacia la ventana sin que se cierre
+                    hideDelay: 400, // Tiempo de gracia antes de ocultarse
                     followPointer: false,
+                    style: {
+                        pointerEvents: 'auto' // CRÍTICO: Permite hacer clic en la ventana
+                    },
                     formatter: function() {
-                        if (this.series.name === 'Estado') {
-                            return false;
-                        }
+                        // Ignoramos el fondo del mapa
+                        if (this.series.name === 'Estado') return false;
+
+                        // Extraemos las propiedades personalizadas de manera segura
+                        const opciones = this.point.options;
+                        
+                        // Si por alguna razón un punto no tiene imágenes, no rompemos el código
+                        if (!opciones.images) return false;
 
                         let imagesHtml = '<div class="popup-images-grid">';
-                        this.point.images.forEach(img => {
+                        opciones.images.forEach(img => {
                             imagesHtml += `
                                 <a href="${img.link}" target="_blank">
-                                    <img src="${img.src}" alt="Visitar ${this.point.sucursal}">
+                                    <img src="${img.src}" alt="Visitar ${opciones.sucursal}">
                                 </a>
                             `;
                         });
@@ -221,7 +219,7 @@
                         return `
                             <div class="custom-hc-popup">
                                 ${imagesHtml}
-                                <div class="popup-text-label">${this.point.sucursal}</div>
+                                <div class="popup-text-label">${opciones.sucursal}</div>
                             </div>
                         `;
                     }
@@ -235,9 +233,7 @@
                         color: '#daccaa',
                         borderColor: '#ffffff',
                         borderWidth: 1,
-                        states: {
-                            hover: { enabled: false }
-                        },
+                        states: { hover: { enabled: false } },
                         dataLabels: {
                             enabled: true,
                             format: '{point.name}',
@@ -248,21 +244,20 @@
                         type: 'mappoint',
                         name: 'Sucursales',
                         data: retailNodes,
-                        // CONFIGURACIÓN NATIVA DEL MARCADOR (A prueba de fallos)
+                        cursor: 'pointer', // Cambia el cursor a "mano" al pasar sobre el punto rojo
                         marker: {
-                            symbol: 'circle', // Forma geométrica nativa
-                            radius: 8,        // Tamaño del punto
-                            fillColor: '#ff2a2a', // Color Rojo
-                            lineColor: '#ffffff', // Borde Blanco
-                            lineWidth: 2,         // Grosor del borde
+                            symbol: 'circle',
+                            radius: 8,
+                            fillColor: '#ff2a2a',
+                            lineColor: '#ffffff',
+                            lineWidth: 2,
                             states: {
                                 hover: {
-                                    radius: 12, // Crece ligeramente al pasar el mouse (Efecto de interacción)
+                                    radius: 12, // Crece para dar respuesta visual
                                     fillColor: '#ff2a2a'
                                 }
                             }
                         }
-                        // Hemos eliminado el dataLabels tramposo de la gota CSS para evitar conflictos.
                     }
                 ]
             });
