@@ -546,7 +546,7 @@
         countBuckets = new Array(12).fill(0);
       }
 
-      // Procesar eventos
+      // Procesar eventos para el gráfico actual
       events.forEach(ev => {
         const evDate = new Date(ev.timestamp);
         // Filtros de fecha
@@ -557,7 +557,7 @@
 
         const conteoPrevio = ev.conteoAnterior || 0;
         
-        // Solo sumamos a la gráfica las LLEGADAS (cuando aumenta el conteo)
+        // Solo analizamos las LLEGADAS (cuando el sistema sumó +1 o más a la barra amarilla)
         if (ev.conteoActual > conteoPrevio) {
           const nuevasDetecciones = ev.conteoActual - conteoPrevio;
           
@@ -568,21 +568,32 @@
           else if (currentViewLevel === 'year') idx = evDate.getMonth();
 
           if (currentMetric === 'count') {
-            // Métrica: Cantidad de Personas
+            // Métrica: Cantidad de Personas (Barra Amarilla)
             dataBuckets[idx] += nuevasDetecciones;
           } else {
-            // Métrica: Promedio de Tiempo (Usamos los tiempos que calculamos previamente)
-            if (ev.duracionesReales && ev.duracionesReales.length > 0) {
-              ev.duracionesReales.forEach(duracionSecs => {
-                dataBuckets[idx] += duracionSecs;
-                countBuckets[idx] += 1;
-              });
+            // Métrica: Tiempo Promedio (Barra Verde)
+            // IMPORTANTE: Por cada persona detectada en este evento (nuevasDetecciones), debemos sumar un tiempo.
+            // Así garantizamos que si subió 1 la barra amarilla, obligatoriamente suba el contador de la verde.
+            for (let k = 0; k < nuevasDetecciones; k++) {
+              let duracion = 0;
+              
+              if (ev.duracionesReales && ev.duracionesReales[k] !== undefined) {
+                // Si la persona ya se fue (ya existe el salto 1 a 0 correspondiente)
+                duracion = ev.duracionesReales[k];
+              } else {
+                // Si la persona sigue frente al monitor (no ha habido salto de 1 a 0),
+                // Calculamos el tiempo desde que llegó hasta este preciso segundo.
+                duracion = (Date.now() - ev.timestamp) / 1000;
+              }
+              
+              dataBuckets[idx] += duracion;
+              countBuckets[idx] += 1;
             }
           }
         }
       });
 
-      // Calcular promedios matemáticos si es la métrica de tiempo
+      // Calcular promedios matemáticos solo para la métrica de tiempo
       if (currentMetric === 'time') {
         for(let i=0; i<dataBuckets.length; i++) {
           if (countBuckets[i] > 0) {
@@ -812,11 +823,19 @@
           if (!isInitialLoad) {
             updateLiveOverlay();
             if (tabletActualEnGrafico === i) {
+               // Si estamos viendo el gráfico en verde, forzamos un redibujado contínuo del último segundo
                updateChartDisplay(); 
             }
           }
         }
       });
+      
+      // Función extra para hacer "tictac" a los usuarios que siguen activos mientras vemos la gráfica verde
+      setInterval(() => {
+          if (tabletActualEnGrafico === i && currentMetric === 'time' && llegadasPendientes[i].length > 0) {
+              updateChartDisplay(true); // actualiza en vivo sin animación para ver crecer el tiempo
+          }
+      }, 1000);
     }
   </script>
 </body>
