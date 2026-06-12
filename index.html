@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapa Interactivo Minimalista: Red Comercial Venezuela</title>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <script src="https://code.highcharts.com/maps/highmaps.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.1/proj4.js"></script>
+    <script src="https://code.highcharts.com/mapdata/countries/ve/ve-all.js"></script>
     
     <style>
         /* * NORMALIZACIÓN Y ESTILIZACIÓN GLOBAL */
@@ -54,18 +56,12 @@
             width: 100%;
             height: 100%;
             z-index: 9999; 
-            pointer-events: none; /* Ignora clics, permite interactuar con lo de abajo */
+            pointer-events: none;
             user-select: none; 
             object-fit: cover; 
         }
 
-        /* * INGENIERÍA DE MARCADORES (L.divIcon) */
-        .custom-leaflet-icon {
-            background: transparent !important;
-            border: none !important;
-        }
-
-        /* * DISEÑO DE LA GOTA DE UBICACIÓN (SIN SOMBRA) */
+        /* * DISEÑO DE LA GOTA DE UBICACIÓN (Adaptado a Highcharts) */
         .comic-marker-pin {
             width: 32px;
             height: 32px;
@@ -73,10 +69,11 @@
             border: 4px solid #000000; 
             border-radius: 50% 50% 50% 0; 
             transform: rotate(-45deg);
-            /* Se eliminó la sombra a petición (filter: drop-shadow...) */
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
+            /* Centrar visualmente el punto de anclaje */
+            top: -16px; 
         }
 
         /* Círculo interior blanco */
@@ -93,47 +90,29 @@
             transform: translate(-50%, -50%);
         }
 
-        /* * MICRO-INTERACCIONES (HOVER DEL PIN) */
-        .custom-leaflet-icon:hover .comic-marker-pin {
+        /* MICRO-INTERACCIONES (HOVER DEL PIN) */
+        .comic-marker-pin:hover {
             transform: rotate(-45deg) scale(1.3);
             background-color: #ffd700; 
             z-index: 1000 !important;
         }
 
-        /* * ESTILIZACIÓN BASE DEL POPUP */
-        .leaflet-popup-content-wrapper {
+        /* * ESTILIZACIÓN DEL POPUP (Reemplaza a Leaflet Tooltip) */
+        .highcharts-tooltip-box {
+            fill: none !important; /* Oculta la caja nativa de Highcharts */
+            stroke: none !important;
+        }
+
+        .custom-hc-popup {
             background-color: #ffffff;
             border: 4px solid #000000;
             border-radius: 15px;
             color: #000000;
             font-family: inherit;
             box-shadow: 8px 8px 0px #000000; 
-            padding: 0;
-        }
-
-        /* Ocultamos las puntas y cierres nativos */
-        .leaflet-popup-tip-container,
-        .leaflet-popup-close-button {
-            display: none !important;
-        }
-
-        .leaflet-popup-content {
-            margin: 15px;
+            padding: 15px;
             text-align: center;
-        }
-
-        /* * LÓGICA DE INVERSIÓN GRAVITACIONAL DEL POPUP 
-         * Esta clase se inyectará dinámicamente con JS si el pin está arriba
-         */
-        .popup-opens-down {
-            bottom: auto !important; /* Anulamos el comportamiento de flotar hacia arriba */
-            top: 0 !important;       /* Anclamos el borde superior del popup al pin */
-            margin-bottom: 0 !important;
-            margin-top: 55px !important; /* Empujamos 55px hacia abajo para que se ubique por debajo de la gota */
-        }
-        
-        .popup-opens-up {
-            /* Clase neutra para cuando abre hacia arriba (comportamiento nativo Leaflet) */
+            pointer-events: auto; /* Permite hacer clic en los enlaces */
         }
 
         /* * ESTRUCTURA DEL CONTENIDO (IMÁGENES PROTAGONISTAS) */
@@ -149,7 +128,7 @@
         }
 
         .popup-images-grid img {
-            width: 150px; /* Tamaño enorme garantizado para todas las imágenes */
+            width: 150px; 
             height: 150px; 
             object-fit: cover;
             border: 4px solid #000000;
@@ -180,134 +159,136 @@
         <img src="CAPA.png" id="capa-superior" alt="Capa Decorativa Superior">
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             
-            /* * 1. INICIALIZACIÓN DEL MAPA */
-            const map = L.map('map', {
-                center: [7.5, -66.0],     
-                zoom: 6,                  
-                zoomControl: true,        
-                attributionControl: false 
-            });
-
-            /* * 2. TILE LAYER */
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(map);
-
-            /* * 3. DATOS */
+            /* * 1. DATOS DE LOS NODOS (SUCURSALES) */
             const retailNodes = [
                 { 
-                    id: 1, 
-                    sucursal: "Kromi Market", 
-                    lat: 10.2225, lng: -68.0160,
-                    images: [
-                        { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Kromi_Market_Valencia.html" }
-                    ]
+                    id: 1, sucursal: "Kromi Market", 
+                    lat: 10.2225, lon: -68.0160, /* Highcharts usa 'lon' en lugar de 'lng' */
+                    images: [ { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Kromi_Market_Valencia.html" } ]
                 },
                 { 
-                    id: 2, 
-                    sucursal: "Redvital San Diego", 
-                    lat: 10.2540, lng: -67.9510,
-                    images: [
-                        { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Redvital_San_Diego_Valencia.html" }
-                    ]
+                    id: 2, sucursal: "Redvital San Diego", 
+                    lat: 10.2540, lon: -67.9510,
+                    images: [ { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Redvital_San_Diego_Valencia.html" } ]
                 },
                 { 
-                    id: 3, 
-                    sucursal: "Redvital La Yaguara", 
-                    lat: 10.4772, lng: -66.9597,
+                    id: 3, sucursal: "Redvital La Yaguara", 
+                    lat: 10.4772, lon: -66.9597,
                     images: [
                         { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Redvital_La_Yaguara.html" },
                         { src: "RECETAS.png", link: "https://yaryur-nestle.github.io/canal-moderno/RECETAS_Redvital_La_Yaguara.html" }
                     ]
                 },
                 { 
-                    id: 4, 
-                    sucursal: "Garzón Hiperahorro", 
-                    lat: 7.7669, lng: -72.2250,
-                    images: [
-                        { src: "MULTIMARCA.png", link: "https://yaryur-nestle.github.io/canal-moderno/MULTIMARCA_Garzon_Hiperahorro_San_Cristobal.html" }
-                    ]
+                    id: 4, sucursal: "Garzón Hiperahorro", 
+                    lat: 7.7669, lon: -72.2250,
+                    images: [ { src: "MULTIMARCA.png", link: "https://yaryur-nestle.github.io/canal-moderno/MULTIMARCA_Garzon_Hiperahorro_San_Cristobal.html" } ]
                 },
                 { 
-                    id: 5, 
-                    sucursal: "Luxor Círculo Militar", 
-                    lat: 10.2670, lng: -67.5950,
-                    images: [
-                        { src: "MULTIMARCA.png", link: "https://yaryur-nestle.github.io/canal-moderno/MULTIMARCA_Luxor_Circulo_Militar_Maracay.html" }
-                    ]
+                    id: 5, sucursal: "Luxor Círculo Militar", 
+                    lat: 10.2670, lon: -67.5950,
+                    images: [ { src: "MULTIMARCA.png", link: "https://yaryur-nestle.github.io/canal-moderno/MULTIMARCA_Luxor_Circulo_Militar_Maracay.html" } ]
                 }
             ];
 
-            /* * 4. INYECCIÓN DEL ECOSISTEMA Y LOGICA ESPACIAL */
-            retailNodes.forEach(node => {
-                
-                const customPin = L.divIcon({
-                    className: 'custom-leaflet-icon',
-                    html: '<div class="comic-marker-pin"></div>',
-                    iconSize: [32, 32], 
-                    iconAnchor: [16, 32], 
-                    popupAnchor: [0, -36] 
-                });
-
-                const marker = L.marker([node.lat, node.lng], { icon: customPin }).addTo(map);
-
-                let imagesHtml = '<div class="popup-images-grid">';
-                node.images.forEach(img => {
-                    imagesHtml += `
-                        <a href="${img.link}" target="_blank">
-                            <img src="${img.src}" alt="Visitar ${node.sucursal}">
-                        </a>
-                    `;
-                });
-                imagesHtml += '</div>';
-
-                const popupContent = `
-                    <div>
-                        ${imagesHtml}
-                        <div class="popup-text-label">${node.sucursal}</div>
-                    </div>
-                `;
-
-                marker.bindPopup(popupContent, {
-                    offset: [0, -10],
-                    maxWidth: 600, 
-                    autoPanPadding: [20, 20] // Añade un ligero margen de respiro al auto-scroll
-                });
-                
-                /*
-                 * 5. FUNCIÓN CENTRAL PARA DECIDIR DÓNDE SE ABRE LA VENTANA
-                 * Evaluamos si se acciona por hover o click.
-                 */
-                const evaluarPosicionEspacial = function() {
-                    // Obtenemos los píxeles (X,Y) del marcador relativos al visor actual del mapa
-                    const puntoPantalla = map.latLngToContainerPoint(this.getLatLng());
-                    // Obtenemos la altura total del visor del mapa en píxeles
-                    const alturaMapa = map.getSize().y;
-                    
-                    const popupAsociado = this.getPopup();
-                    
-                    // Si el punto 'Y' es menor a la mitad (está de la mitad hacia arriba)
-                    if (puntoPantalla.y < (alturaMapa / 2)) {
-                        popupAsociado.options.className = 'popup-opens-down';
-                    } else {
-                        // Si está de la mitad hacia abajo
-                        popupAsociado.options.className = 'popup-opens-up';
-                    }
-                    
-                    this.openPopup();
-                };
-
-                // Suscribimos la función inteligente a los eventos
-                marker.on('mouseover', evaluarPosicionEspacial);
-                marker.on('click', evaluarPosicionEspacial);
+            /* * 2. PREPARACIÓN DEL MAPA BASE DE VENEZUELA */
+            const mapData = Highcharts.maps['countries/ve/ve-all'];
+            const baseData = mapData.features.map(function(feature, index) {
+                return [feature.properties['hc-key'], index];
             });
-            
+
+            /* * 3. INICIALIZACIÓN DEL MAPA DE HIGHCHARTS */
+            Highcharts.mapChart('map', {
+                chart: {
+                    map: 'countries/ve/ve-all',
+                    backgroundColor: 'transparent'
+                },
+                title: { text: null },
+                credits: { enabled: false }, // Oculta el logo de Highcharts para un look más limpio
+                mapNavigation: {
+                    enabled: true,
+                    buttonOptions: { verticalAlign: 'bottom' }
+                },
+                
+                // Configuración de la ventana inteligente (Reemplaza al Popup de Leaflet)
+                tooltip: {
+                    useHTML: true,
+                    padding: 0,
+                    backgroundColor: 'transparent',
+                    borderWidth: 0,
+                    shadow: false,
+                    distance: 20, // Distancia del popup respecto al pin
+                    stickOnContact: true, // ¡Clave! Permite que el mouse entre al popup para hacer click en las imágenes
+                    hideDelay: 300,
+                    formatter: function() {
+                        // Si el usuario pasa el mouse por un estado (fondo del mapa)
+                        if (this.series.name === 'Estado') {
+                            return `<div style="background:#fff; padding:5px 10px; border:2px solid #000; border-radius:5px; font-family: 'Comic Sans MS';"><b>${this.point.name}</b></div>`;
+                        }
+
+                        // Si el usuario pasa el mouse por un PIN (Sucursal)
+                        let imagesHtml = '<div class="popup-images-grid">';
+                        this.point.images.forEach(img => {
+                            imagesHtml += `
+                                <a href="${img.link}" target="_blank">
+                                    <img src="${img.src}" alt="Visitar ${this.point.sucursal}">
+                                </a>
+                            `;
+                        });
+                        imagesHtml += '</div>';
+
+                        return `
+                            <div class="custom-hc-popup">
+                                ${imagesHtml}
+                                <div class="popup-text-label">${this.point.sucursal}</div>
+                            </div>
+                        `;
+                    }
+                },
+
+                /* * 4. INYECCIÓN DEL ECOSISTEMA (Capas) */
+                series: [
+                    // Capa 1: Los estados de Venezuela
+                    {
+                        data: baseData,
+                        name: 'Estado',
+                        color: '#daccaa',
+                        borderColor: '#ffffff',
+                        borderWidth: 1,
+                        states: {
+                            hover: { color: '#f39c12' }
+                        },
+                        dataLabels: {
+                            enabled: true,
+                            format: '{point.name}',
+                            style: { fontSize: '10px', fontWeight: 'normal', textOutline: 'none' }
+                        }
+                    },
+                    // Capa 2: Los marcadores de las sucursales (Tu diseño Comic)
+                    {
+                        type: 'mappoint',
+                        name: 'Sucursales',
+                        data: retailNodes,
+                        marker: {
+                            radius: 16, // Área invisible de detección del mouse del tamaño del pin
+                            fillColor: 'transparent',
+                            lineColor: 'transparent'
+                        },
+                        dataLabels: {
+                            useHTML: true,
+                            enabled: true,
+                            allowOverlap: true,
+                            formatter: function() {
+                                // Aquí inyectamos el HTML de tu marcador
+                                return '<div class="comic-marker-pin"></div>';
+                            }
+                        }
+                    }
+                ]
+            });
         });
     </script>
 </body>
