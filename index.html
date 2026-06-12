@@ -35,7 +35,7 @@
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            position: relative; /* Clave para que el panel lateral flote dentro de esta caja */
+            position: relative; 
             overflow: hidden; 
         }
 
@@ -61,29 +61,27 @@
             opacity: 0.1;
         }
 
-        /* * PANEL LATERAL DE INFORMACIÓN (NUEVO) */
+        /* * PANEL LATERAL DE INFORMACIÓN */
         #info-panel {
             position: absolute;
             top: 0;
-            right: -350px; /* Oculto fuera de la pantalla a la derecha */
+            right: -350px; 
             width: 320px;
             height: 100%;
             background-color: #ffffff;
             box-shadow: -4px 0 15px rgba(0,0,0,0.1);
-            z-index: 10000; /* Por encima de todo */
-            transition: right 0.3s ease-in-out; /* Animación suave */
+            z-index: 10000; 
+            transition: right 0.3s ease-in-out; 
             display: flex;
             flex-direction: column;
             padding: 20px;
             overflow-y: auto;
         }
 
-        /* Clase para mostrar el panel */
         #info-panel.active {
             right: 0;
         }
 
-        /* Botón de cerrar (X) */
         #close-btn {
             align-self: flex-end;
             background: none;
@@ -92,25 +90,37 @@
             color: #999999;
             cursor: pointer;
             transition: color 0.2s;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         #close-btn:hover {
             color: #ff2a2a;
         }
 
-        /* Título del Panel */
+        /* Textos del Panel */
+        .panel-header {
+            text-align: center;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        #panel-subtitle {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ff2a2a; /* Rojo para resaltar el estado */
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
         #panel-title {
             font-size: 22px;
             font-weight: 600;
             color: #333333;
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 10px;
         }
 
-        /* Contenedor de Imágenes dentro del Panel */
+        /* Contenedor de Imágenes */
         .panel-images-container {
             display: flex;
             flex-direction: column;
@@ -150,7 +160,10 @@
         
         <div id="info-panel">
             <button id="close-btn">&times;</button>
-            <h2 id="panel-title">Nombre Sucursal</h2>
+            <div class="panel-header">
+                <div id="panel-subtitle">Estado: </div>
+                <h2 id="panel-title">Nombre Sucursal</h2>
+            </div>
             <div id="panel-images" class="panel-images-container">
                 </div>
         </div>
@@ -159,24 +172,24 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             
-            // Referencias a los elementos del panel lateral
+            let chartInstance = null; // Guardará la referencia al mapa para poder limpiarlo
             const panel = document.getElementById('info-panel');
+            const panelSubtitle = document.getElementById('panel-subtitle');
             const panelTitle = document.getElementById('panel-title');
             const panelImages = document.getElementById('panel-images');
             const closeBtn = document.getElementById('close-btn');
 
-            // Función para abrir el panel con datos dinámicos
-            function abrirPanel(sucursal, images) {
+            // Función para abrir el panel e inyectar datos
+            function abrirPanel(sucursal, images, estadoNombre) {
+                panelSubtitle.textContent = `Estado: ${estadoNombre}`;
                 panelTitle.textContent = sucursal;
                 
-                // Limpiar imágenes anteriores
                 panelImages.innerHTML = ''; 
 
-                // Crear los enlaces e imágenes nuevas
                 images.forEach(img => {
                     const enlace = document.createElement('a');
                     enlace.href = img.link;
-                    enlace.target = "_blank"; // Abre en nueva pestaña
+                    enlace.target = "_blank"; 
                     
                     const imagen = document.createElement('img');
                     imagen.src = img.src;
@@ -186,32 +199,45 @@
                     panelImages.appendChild(enlace);
                 });
 
-                // Deslizar el panel hacia la vista
                 panel.classList.add('active');
             }
 
-            // Función para cerrar el panel
+            // Función para cerrar el panel y restaurar los colores del mapa
             function cerrarPanel() {
                 panel.classList.remove('active');
+                
+                // Si el mapa existe, devolvemos la opacidad de todos los estados a la normalidad
+                if (chartInstance) {
+                    const stateSeries = chartInstance.get('capa-estados');
+                    if (stateSeries) {
+                        stateSeries.points.forEach(p => {
+                            // false al final es importante para no redibujar en cada iteración (mejora rendimiento)
+                            p.update({ opacity: 1, borderWidth: 1 }, false); 
+                        });
+                        chartInstance.redraw(); // Redibuja todo de golpe
+                    }
+                }
             }
 
-            // Evento para cerrar al tocar la 'X'
             closeBtn.addEventListener('click', cerrarPanel);
 
-            /* * 1. DATOS DE LOS NODOS (SUCURSALES) */
+            /* * 1. DATOS DE LOS NODOS (SUCURSALES) - ¡Ahora con Estado y ID! */
             const retailNodes = [
                 { 
                     id: 1, sucursal: "Kromi Market", 
+                    estadoNombre: "Carabobo", estadoId: "ve-ca", // Clave para Highcharts
                     lat: 10.2225, lon: -68.0160,
                     images: [ { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Kromi_Market_Valencia.html" } ]
                 },
                 { 
                     id: 2, sucursal: "Redvital San Diego", 
+                    estadoNombre: "Carabobo", estadoId: "ve-ca",
                     lat: 10.2540, lon: -67.9510,
                     images: [ { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Redvital_San_Diego_Valencia.html" } ]
                 },
                 { 
                     id: 3, sucursal: "Redvital La Yaguara", 
+                    estadoNombre: "Distrito Capital", estadoId: "ve-dc",
                     lat: 10.4772, lon: -66.9597,
                     images: [
                         { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Redvital_La_Yaguara.html" },
@@ -220,11 +246,13 @@
                 },
                 { 
                     id: 4, sucursal: "Garzón Hiperahorro", 
+                    estadoNombre: "Táchira", estadoId: "ve-ta",
                     lat: 7.7669, lon: -72.2250,
                     images: [ { src: "MULTIMARCA.png", link: "https://yaryur-nestle.github.io/canal-moderno/MULTIMARCA_Garzon_Hiperahorro_San_Cristobal.html" } ]
                 },
                 { 
                     id: 5, sucursal: "Luxor Círculo Militar", 
+                    estadoNombre: "Aragua", estadoId: "ve-ar",
                     lat: 10.2670, lon: -67.5950,
                     images: [ { src: "MULTIMARCA.png", link: "https://yaryur-nestle.github.io/canal-moderno/MULTIMARCA_Luxor_Circulo_Militar_Maracay.html" } ]
                 }
@@ -237,12 +265,11 @@
             });
 
             /* * 3. INICIALIZACIÓN DEL MAPA DE HIGHCHARTS */
-            Highcharts.mapChart('map', {
+            chartInstance = Highcharts.mapChart('map', {
                 chart: {
                     map: 'countries/ve/ve-all',
                     backgroundColor: 'transparent',
                     events: {
-                        // Si el usuario hace clic en el fondo del mapa (océano o tierra vacía), cierra el panel
                         click: function () {
                             cerrarPanel();
                         }
@@ -258,16 +285,36 @@
                 
                 plotOptions: {
                     series: {
-                        states: { inactive: { opacity: 1 } }, // Evita que el mapa se ponga pálido
+                        states: { inactive: { opacity: 1 } },
                         point: {
                             events: {
-                                // EL EVENTO MÁGICO: Al hacer clic en un punto (estado o sucursal)
                                 click: function () {
-                                    // Si tiene la propiedad 'images', es una sucursal nuestra
+                                    // Comprueba si es una de nuestras sucursales (tienen 'images')
                                     if (this.options && this.options.images) {
-                                        abrirPanel(this.options.sucursal, this.options.images);
+                                        
+                                        // 1. Abrimos el panel
+                                        abrirPanel(this.options.sucursal, this.options.images, this.options.estadoNombre);
+                                        
+                                        // 2. Aplicamos el efecto de enfoque (Dimming)
+                                        const selectedEstadoId = this.options.estadoId;
+                                        const chart = this.series.chart;
+                                        const stateSeries = chart.get('capa-estados');
+                                        
+                                        if (stateSeries) {
+                                            stateSeries.points.forEach(p => {
+                                                if (p['hc-key'] === selectedEstadoId) {
+                                                    // Estado seleccionado: opacidad 100% y borde ligeramente más grueso
+                                                    p.update({ opacity: 1, borderWidth: 2 }, false);
+                                                } else {
+                                                    // Resto de los estados: Claritos (opacidad 40%)
+                                                    p.update({ opacity: 0.4, borderWidth: 1 }, false);
+                                                }
+                                            });
+                                            chart.redraw();
+                                        }
+
                                     } else {
-                                        // Si hace clic en un Estado que no tiene sucursal, cerramos el panel
+                                        // Si hace clic en un Estado vacío, cierra el panel y reinicia luces
                                         cerrarPanel();
                                     }
                                 }
@@ -276,14 +323,12 @@
                     }
                 },
                 
-                // DESACTIVAMOS EL TOOLTIP FLOTANTE POR COMPLETO
-                tooltip: {
-                    enabled: false 
-                },
+                tooltip: { enabled: false },
 
                 /* * 4. INYECCIÓN DEL ECOSISTEMA (Capas) */
                 series: [
                     {
+                        id: 'capa-estados', // IMPORTANTE: Identificador para poder buscar esta capa en JavaScript
                         data: baseData,
                         name: 'Estado',
                         color: '#daccaa',
