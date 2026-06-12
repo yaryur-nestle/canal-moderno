@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa Interactivo Minimalista: Red Comercial Venezuela</title>
+    <title>Canal Moderno Nestle</title>
     
     <script src="https://code.highcharts.com/maps/highmaps.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.1/proj4.js"></script>
@@ -58,46 +58,10 @@
             pointer-events: none;
             user-select: none; 
             object-fit: cover; 
-            opacity: 0.1; /* Sutil */
+            opacity: 0.1;
         }
 
-        /* * DISEÑO DE LA GOTA DE UBICACIÓN (Sutil, borde blanco fino, siempre visible) */
-        .custom-marker-pin {
-            width: 32px;
-            height: 32px;
-            background-color: #ff2a2a; /* Rojo */
-            border: 2px solid #ffffff; 
-            border-radius: 50% 50% 50% 0; 
-            transform: rotate(-45deg);
-            cursor: pointer;
-            position: relative;
-            /* Centrar visualmente el punto de anclaje de la gota */
-            top: -16px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: transform 0.2s ease;
-            pointer-events: auto; /* IMPORTANTE: Permite la interacción directa con la gota */
-        }
-
-        /* Micro-interacción al pasar el mouse directamente sobre la gota */
-        .custom-marker-pin:hover {
-            transform: rotate(-45deg) scale(1.15);
-        }
-
-        /* Círculo interior blanco de la gota */
-        .custom-marker-pin::after {
-            content: '';
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #ffffff;
-            border: 1px solid #ffffff;
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* * ESTILIZACIÓN DEL POPUP (Sutil, borde fino, sin estilo cómic) */
+        /* * ESTILIZACIÓN DEL POPUP (Sutil, borde fino) */
         .highcharts-tooltip-box {
             fill: none !important; /* Oculta la caja nativa de Highcharts */
             stroke: none !important;
@@ -211,31 +175,39 @@
                     backgroundColor: 'transparent'
                 },
                 title: { text: null },
-                credits: { enabled: false }, // Oculta el logo de Highcharts
-                legend: { enabled: false }, // Oculta la leyenda
+                credits: { enabled: false },
+                legend: { enabled: false },
                 mapNavigation: {
                     enabled: true,
                     buttonOptions: { verticalAlign: 'bottom' }
                 },
                 
-                // Configuración de la ventana inteligente (Comportamiento tipo Leaflet Popup)
+                // Configuración Global para evitar que el mapa se ponga "clarito" (pálido)
+                plotOptions: {
+                    series: {
+                        states: {
+                            inactive: {
+                                opacity: 1 // ESTA ES LA CLAVE: 1 significa 100% visible siempre
+                            }
+                        }
+                    }
+                },
+                
                 tooltip: {
                     useHTML: true,
                     padding: 0,
-                    backgroundColor: 'rgba(255,255,255,0)', // Transparente para usar nuestro propio CSS
+                    backgroundColor: 'rgba(255,255,255,0)',
                     borderWidth: 0,
                     shadow: false,
-                    distance: 15, // Distancia del popup respecto al pin
-                    stickOnContact: true, // Permite interactuar con el popup (clics en hipervínculos)
+                    distance: 15,
+                    stickOnContact: true,
                     hideDelay: 300,
-                    followPointer: false, // CLAVE: Evita que persiga el mouse, anclándose al marcador
+                    followPointer: false,
                     formatter: function() {
-                        // Si el usuario interactúa con un estado (fondo del mapa)
                         if (this.series.name === 'Estado') {
-                            return false; // Retorna false para no mostrar nada
+                            return false;
                         }
 
-                        // Si el usuario interactúa con un PIN (Sucursal)
                         let imagesHtml = '<div class="popup-images-grid">';
                         this.point.images.forEach(img => {
                             imagesHtml += `
@@ -257,7 +229,6 @@
 
                 /* * 4. INYECCIÓN DEL ECOSISTEMA (Capas) */
                 series: [
-                    // Capa 1: Los estados de Venezuela (Plano base)
                     {
                         data: baseData,
                         name: 'Estado',
@@ -265,9 +236,7 @@
                         borderColor: '#ffffff',
                         borderWidth: 1,
                         states: {
-                            hover: {
-                                enabled: false // Desactivar el color naranja de hover
-                            }
+                            hover: { enabled: false }
                         },
                         dataLabels: {
                             enabled: true,
@@ -275,40 +244,25 @@
                             style: { fontSize: '10px', fontWeight: 'normal', textOutline: 'none', color: '#666' }
                         }
                     },
-                    // Capa 2: Los marcadores de las sucursales
                     {
                         type: 'mappoint',
                         name: 'Sucursales',
                         data: retailNodes,
-                        color: 'rgba(0,0,0,0)', // ESTO ELIMINA EL "AZUL POR DEFECTO" DE LA SERIE
+                        // CONFIGURACIÓN NATIVA DEL MARCADOR (A prueba de fallos)
                         marker: {
-                            radius: 18, // Área invisible de detección de clic/hover
-                            fillColor: 'rgba(0,0,0,0)', // Marcador 100% transparente para que solo se vea tu HTML
-                            lineColor: 'rgba(0,0,0,0)',
+                            symbol: 'circle', // Forma geométrica nativa
+                            radius: 8,        // Tamaño del punto
+                            fillColor: '#ff2a2a', // Color Rojo
+                            lineColor: '#ffffff', // Borde Blanco
+                            lineWidth: 2,         // Grosor del borde
                             states: {
                                 hover: {
-                                    radius: 18,
-                                    fillColor: 'rgba(0,0,0,0)',
-                                    lineColor: 'rgba(0,0,0,0)'
-                                },
-                                select: {
-                                    fillColor: 'rgba(0,0,0,0)',
-                                    lineColor: 'rgba(0,0,0,0)'
+                                    radius: 12, // Crece ligeramente al pasar el mouse (Efecto de interacción)
+                                    fillColor: '#ff2a2a'
                                 }
                             }
-                        },
-                        dataLabels: {
-                            useHTML: true,
-                            enabled: true,
-                            allowOverlap: true,
-                            crop: false,       // LA SOLUCIÓN MÁGICA: Evita que los puntos se oculten al cargar
-                            overflow: 'allow', // LA SOLUCIÓN MÁGICA: Fuerza a pintarlos aunque "salgan" de la caja
-                            y: -10, 
-                            formatter: function() {
-                                // Aquí inyectamos el HTML de la gota invertida
-                                return '<div class="custom-marker-pin"></div>';
-                            }
                         }
+                        // Hemos eliminado el dataLabels tramposo de la gota CSS para evitar conflictos.
                     }
                 ]
             });
