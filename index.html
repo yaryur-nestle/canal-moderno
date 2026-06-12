@@ -28,7 +28,7 @@
             overflow: hidden;
         }
 
-        /* * CONTENEDOR DEL MAPA (Sutil y sin estilo cómic) */
+        /* * CONTENEDOR DEL MAPA */
         #map-container {
             width: 90vw;
             height: 90vh;
@@ -65,7 +65,7 @@
         .custom-marker-pin {
             width: 32px;
             height: 32px;
-            background-color: #ff2a2a; 
+            background-color: #ff2a2a; /* Rojo */
             border: 2px solid #ffffff; 
             border-radius: 50% 50% 50% 0; 
             transform: rotate(-45deg);
@@ -75,11 +75,12 @@
             top: -16px; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             transition: transform 0.2s ease;
+            pointer-events: auto; /* IMPORTANTE: Permite la interacción directa con la gota */
         }
 
-        /* Micro-interacción al pasar el mouse sobre el contenedor del punto */
-        .highcharts-point:hover .custom-marker-pin {
-            transform: rotate(-45deg) scale(1.1);
+        /* Micro-interacción al pasar el mouse directamente sobre la gota */
+        .custom-marker-pin:hover {
+            transform: rotate(-45deg) scale(1.15);
         }
 
         /* Círculo interior blanco de la gota */
@@ -274,20 +275,25 @@
                             style: { fontSize: '10px', fontWeight: 'normal', textOutline: 'none', color: '#666' }
                         }
                     },
-                    // Capa 2: Los marcadores de las sucursales (Sutil, siempre visibles, interactivos)
+                    // Capa 2: Los marcadores de las sucursales
                     {
                         type: 'mappoint',
                         name: 'Sucursales',
                         data: retailNodes,
+                        color: 'rgba(0,0,0,0)', // ESTO ELIMINA EL "AZUL POR DEFECTO" DE LA SERIE
                         marker: {
-                            radius: 18, // Área invisible de detección de clic/hover alrededor de la gota
-                            fillColor: 'transparent',
-                            lineColor: 'transparent',
+                            radius: 18, // Área invisible de detección de clic/hover
+                            fillColor: 'rgba(0,0,0,0)', // Marcador 100% transparente para que solo se vea tu HTML
+                            lineColor: 'rgba(0,0,0,0)',
                             states: {
                                 hover: {
                                     radius: 18,
-                                    fillColor: 'transparent',
-                                    lineColor: 'transparent'
+                                    fillColor: 'rgba(0,0,0,0)',
+                                    lineColor: 'rgba(0,0,0,0)'
+                                },
+                                select: {
+                                    fillColor: 'rgba(0,0,0,0)',
+                                    lineColor: 'rgba(0,0,0,0)'
                                 }
                             }
                         },
@@ -295,7 +301,8 @@
                             useHTML: true,
                             enabled: true,
                             allowOverlap: true,
-                            // Alineación para que la punta de la gota coincida con la coordenada real
+                            crop: false,       // LA SOLUCIÓN MÁGICA: Evita que los puntos se oculten al cargar
+                            overflow: 'allow', // LA SOLUCIÓN MÁGICA: Fuerza a pintarlos aunque "salgan" de la caja
                             y: -10, 
                             formatter: function() {
                                 // Aquí inyectamos el HTML de la gota invertida
