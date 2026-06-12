@@ -27,15 +27,15 @@
             overflow: hidden;
         }
 
-        #map-container {
+        /* * CONTENEDOR PRINCIPAL */
+        #app-container {
             width: 90vw;
             height: 90vh;
             background-color: #ffffff;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            position: relative;
-            z-index: 1;
+            position: relative; /* Clave para que el panel lateral flote dentro de esta caja */
             overflow: hidden; 
         }
 
@@ -43,87 +43,161 @@
             width: 100%;
             height: 100%;
             background-color: transparent;
+            position: relative;
+            z-index: 1;
         }
 
+        /* * CAPA SUPERIOR (No interactiva) */
         #capa-superior {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 9999; 
+            z-index: 2; 
             pointer-events: none;
             user-select: none; 
             object-fit: cover; 
             opacity: 0.1;
         }
 
-        /* * ESTILIZACIÓN DEL POPUP */
-        .highcharts-tooltip-box {
-            fill: none !important; 
-            stroke: none !important;
-        }
-
-        .custom-hc-popup {
+        /* * PANEL LATERAL DE INFORMACIÓN (NUEVO) */
+        #info-panel {
+            position: absolute;
+            top: 0;
+            right: -350px; /* Oculto fuera de la pantalla a la derecha */
+            width: 320px;
+            height: 100%;
             background-color: #ffffff;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            color: #333333;
-            font-family: inherit;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
-            padding: 15px;
-            text-align: center;
-            pointer-events: auto; /* IMPORTANTE para permitir clics */
-            min-width: 180px;
-        }
-
-        .popup-images-grid {
+            box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+            z-index: 10000; /* Por encima de todo */
+            transition: right 0.3s ease-in-out; /* Animación suave */
             display: flex;
-            justify-content: center;
-            gap: 15px; 
-            margin-bottom: 12px;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
         }
 
-        .popup-images-grid a {
+        /* Clase para mostrar el panel */
+        #info-panel.active {
+            right: 0;
+        }
+
+        /* Botón de cerrar (X) */
+        #close-btn {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999999;
+            cursor: pointer;
+            transition: color 0.2s;
+            margin-bottom: 10px;
+        }
+
+        #close-btn:hover {
+            color: #ff2a2a;
+        }
+
+        /* Título del Panel */
+        #panel-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333333;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        /* Contenedor de Imágenes dentro del Panel */
+        .panel-images-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .panel-images-container a {
             display: block;
             text-decoration: none;
+            width: 100%;
+            text-align: center;
         }
 
-        .popup-images-grid img {
-            width: 150px; 
-            height: 150px; 
+        .panel-images-container img {
+            width: 200px;
+            height: 200px;
             object-fit: cover;
-            border: 1px solid #e0e0e0; 
-            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             cursor: pointer;
         }
 
-        .popup-images-grid img:hover {
-            transform: translateY(-2px); 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .popup-text-label {
-            font-size: 18px; 
-            font-weight: 600;
-            color: #333333;
-            text-transform: none; 
-            white-space: nowrap;
-            text-align: center; 
+        .panel-images-container img:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
 
-    <div id="map-container">
+    <div id="app-container">
         <div id="map"></div>
         <img src="CAPA.png" id="capa-superior" alt="Capa Decorativa Superior">
+        
+        <div id="info-panel">
+            <button id="close-btn">&times;</button>
+            <h2 id="panel-title">Nombre Sucursal</h2>
+            <div id="panel-images" class="panel-images-container">
+                </div>
+        </div>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             
+            // Referencias a los elementos del panel lateral
+            const panel = document.getElementById('info-panel');
+            const panelTitle = document.getElementById('panel-title');
+            const panelImages = document.getElementById('panel-images');
+            const closeBtn = document.getElementById('close-btn');
+
+            // Función para abrir el panel con datos dinámicos
+            function abrirPanel(sucursal, images) {
+                panelTitle.textContent = sucursal;
+                
+                // Limpiar imágenes anteriores
+                panelImages.innerHTML = ''; 
+
+                // Crear los enlaces e imágenes nuevas
+                images.forEach(img => {
+                    const enlace = document.createElement('a');
+                    enlace.href = img.link;
+                    enlace.target = "_blank"; // Abre en nueva pestaña
+                    
+                    const imagen = document.createElement('img');
+                    imagen.src = img.src;
+                    imagen.alt = `Visitar ${sucursal}`;
+
+                    enlace.appendChild(imagen);
+                    panelImages.appendChild(enlace);
+                });
+
+                // Deslizar el panel hacia la vista
+                panel.classList.add('active');
+            }
+
+            // Función para cerrar el panel
+            function cerrarPanel() {
+                panel.classList.remove('active');
+            }
+
+            // Evento para cerrar al tocar la 'X'
+            closeBtn.addEventListener('click', cerrarPanel);
+
             /* * 1. DATOS DE LOS NODOS (SUCURSALES) */
             const retailNodes = [
                 { 
@@ -166,7 +240,13 @@
             Highcharts.mapChart('map', {
                 chart: {
                     map: 'countries/ve/ve-all',
-                    backgroundColor: 'transparent'
+                    backgroundColor: 'transparent',
+                    events: {
+                        // Si el usuario hace clic en el fondo del mapa (océano o tierra vacía), cierra el panel
+                        click: function () {
+                            cerrarPanel();
+                        }
+                    }
                 },
                 title: { text: null },
                 credits: { enabled: false },
@@ -178,51 +258,27 @@
                 
                 plotOptions: {
                     series: {
-                        states: { inactive: { opacity: 1 } }
+                        states: { inactive: { opacity: 1 } }, // Evita que el mapa se ponga pálido
+                        point: {
+                            events: {
+                                // EL EVENTO MÁGICO: Al hacer clic en un punto (estado o sucursal)
+                                click: function () {
+                                    // Si tiene la propiedad 'images', es una sucursal nuestra
+                                    if (this.options && this.options.images) {
+                                        abrirPanel(this.options.sucursal, this.options.images);
+                                    } else {
+                                        // Si hace clic en un Estado que no tiene sucursal, cerramos el panel
+                                        cerrarPanel();
+                                    }
+                                }
+                            }
+                        }
                     }
                 },
                 
-                // LA MAGIA DE LA VENTANA INTERACTIVA ESTÁ AQUÍ
+                // DESACTIVAMOS EL TOOLTIP FLOTANTE POR COMPLETO
                 tooltip: {
-                    useHTML: true,
-                    padding: 0,
-                    backgroundColor: 'rgba(255,255,255,0)',
-                    borderWidth: 0,
-                    shadow: false,
-                    distance: 15,
-                    stickOnContact: true, // Permite mover el mouse hacia la ventana sin que se cierre
-                    hideDelay: 400, // Tiempo de gracia antes de ocultarse
-                    followPointer: false,
-                    style: {
-                        pointerEvents: 'auto' // CRÍTICO: Permite hacer clic en la ventana
-                    },
-                    formatter: function() {
-                        // Ignoramos el fondo del mapa
-                        if (this.series.name === 'Estado') return false;
-
-                        // Extraemos las propiedades personalizadas de manera segura
-                        const opciones = this.point.options;
-                        
-                        // Si por alguna razón un punto no tiene imágenes, no rompemos el código
-                        if (!opciones.images) return false;
-
-                        let imagesHtml = '<div class="popup-images-grid">';
-                        opciones.images.forEach(img => {
-                            imagesHtml += `
-                                <a href="${img.link}" target="_blank">
-                                    <img src="${img.src}" alt="Visitar ${opciones.sucursal}">
-                                </a>
-                            `;
-                        });
-                        imagesHtml += '</div>';
-
-                        return `
-                            <div class="custom-hc-popup">
-                                ${imagesHtml}
-                                <div class="popup-text-label">${opciones.sucursal}</div>
-                            </div>
-                        `;
-                    }
+                    enabled: false 
                 },
 
                 /* * 4. INYECCIÓN DEL ECOSISTEMA (Capas) */
@@ -244,7 +300,7 @@
                         type: 'mappoint',
                         name: 'Sucursales',
                         data: retailNodes,
-                        cursor: 'pointer', // Cambia el cursor a "mano" al pasar sobre el punto rojo
+                        cursor: 'pointer',
                         marker: {
                             symbol: 'circle',
                             radius: 8,
@@ -253,7 +309,7 @@
                             lineWidth: 2,
                             states: {
                                 hover: {
-                                    radius: 12, // Crece para dar respuesta visual
+                                    radius: 12,
                                     fillColor: '#ff2a2a'
                                 }
                             }
