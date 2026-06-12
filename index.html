@@ -47,6 +47,7 @@
             z-index: 1;
         }
 
+        /* * CAPA SUPERIOR (Manejo dinámico de Opacidad) */
         #capa-superior {
             position: absolute;
             top: 0;
@@ -54,10 +55,11 @@
             width: 100%;
             height: 100%;
             z-index: 2; 
-            pointer-events: none;
+            pointer-events: none; /* Crucial para no bloquear los clics al mapa */
             user-select: none; 
             object-fit: cover; 
-            opacity: 0.1;
+            opacity: 1; /* Inicia al 100% */
+            transition: opacity 0.4s ease-in-out; /* Transición suave al hacer zoom */
         }
 
         /* * BOTÓN DE HAMBURGUESA / FLECHA */
@@ -143,7 +145,7 @@
 
         #panel-subtitle {
             font-size: 18px;
-            font-weight: 900; /* Negrita */
+            font-weight: 900; 
             color: #daccaa; 
             letter-spacing: 0.5px;
             margin-bottom: 15px; 
@@ -244,7 +246,7 @@
         .marca-btn {
             aspect-ratio: 1 / 1;
             width: 180px;
-            margin: 0 auto; /* Centrado */
+            margin: 0 auto; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -448,7 +450,7 @@
             function abrirMenuFiltros() {
                 infoPanel.classList.remove('active'); 
                 navPanel.classList.add('active');
-                hamburgerBtn.style.display = 'flex'; // Asegurarnos de que el botón esté visible
+                hamburgerBtn.style.display = 'flex'; 
                 hamburgerBtn.classList.add('open');
             }
 
@@ -457,7 +459,6 @@
                 infoPanel.classList.remove('active');
                 hamburgerBtn.classList.remove('open');
                 
-                // Mostrar siempre el botón cuando los paneles están cerrados o en menú
                 hamburgerBtn.style.display = 'flex'; 
                 
                 document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
@@ -473,7 +474,6 @@
                 navPanel.classList.remove('active');
                 hamburgerBtn.classList.remove('open');
                 
-                // OCULTAMOS EL BOTÓN HAMBURGUESA AL ABRIR LA INFO
                 hamburgerBtn.style.display = 'none'; 
 
                 document.getElementById('panel-subtitle').textContent = estadoNombre;
@@ -512,11 +512,9 @@
                     const span = this.querySelector('span');
                     const isOpen = content.classList.contains('open');
 
-                    // 1. Cerrar TODOS los acordeones
                     document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
                     document.querySelectorAll('.accordion-btn span').forEach(s => s.textContent = '+');
 
-                    // 2. Si el que toqué NO estaba abierto, lo abro
                     if (!isOpen) {
                         content.classList.add('open');
                         span.textContent = '-';
@@ -531,17 +529,17 @@
                     document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
                     document.querySelectorAll('.filter-results').forEach(r => {
                         r.classList.remove('active');
-                        r.innerHTML = ''; // Limpiar resultados anteriores
+                        r.innerHTML = ''; 
                     });
 
                     this.classList.add('active-filter');
                     
                     const type = this.getAttribute('data-type'); 
                     const val = this.getAttribute('data-val');   
-                    const resultsContainer = this.nextElementSibling; // El div class="filter-results"
+                    const resultsContainer = this.nextElementSibling; 
                     
                     let estadosAEncender = new Set(); 
-                    let matchingLinks = []; // Arreglo para guardar los hipervínculos dinámicos
+                    let matchingLinks = []; 
 
                     retailNodes.forEach(node => {
                         if (type === 'marca') {
@@ -553,9 +551,7 @@
                         } else if (type === 'sucursal') {
                             if (node.logo === val) {
                                 estadosAEncender.add(node.estadoId);
-                                // Si filtramos por sucursal, agregamos todas sus imágenes/marcas
                                 node.images.forEach(img => {
-                                    // Extraemos el nombre de la marca del archivo de imagen
                                     let brandName = img.src.replace('.png', '').replace('.jpg', '');
                                     matchingLinks.push({ title: `${node.sucursal} (${brandName})`, link: img.link });
                                 });
@@ -563,17 +559,16 @@
                         }
                     });
 
-                    // Construimos la lista en el DOM
                     matchingLinks.forEach(item => {
                         const a = document.createElement('a');
                         a.href = item.link;
                         a.target = '_blank';
-                        a.innerHTML = `&bull; ${item.title}`; // Viñeta y título
+                        a.innerHTML = `&bull; ${item.title}`;
                         resultsContainer.appendChild(a);
                     });
 
                     if (matchingLinks.length > 0) {
-                        resultsContainer.classList.add('active'); // Mostrar la cajita
+                        resultsContainer.classList.add('active'); 
                     }
 
                     iluminarEstados(Array.from(estadosAEncender));
@@ -601,6 +596,28 @@
                 mapNavigation: {
                     enabled: true,
                     buttonOptions: { verticalAlign: 'bottom' }
+                },
+
+                /* *** NUEVO EVENTO: SENSOR DE ZOOM PARA LA CAPA SUPERIOR *** */
+                xAxis: {
+                    events: {
+                        afterSetExtremes: function (e) {
+                            const capa = document.getElementById('capa-superior');
+                            // Comparamos el rango de zoom actual con los extremos totales del mapa
+                            if (e.min !== undefined && e.dataMin !== undefined) {
+                                const rangoActual = e.max - e.min;
+                                const rangoTotal = e.dataMax - e.dataMin;
+                                // Si el encuadre es menor al 99% del país, estamos haciendo zoom
+                                if (rangoActual < rangoTotal * 0.99) {
+                                    capa.style.opacity = '0.1'; // Clarita al hacer zoom
+                                } else {
+                                    capa.style.opacity = '1';   // 100% al restablecer
+                                }
+                            } else {
+                                capa.style.opacity = '1';
+                            }
+                        }
+                    }
                 },
                 
                 plotOptions: {
@@ -638,7 +655,7 @@
                         borderWidth: 1,
                         states: { hover: { enabled: false } },
                         dataLabels: {
-                            enabled: false // <--- ETIQUETAS DE ESTADOS OCULTAS
+                            enabled: false // Etiquetas de estados ocultas
                         }
                     },
                     {
