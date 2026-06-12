@@ -264,7 +264,7 @@
       width: 100%;
       height: 50vh;
       position: relative;
-      overflow: hidden; /* Para que la animación no se salga del contenedor */
+      overflow: hidden; 
     }
 
     .nav-arrow {
@@ -414,7 +414,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Pantalla completa
     document.getElementById('fullscreen-btn').addEventListener('click', () => {
       const elem = document.documentElement;
       if (!document.fullscreenElement) {
@@ -424,21 +423,21 @@
       }
     });
 
-    // Configuración base
     const configTablets = {
       1: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 206, 86, 0.8)', colorBorder: 'rgb(255, 206, 86)', name: 'NIDO REDVITAL LA YAGUARA' },
       2: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(54, 162, 235, 0.8)', colorBorder: 'rgb(54, 162, 235)', name: 'MUEBLE MULTICATEGORÍA' },
       3: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 99, 132, 0.8)', colorBorder: 'rgb(255, 99, 132)', name: 'MUEBLE RECETAS' }
     };
 
-    // --- VARIABLES DE ESTADO DEL GRÁFICO ---
+    // --- VARIABLES GLOBALES DEL HISTORIAL Y CÁLCULO FIFO ---
     let tabletActualEnGrafico = null; 
-    let todosLosEventos = { 1: [], 2: [], 3: [] }; // Almacenará todo el historial
+    const todosLosEventos = { 1: [], 2: [], 3: [] }; 
+    const llegadasPendientes = { 1: [], 2: [], 3: [] }; // Cola FIFO para calcular tiempos de permanencia reales
     
     const VIEW_LEVELS = ['hour', 'day', 'month', 'year'];
-    let currentViewLevel = 'hour'; // Nivel de zoom actual
-    let currentViewDate = new Date(); // Fecha base de la vista actual
-    let currentMetric = 'count'; // 'count' (Personas) o 'time' (Tiempo promedio)
+    let currentViewLevel = 'hour'; 
+    let currentViewDate = new Date(); 
+    let currentMetric = 'count'; 
 
     // --- VARIABLES DEL OVERLAY EN VIVO ---
     const estadoVisual = { 1: [], 2: [], 3: [] }; 
@@ -506,11 +505,11 @@
       const date = new Date(currentViewDate);
       let labels = [];
       let dataBuckets = [];
-      let countBuckets = []; // Para sacar promedios si la métrica es 'time'
+      let countBuckets = []; 
       let titlePrefix = "";
       let titleSuffix = "";
 
-      // Definir rangos y etiquetas según el nivel
+      // Definir rangos y etiquetas
       if (currentViewLevel === 'hour') {
         titlePrefix = "HORA:";
         titleSuffix = `${formatHourAMPM(date, true).replace(/:\d+/, ':00')} - ${formatHourAMPM(date, true).replace(/:\d+/, ':59')} (${date.toLocaleDateString('es-ES')})`;
@@ -550,16 +549,17 @@
       // Procesar eventos
       events.forEach(ev => {
         const evDate = new Date(ev.timestamp);
-        // Filtros de fecha según el nivel
+        // Filtros de fecha
         if (currentViewLevel === 'hour' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate() || evDate.getHours() !== date.getHours())) return;
         if (currentViewLevel === 'day' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate())) return;
         if (currentViewLevel === 'month' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth())) return;
         if (currentViewLevel === 'year' && (evDate.getFullYear() !== date.getFullYear())) return;
 
         const conteoPrevio = ev.conteoAnterior || 0;
+        
+        // Solo sumamos a la gráfica las LLEGADAS (cuando aumenta el conteo)
         if (ev.conteoActual > conteoPrevio) {
           const nuevasDetecciones = ev.conteoActual - conteoPrevio;
-          const duracion = ev.duracion || ev.tiempo || 0; // Asumimos que Firebase tiene esta variable
           
           let idx = 0;
           if (currentViewLevel === 'hour') idx = evDate.getMinutes();
@@ -568,16 +568,21 @@
           else if (currentViewLevel === 'year') idx = evDate.getMonth();
 
           if (currentMetric === 'count') {
+            // Métrica: Cantidad de Personas
             dataBuckets[idx] += nuevasDetecciones;
           } else {
-            // Acumulamos tiempo para luego promediar
-            dataBuckets[idx] += duracion * nuevasDetecciones;
-            countBuckets[idx] += nuevasDetecciones;
+            // Métrica: Promedio de Tiempo (Usamos los tiempos que calculamos previamente)
+            if (ev.duracionesReales && ev.duracionesReales.length > 0) {
+              ev.duracionesReales.forEach(duracionSecs => {
+                dataBuckets[idx] += duracionSecs;
+                countBuckets[idx] += 1;
+              });
+            }
           }
         }
       });
 
-      // Calcular promedios si es tiempo
+      // Calcular promedios matemáticos si es la métrica de tiempo
       if (currentMetric === 'time') {
         for(let i=0; i<dataBuckets.length; i++) {
           if (countBuckets[i] > 0) {
@@ -586,16 +591,14 @@
         }
       }
 
-      // Actualizar UI Textos
+      // Actualizar UI
       document.getElementById('chart-title').innerText = configTablets[tabletActualEnGrafico].name;
       document.getElementById('chart-subtitle').innerText = `${titlePrefix} ${titleSuffix}`;
 
-      // Configurar botones de Lupa
       const idxLevel = VIEW_LEVELS.indexOf(currentViewLevel);
       document.getElementById('btn-zoom-in').style.display = idxLevel > 0 ? 'flex' : 'none';
       document.getElementById('btn-zoom-out').style.display = idxLevel < VIEW_LEVELS.length - 1 ? 'flex' : 'none';
 
-      // Verificar botón de "siguiente" (no permitir ir al futuro)
       const now = new Date();
       let isCurrent = false;
       if (currentViewLevel === 'hour') isCurrent = (date.getHours() === now.getHours() && date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
@@ -605,9 +608,8 @@
       
       document.getElementById('btn-next').disabled = isCurrent;
 
-      // Actualizar Chart
       const colorAmarillo = configTablets[tabletActualEnGrafico].colorBg || '#FFCE56';
-      const colorVerde = 'rgba(42, 161, 42, 0.8)'; // Verde oscuro
+      const colorVerde = 'rgba(42, 161, 42, 0.8)'; 
       
       mainChart.data.labels = labels;
       mainChart.data.datasets[0].data = dataBuckets;
@@ -617,12 +619,10 @@
       else mainChart.options.animation = { duration: 400, easing: 'easeOutQuart' };
       
       mainChart.update();
-      mainChart.options.animation = { duration: 400, easing: 'easeOutQuart' }; // Reset anim
+      mainChart.options.animation = { duration: 400, easing: 'easeOutQuart' }; 
     }
 
     // --- CONTROLES DE INTERFAZ ---
-
-    // Cambiar de Métrica (Personas <-> Tiempo)
     document.getElementById('btn-metric').addEventListener('click', () => {
       currentMetric = currentMetric === 'count' ? 'time' : 'count';
       document.getElementById('icon-chrono').style.display = currentMetric === 'count' ? 'block' : 'none';
@@ -630,7 +630,6 @@
       updateChartDisplay();
     });
 
-    // Lupa Menos (Alejar: Hora -> Día -> Mes -> Año)
     document.getElementById('btn-zoom-out').addEventListener('click', () => {
       let idx = VIEW_LEVELS.indexOf(currentViewLevel);
       if (idx < VIEW_LEVELS.length - 1) {
@@ -639,26 +638,20 @@
       }
     });
 
-    // Lupa Más (Acercar: Año -> Mes -> Día -> Hora)
     document.getElementById('btn-zoom-in').addEventListener('click', () => {
       let idx = VIEW_LEVELS.indexOf(currentViewLevel);
       if (idx > 0) {
         currentViewLevel = VIEW_LEVELS[idx - 1];
-        // Al acercar, reseteamos a la fecha actual para no confundir (opcional, pero buena UX)
         currentViewDate = new Date(); 
         updateChartDisplay();
       }
     });
 
-    // Navegación en el Tiempo (Flechas)
-    function changeTime(direction) { // -1 (pasado), +1 (futuro)
+    function changeTime(direction) { 
       const wrapper = document.getElementById('chart-wrapper');
-      
-      // Animación de Salida
       wrapper.classList.add(direction < 0 ? 'slide-out-right' : 'slide-out-left');
       
       setTimeout(() => {
-        // Cambiar Fecha lógicamente
         const d = new Date(currentViewDate);
         if (currentViewLevel === 'hour') d.setHours(d.getHours() + direction);
         if (currentViewLevel === 'day') d.setDate(d.getDate() + direction);
@@ -666,27 +659,23 @@
         if (currentViewLevel === 'year') d.setFullYear(d.getFullYear() + direction);
         currentViewDate = d;
         
-        updateChartDisplay(true); // Actualizar gráfico instantáneamente
+        updateChartDisplay(true); 
 
-        // Animación de Entrada
         wrapper.classList.remove('slide-out-right', 'slide-out-left');
         wrapper.classList.add(direction < 0 ? 'slide-in-left' : 'slide-in-right');
         
-        setTimeout(() => {
-          wrapper.classList.remove('slide-in-left', 'slide-in-right');
-        }, 400); // Duración de la animación en CSS
+        setTimeout(() => { wrapper.classList.remove('slide-in-left', 'slide-in-right'); }, 400); 
       }, 400);
     }
 
     document.getElementById('btn-prev').addEventListener('click', () => changeTime(-1));
     document.getElementById('btn-next').addEventListener('click', () => changeTime(1));
 
-    // Voltear al Gráfico
     window.flipToChart = function(tabletId) {
       tabletActualEnGrafico = tabletId;
-      currentViewLevel = 'hour'; // Por defecto vista de hora
-      currentViewDate = new Date(); // Reset a la hora actual
-      currentMetric = 'count'; // Por defecto cuenta de personas
+      currentViewLevel = 'hour'; 
+      currentViewDate = new Date(); 
+      currentMetric = 'count'; 
       document.getElementById('icon-chrono').style.display = 'block';
       document.getElementById('icon-user').style.display = 'none';
 
@@ -694,10 +683,9 @@
       document.getElementById('flip-container').classList.add('flipped');
     }
 
-    // Voltear de vuelta
     window.flipToFront = function() {
       document.getElementById('flip-container').classList.remove('flipped');
-      setTimeout(() => { tabletActualEnGrafico = null; }, 500); // Esperar que termine la anim 3D
+      setTimeout(() => { tabletActualEnGrafico = null; }, 500); 
     }
 
     // --- LÓGICA OVERLAY Y SILUETAS ---
@@ -777,8 +765,7 @@
       estadoVisual[tabletId] = activasActuales; 
     }
 
-    // --- CONEXIÓN FIREBASE ---
-    // Cargamos todo el historial para permitir los zooms y viajes en el tiempo
+    // --- CONEXIÓN FIREBASE Y PROCESAMIENTO FIFO DE TIEMPOS ---
     for (let i = 1; i <= 3; i++) {
       const numFormat = i.toString().padStart(2, '0'); 
       const eventosQuery = query(ref(db, `muebles/tablet_${numFormat}/eventos`), orderByChild('timestamp'));
@@ -788,18 +775,42 @@
         
         if (data && data.timestamp && data.conteoActual !== undefined) {
           
-          // Almacenar en el buffer histórico
+          data.duracionesReales = []; // Aquí almacenaremos el tiempo de la visita cuando termine
           todosLosEventos[i].push(data);
 
-          // Lógica en VIVO (solo importa para eventos recientes, pero onChildAdded pasa por todos al inicio)
-          // Asumimos que los últimos en cargarse son el estado actual.
-          actualizarSiluetas(i, data.conteoActual);
-          conteosActuales[i] = data.conteoActual;
+          const conteoAnterior = data.conteoAnterior || 0;
+          const conteoActual = data.conteoActual;
+
+          // LÓGICA FIFO PARA ESTAMPAS DE TIEMPO
+          if (conteoActual > conteoAnterior) {
+            // Si llegan personas, las empujamos a la cola de "Llegadas Pendientes"
+            const diferencia = conteoActual - conteoAnterior;
+            for (let k = 0; k < diferencia; k++) {
+              llegadasPendientes[i].push(data);
+            }
+          } else if (conteoActual < conteoAnterior) {
+            // Si se van personas, sacamos de la cola de pendientes y calculamos el tiempo
+            const diferencia = conteoAnterior - conteoActual;
+            for (let k = 0; k < diferencia; k++) {
+              if (llegadasPendientes[i].length > 0) {
+                // Saca el primer evento de llegada que ocurrió
+                const eventoLlegada = llegadasPendientes[i].shift(); 
+                
+                // Resta de las estampas de tiempo (milisegundos a segundos)
+                const duracionSegundos = (data.timestamp - eventoLlegada.timestamp) / 1000;
+                
+                // Se lo asignamos al objeto original de llegada para que la gráfica lo lea
+                eventoLlegada.duracionesReales.push(duracionSegundos);
+              }
+            }
+          }
+
+          // Lógica en VIVO para el Monitor Frontal
+          actualizarSiluetas(i, conteoActual);
+          conteosActuales[i] = conteoActual;
           
           if (!isInitialLoad) {
             updateLiveOverlay();
-            
-            // Si entra un nuevo evento mientras vemos el gráfico del día/hora actual, actualizarlo en vivo
             if (tabletActualEnGrafico === i) {
                updateChartDisplay(); 
             }
