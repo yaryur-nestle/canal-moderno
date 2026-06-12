@@ -19,8 +19,8 @@
 
         /* * ESTÉTICA DEL LIENZO BASE */
         body {
-            background-color: #ffffff;
-            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive, sans-serif;
+            background-color: #f4f4f9;
+            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -28,14 +28,14 @@
             overflow: hidden;
         }
 
-        /* * CONTENEDOR DEL MAPA */
+        /* * CONTENEDOR DEL MAPA (Sutil y sin estilo cómic) */
         #map-container {
             width: 90vw;
             height: 90vh;
             background-color: #ffffff;
-            border: 6px solid #000000;
-            border-radius: 20px;
-            box-shadow: 15px 15px 0px #000000;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             position: relative;
             z-index: 1;
             overflow: hidden; 
@@ -44,11 +44,10 @@
         #map {
             width: 100%;
             height: 100%;
-            border-radius: 14px; 
             background-color: transparent;
         }
 
-        /* * CAPA SUPERIOR (No interactiva) */
+        /* * CAPA SUPERIOR (Mantenemos si se necesita, pero sin estilo cómic) */
         #capa-superior {
             position: absolute;
             top: 0;
@@ -59,45 +58,41 @@
             pointer-events: none;
             user-select: none; 
             object-fit: cover; 
+            opacity: 0.1; /* Sutil */
         }
 
-        /* * DISEÑO DE LA GOTA DE UBICACIÓN (Adaptado a Highcharts) */
-        .comic-marker-pin {
+        /* * DISEÑO DE LA GOTA DE UBICACIÓN (Sutil, borde blanco fino, siempre visible) */
+        .custom-marker-pin {
             width: 32px;
             height: 32px;
             background-color: #ff2a2a; 
-            border: 4px solid #000000; 
+            border: 2px solid #ffffff; /* Borde sutil y limpio */
             border-radius: 50% 50% 50% 0; 
             transform: rotate(-45deg);
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             /* Centrar visualmente el punto de anclaje */
             top: -16px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         /* Círculo interior blanco */
-        .comic-marker-pin::after {
+        .custom-marker-pin::after {
             content: '';
             position: absolute;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             background-color: #ffffff;
-            border: 3px solid #000000;
+            border: 1px solid #ffffff;
             border-radius: 50%;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
         }
 
-        /* MICRO-INTERACCIONES (HOVER DEL PIN) */
-        .comic-marker-pin:hover {
-            transform: rotate(-45deg) scale(1.3);
-            background-color: #ffd700; 
-            z-index: 1000 !important;
-        }
+        /* No hay hover de escala o color en el pin para mantenerlo sutil */
 
-        /* * ESTILIZACIÓN DEL POPUP (Reemplaza a Leaflet Tooltip) */
+        /* * ESTILIZACIÓN DEL POPUP (Sutil, borde fino, sin estilo cómic) */
         .highcharts-tooltip-box {
             fill: none !important; /* Oculta la caja nativa de Highcharts */
             stroke: none !important;
@@ -105,11 +100,11 @@
 
         .custom-hc-popup {
             background-color: #ffffff;
-            border: 4px solid #000000;
-            border-radius: 15px;
-            color: #000000;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            color: #333333;
             font-family: inherit;
-            box-shadow: 8px 8px 0px #000000; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
             padding: 15px;
             text-align: center;
             pointer-events: auto; /* Permite hacer clic en los enlaces */
@@ -131,22 +126,22 @@
             width: 150px; 
             height: 150px; 
             object-fit: cover;
-            border: 4px solid #000000;
-            border-radius: 8px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 4px 4px 0px rgba(0,0,0,1);
+            border: 1px solid #e0e0e0; /* Borde fino */
+            border-radius: 6px;
+            transition: transform 0.1s ease;
+            box-shadow: none; /* Sin sombra gruesa */
             cursor: pointer;
         }
 
         .popup-images-grid img:hover {
-            transform: translateY(-4px); 
-            box-shadow: 6px 8px 0px rgba(0,0,0,1);
+            transform: translateY(-2px); /* Ligera microinteracción */
         }
 
         .popup-text-label {
             font-size: 18px; 
-            font-weight: 900;
-            text-transform: uppercase;
+            font-weight: 600;
+            color: #333333;
+            text-transform: none; /* Sin mayúsculas agresivas */
             white-space: nowrap;
             text-align: center; 
         }
@@ -166,7 +161,7 @@
             const retailNodes = [
                 { 
                     id: 1, sucursal: "Kromi Market", 
-                    lat: 10.2225, lon: -68.0160, /* Highcharts usa 'lon' en lugar de 'lng' */
+                    lat: 10.2225, lon: -68.0160,
                     images: [ { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Kromi_Market_Valencia.html" } ]
                 },
                 { 
@@ -207,13 +202,14 @@
                     backgroundColor: 'transparent'
                 },
                 title: { text: null },
-                credits: { enabled: false }, // Oculta el logo de Highcharts para un look más limpio
+                credits: { enabled: false }, // Oculta el logo de Highcharts
+                legend: { enabled: false }, // Oculta la leyenda
                 mapNavigation: {
                     enabled: true,
                     buttonOptions: { verticalAlign: 'bottom' }
                 },
                 
-                // Configuración de la ventana inteligente (Reemplaza al Popup de Leaflet)
+                // Configuración de la ventana inteligente (Tooltip sutil)
                 tooltip: {
                     useHTML: true,
                     padding: 0,
@@ -221,12 +217,12 @@
                     borderWidth: 0,
                     shadow: false,
                     distance: 20, // Distancia del popup respecto al pin
-                    stickOnContact: true, // ¡Clave! Permite que el mouse entre al popup para hacer click en las imágenes
+                    stickOnContact: true, // Permite interactuar con el popup
                     hideDelay: 300,
                     formatter: function() {
                         // Si el usuario pasa el mouse por un estado (fondo del mapa)
                         if (this.series.name === 'Estado') {
-                            return `<div style="background:#fff; padding:5px 10px; border:2px solid #000; border-radius:5px; font-family: 'Comic Sans MS';"><b>${this.point.name}</b></div>`;
+                            return null; // No mostrar nada para estados
                         }
 
                         // Si el usuario pasa el mouse por un PIN (Sucursal)
@@ -251,7 +247,7 @@
 
                 /* * 4. INYECCIÓN DEL ECOSISTEMA (Capas) */
                 series: [
-                    // Capa 1: Los estados de Venezuela
+                    // Capa 1: Los estados de Venezuela (Sin interactividad naranja)
                     {
                         data: baseData,
                         name: 'Estado',
@@ -259,15 +255,17 @@
                         borderColor: '#ffffff',
                         borderWidth: 1,
                         states: {
-                            hover: { color: '#f39c12' }
+                            hover: {
+                                enabled: false // Desactivar el color naranja de hover
+                            }
                         },
                         dataLabels: {
                             enabled: true,
                             format: '{point.name}',
-                            style: { fontSize: '10px', fontWeight: 'normal', textOutline: 'none' }
+                            style: { fontSize: '10px', fontWeight: 'normal', textOutline: 'none', color: '#666' }
                         }
                     },
-                    // Capa 2: Los marcadores de las sucursales (Tu diseño Comic)
+                    // Capa 2: Los marcadores de las sucursales (Sutil, siempre visibles, interactivos)
                     {
                         type: 'mappoint',
                         name: 'Sucursales',
@@ -282,8 +280,8 @@
                             enabled: true,
                             allowOverlap: true,
                             formatter: function() {
-                                // Aquí inyectamos el HTML de tu marcador
-                                return '<div class="comic-marker-pin"></div>';
+                                // Aquí inyectamos el HTML de tu marcador sutil
+                                return '<div class="custom-marker-pin"></div>';
                             }
                         }
                     }
