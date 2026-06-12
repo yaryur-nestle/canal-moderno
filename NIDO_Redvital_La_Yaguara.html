@@ -22,7 +22,7 @@
     .fullscreen-btn {
       position: absolute;
       top: 15px;
-      left: 15px; /* Modificado de right a left para la esquina superior izquierda */
+      left: 15px;
       width: 50px;
       height: 50px;
       background: rgba(255, 255, 255, 0.2);
@@ -63,12 +63,11 @@
       backface-visibility: hidden; 
     }
 
-    /* Lógica de interacciones táctiles segura */
     .front { pointer-events: auto; background-color: #ffffff; }
-    .back { pointer-events: none; } /* Desactivado mientras estamos en el frente */
+    .back { pointer-events: none; } 
     
-    .flip-container.flipped .front { pointer-events: none; } /* Desactivado al girar */
-    .flip-container.flipped .back { pointer-events: auto; } /* Activado al girar */
+    .flip-container.flipped .front { pointer-events: none; } 
+    .flip-container.flipped .back { pointer-events: auto; } 
 
     /* Imágenes */
     .base-img, .person-img {
@@ -78,7 +77,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover; 
-      pointer-events: none; /* Asegura que no tapen los clics de las zonas */
+      pointer-events: none; 
     }
 
     .person-img {
@@ -103,7 +102,84 @@
     .click-zone.center { left: 33.33%; }
     .click-zone.right { left: 66.66%; }
 
-    /* Cara trasera */
+    /* --- Interfaz Overlay EN VIVO --- */
+    .live-overlay {
+      position: absolute;
+      top: 50%;
+      left: 65%; /* Descentrado hacia la derecha */
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 100;
+      pointer-events: none; /* No interfiere con los clics de las zonas */
+    }
+
+    .en-vivo-badge {
+      color: #ff3333;
+      border: 3px solid #ff3333;
+      border-radius: 50px;
+      padding: 5px 25px;
+      font-weight: 900;
+      font-size: 1.8rem;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px #ff3333;
+      box-shadow: 0 0 10px #ff3333, inset 0 0 10px #ff3333;
+      animation: heartbeat 1.2s infinite;
+      margin-bottom: 10px;
+    }
+
+    @keyframes heartbeat {
+      0% { transform: scale(1); opacity: 1; }
+      15% { transform: scale(1.1); opacity: 0.8; }
+      30% { transform: scale(1); opacity: 1; }
+      45% { transform: scale(1.1); opacity: 0.8; }
+      70% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .live-count {
+      font-size: 4.5rem;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 0px;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+      text-transform: uppercase;
+    }
+
+    .live-timer {
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: #d4af37; /* Amarillo oscuro/dorado */
+      font-variant-numeric: tabular-nums;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+      transition: color 0.1s;
+    }
+
+    .live-timer.recorded {
+      color: #00ff00; /* Cambia a verde cuando se detiene */
+    }
+
+    .live-datetime {
+      font-size: 1.3rem;
+      color: #bbbbbb;
+      margin-top: 5px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+      font-weight: 600;
+    }
+
+    /* Animación de desaparición (guardado) */
+    .fade-out-up {
+      animation: fadeOutUp 0.5s forwards ease-in;
+    }
+
+    @keyframes fadeOutUp {
+      0% { opacity: 1; transform: translateY(-50%); }
+      100% { opacity: 0; transform: translateY(-70%); }
+    }
+
+
+    /* --- Cara trasera --- */
     .back {
       transform: rotateY(180deg); 
       background-color: #ffffff;
@@ -124,7 +200,6 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.1);
       border: 1px solid #e0e0e0;
       text-align: center;
-      /* Se eliminó pointer-events: none para permitir hover en el gráfico y clic en el texto */
     }
 
     h1 {
@@ -155,7 +230,7 @@
       font-size: 0.9rem;
       letter-spacing: 1px;
       animation: pulse 2s infinite;
-      cursor: pointer; /* Ahora este es el único botón para regresar */
+      cursor: pointer;
       padding: 10px 20px;
       display: inline-block;
       border-radius: 8px;
@@ -201,6 +276,13 @@
         <img src="3-3.png" class="person-img" id="img-3-3">
         <img src="3-4.png" class="person-img" id="img-3-4">
         <img src="3-5.png" class="person-img" id="img-3-5">
+
+        <div class="live-overlay" id="live-overlay" style="display: none;">
+          <div class="en-vivo-badge">EN VIVO</div>
+          <div class="live-count" id="live-count">1 persona</div>
+          <div class="live-timer" id="live-timer">0.000</div>
+          <div class="live-datetime" id="live-datetime">--</div>
+        </div>
 
         <div class="click-zone left" onclick="flipToChart(1)"></div>
         <div class="click-zone center" onclick="flipToChart(2)"></div>
@@ -257,7 +339,6 @@
     const startTimestamp = startOfHourDate.getTime();
     const labelsMinutos = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
 
-    // Títulos y colores actualizados
     const configTablets = {
       1: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 206, 86, 0.8)', colorBorder: 'rgb(255, 206, 86)', name: 'MUEBLE NIDO' },
       2: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(54, 162, 235, 0.8)', colorBorder: 'rgb(54, 162, 235)', name: 'MUEBLE MULTICATEGORÍA' },
@@ -268,7 +349,81 @@
     const dataHistogramas = { 1: new Array(60).fill(0), 2: new Array(60).fill(0), 3: new Array(60).fill(0) };
     let tabletActualEnGrafico = null; 
 
-    // --- CONFIGURACIÓN DEL TOOLTIP PERSONALIZADO ---
+    // --- VARIABLES DEL OVERLAY EN VIVO ---
+    let conteosActuales = { 1: 0, 2: 0, 3: 0 };
+    let isOverlayActive = false;
+    let overlayStartTime = 0;
+    let overlayTimerInterval = null;
+    let stopTimeout1 = null;
+    let stopTimeout2 = null;
+    
+    // Bandera para evitar que la carga masiva del historial dispare la interfaz de "EN VIVO"
+    let isInitialLoad = true;
+    setTimeout(() => { 
+      isInitialLoad = false; 
+      updateLiveOverlay(); // Revisa el estado real una vez estabilizado
+    }, 1500);
+
+    function renderTimer() {
+      const now = Date.now();
+      const diff = now - overlayStartTime;
+      const secs = Math.floor(diff / 1000);
+      const millis = diff % 1000;
+      
+      document.getElementById('live-timer').innerText = `${secs}.${millis.toString().padStart(3, '0')}`;
+      
+      const dateObj = new Date();
+      const dateString = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+      const timeString = dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('live-datetime').innerText = `${dateString} | ${timeString}`;
+    }
+
+    function updateLiveOverlay() {
+      const total = conteosActuales[1] + conteosActuales[2] + conteosActuales[3];
+      const overlayEl = document.getElementById('live-overlay');
+      const countEl = document.getElementById('live-count');
+      const timerEl = document.getElementById('live-timer');
+
+      if (total > 0) {
+        // Cancelar secuencias de apagado si las hay
+        clearTimeout(stopTimeout1);
+        clearTimeout(stopTimeout2);
+        
+        if (!isOverlayActive) {
+          isOverlayActive = true;
+          overlayEl.classList.remove('fade-out-up');
+          overlayEl.style.display = 'flex';
+          timerEl.classList.remove('recorded');
+          
+          overlayStartTime = Date.now();
+          overlayTimerInterval = setInterval(renderTimer, 47); // Refresco rápido para milisegundos fluidos
+        }
+        
+        countEl.innerText = total === 1 ? "1 persona" : `${total} personas`;
+        
+      } else {
+        if (isOverlayActive) {
+          isOverlayActive = false;
+          clearInterval(overlayTimerInterval);
+          
+          // Se vuelve verde el contador
+          timerEl.classList.add('recorded'); 
+          
+          // Secuencia de salida "Guardado"
+          stopTimeout1 = setTimeout(() => {
+            overlayEl.classList.add('fade-out-up'); // Inicia traslación hacia arriba
+            
+            stopTimeout2 = setTimeout(() => {
+              overlayEl.style.display = 'none';
+              overlayEl.classList.remove('fade-out-up');
+            }, 500); // Espera a que termine la animación
+            
+          }, 500); // Se mantiene medio segundo estático en verde
+        }
+      }
+    }
+
+
     const ctx = document.getElementById('main-chart').getContext('2d');
     const mainChart = new Chart(ctx, {
       type: 'bar',
@@ -291,10 +446,7 @@
           y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#eaeaea' } },
           x: { grid: { display: false } }
         },
-        interaction: {
-          mode: 'index',
-          intersect: false,
-        },
+        interaction: { mode: 'index', intersect: false },
         plugins: { 
           legend: { display: false },
           tooltip: {
@@ -309,7 +461,7 @@
                 let hr = currentHour;
                 const ampm = hr >= 12 ? 'pm' : 'am';
                 hr = hr % 12;
-                hr = hr ? hr : 12; // Formato 12 horas (la hora 0 es 12)
+                hr = hr ? hr : 12; 
                 return `${hr}:${minuto}${ampm}`;
               },
               label: function(context) {
@@ -326,7 +478,6 @@
     window.flipToChart = function(tabletId) {
       tabletActualEnGrafico = tabletId;
       
-      // Cálculo del formato de hora (ej. 8:00pm - 8:59pm)
       let hr = currentHour % 12;
       hr = hr ? hr : 12;
       const ampm = currentHour >= 12 ? 'pm' : 'am';
@@ -393,6 +544,12 @@
         if (data && data.timestamp && data.conteoActual !== undefined) {
           
           actualizarSiluetas(i, data.conteoActual);
+
+          // Actualiza el estado global de la tablet para el Overlay
+          conteosActuales[i] = data.conteoActual;
+          if (!isInitialLoad) {
+            updateLiveOverlay();
+          }
 
           const conteoAnterior = data.conteoAnterior || 0;
           if (data.conteoActual > conteoAnterior) {
