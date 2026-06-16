@@ -228,12 +228,13 @@
       const estado = snapshot.val();
       if(!estado) return;
 
-      // Lógica de Confeti Denso
+      // Lógica de Confeti Optimizado (Más grande, menos cantidad)
       if (estado.hayPersonas) {
         if (!confettiInterval) {
           confettiInterval = setInterval(() => {
             confetti({
-                particleCount: 150,
+                particleCount: 25,    // Menos cantidad por ráfaga
+                scalar: 2.5,         // Tamaño mucho más grande
                 angle: 90,
                 spread: 180,
                 origin: { x: Math.random(), y: -0.1 },
@@ -241,7 +242,7 @@
                 gravity: 1.2,
                 zIndex: 9999
             });
-          }, 250);
+          }, 400); // Intervalo más relajado
         }
       } else {
         clearInterval(confettiInterval);
