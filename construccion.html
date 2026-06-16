@@ -1,414 +1,756 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yar-Yur System - Monitor Interactivo</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #000000;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      overflow: hidden; 
-    }
-
-    /* --- Botón Pantalla Completa --- */
-    .fullscreen-btn {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      width: 50px;
-      height: 50px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 2px solid rgba(255, 255, 255, 0.5);
-      border-radius: 8px;
-      cursor: pointer;
-      z-index: 1000;
-      transition: background 0.3s;
-    }
-    .fullscreen-btn:hover { background: rgba(255, 255, 255, 0.5); }
-
-    /* --- Contenedor Principal (Efecto Flip 3D) --- */
-    .flip-container {
-      perspective: 1500px;
-      width: 100vw;
-      height: 100vh;
-    }
-
-    .flipper {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      transform-style: preserve-3d;
-      transition: transform 1s cubic-bezier(0.68, -0.15, 0.265, 1.15); 
-    }
-
-    .flip-container.flipped .flipper {
-      transform: rotateY(180deg);
-    }
-
-    /* Caras del interactivo */
-    .front, .back {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden; 
-    }
-
-    /* Lógica de interacciones táctiles segura */
-    .front { pointer-events: auto; background-color: #ffffff; }
-    .back { pointer-events: none; } /* Desactivado mientras estamos en el frente */
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yar-Yur System Canal Moderno Nestle</title>
     
-    .flip-container.flipped .front { pointer-events: none; } /* Desactivado al girar */
-    .flip-container.flipped .back { pointer-events: auto; } /* Activado al girar */
+    <script src="https://code.highcharts.com/maps/highmaps.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.1/proj4.js"></script>
+    <script src="https://code.highcharts.com/mapdata/countries/ve/ve-all.js"></script>
+    
+    <style>
+        /* * NORMALIZACIÓN Y ESTILIZACIÓN GLOBAL */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    /* Imágenes */
-    .base-img, .person-img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover; 
-      pointer-events: none; /* Asegura que no tapen los clics de las zonas */
-    }
+        body {
+            background-color: #f4f4f9;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-    .person-img {
-      opacity: 0;
-      transition: opacity 1.5s ease-in-out;
-    }
+        /* * CONTENEDOR PRINCIPAL */
+        #app-container {
+            width: 90vw;
+            height: 90vh;
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: relative; 
+            overflow: hidden; 
+            transition: width 0.3s, height 0.3s, border-radius 0.3s; /* Transición suave para pantalla completa */
+        }
 
-    .person-img.active {
-      opacity: 1;
-    }
+        /* Estilos cuando está en Pantalla Completa */
+        :fullscreen #app-container { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        :-webkit-full-screen #app-container { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        :-moz-full-screen #app-container { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        :-ms-fullscreen #app-container { width: 100vw; height: 100vh; border-radius: 0; border: none; }
 
-    /* Zonas interactivas frontales */
-    .click-zone {
-      position: absolute;
-      top: 0;
-      height: 100%;
-      width: 33.33%;
-      cursor: pointer;
-      z-index: 50;
-    }
-    .click-zone.left { left: 0; }
-    .click-zone.center { left: 33.33%; }
-    .click-zone.right { left: 66.66%; }
+        #map {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            position: relative;
+            z-index: 1;
+        }
 
-    /* Cara trasera */
-    .back {
-      transform: rotateY(180deg); 
-      background-color: #ffffff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-      box-sizing: border-box;
-    }
+        /* * CAPA SUPERIOR (Manejo dinámico de Opacidad) */
+        #capa-superior {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2; 
+            pointer-events: none; /* Crucial para no bloquear los clics al mapa */
+            user-select: none; 
+            object-fit: cover; 
+            opacity: 1; /* Inicia al 100% */
+            transition: opacity 0.4s ease-in-out; /* Transición suave al hacer zoom */
+        }
 
-    .back-content {
-      background: #f8f9fa;
-      padding: 40px;
-      border-radius: 20px;
-      width: 90%;
-      max-width: 1200px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-      border: 1px solid #e0e0e0;
-      text-align: center;
-      /* Se eliminó pointer-events: none para permitir hover en el gráfico y clic en el texto */
-    }
+        /* * BOTÓN DE HAMBURGUESA / FLECHA */
+        #hamburger-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 32px;
+            height: 22px;
+            cursor: pointer;
+            z-index: 10002; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: none;
+            border: none;
+            padding: 0;
+        }
 
-    h1 {
-      color: #111;
-      letter-spacing: 3px;
-      margin-top: 0;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      font-weight: 800;
-    }
+        #hamburger-btn span {
+            display: block;
+            height: 3px;
+            width: 100%;
+            background-color: #b39c6e; 
+            border-radius: 3px;
+            transition: all 0.3s ease-in-out;
+            transform-origin: right center;
+        }
 
-    .subtitle {
-      color: #666;
-      margin-bottom: 30px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
+        #hamburger-btn.open span:nth-child(1) {
+            transform: rotate(-45deg) translateY(-2px);
+            width: 16px;
+        }
+        #hamburger-btn.open span:nth-child(2) {
+            transform: scaleX(1); 
+        }
+        #hamburger-btn.open span:nth-child(3) {
+            transform: rotate(45deg) translateY(2px);
+            width: 16px;
+        }
 
-    .chart-container {
-      position: relative;
-      height: 50vh;
-      width: 100%;
-    }
+        /* * BOTÓN DE PANTALLA COMPLETA */
+        #fullscreen-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 44px;
+            height: 44px;
+            background-color: #ffffff;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 10002;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
 
-    .hint {
-      margin-top: 30px;
-      color: #888;
-      font-size: 0.9rem;
-      letter-spacing: 1px;
-      animation: pulse 2s infinite;
-      cursor: pointer; /* Ahora este es el único botón para regresar */
-      padding: 10px 20px;
-      display: inline-block;
-      border-radius: 8px;
-      transition: background-color 0.3s, color 0.3s;
-    }
+        #fullscreen-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            border-color: #b39c6e;
+        }
 
-    .hint:hover {
-      background-color: rgba(0,0,0,0.05);
-      color: #333;
-    }
+        /* * PANELES LATERALES */
+        .side-panel {
+            position: absolute;
+            top: 0;
+            right: -350px; 
+            width: 320px;
+            height: 100%;
+            background-color: #ffffff;
+            box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+            z-index: 10000; 
+            transition: right 0.3s ease-in-out; 
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            padding-top: 60px; 
+            overflow-y: auto;
+        }
 
-    @keyframes pulse {
-      0% { opacity: 0.6; }
-      50% { opacity: 1; }
-      100% { opacity: 0.6; }
-    }
-  </style>
+        .side-panel.active { right: 0; }
+
+        /* * PANEL DE INFORMACIÓN (Puntos Rojos) */
+        #close-info-btn {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #999999;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        #close-info-btn:hover { color: #ff2a2a; }
+
+        .panel-header {
+            text-align: center;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        #panel-subtitle {
+            font-size: 18px;
+            font-weight: 900; 
+            color: #daccaa; 
+            letter-spacing: 0.5px;
+            margin-bottom: 15px; 
+            text-transform: uppercase;
+        }
+
+        #panel-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333333;
+        }
+
+        .panel-images-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .panel-images-container a { display: block; text-decoration: none; width: 100%; text-align: center; }
+
+        .panel-images-container img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .panel-images-container img:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .panel-footer-logo {
+            margin-top: auto; 
+            padding-top: 25px;
+            text-align: center;
+        }
+
+        #panel-logo-img { max-width: 180px; max-height: 80px; object-fit: contain; }
+
+        /* * PANEL DE MENÚ (Hamburguesa / Filtros) */
+        .accordion-btn {
+            background: none;
+            border: none;
+            border-bottom: 2px solid #f0f0f0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #daccaa; 
+            width: 100%;
+            text-align: left;
+            padding: 15px 5px;
+            cursor: pointer;
+            outline: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+        .accordion-btn:hover { color: #b39c6e; }
+
+        .accordion-content {
+            display: none; 
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px 0;
+        }
+
+        .accordion-content.open { display: flex; }
+
+        /* Contenedor del Botón + Lista Dinámica */
+        .filter-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .filter-img-btn {
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #fcfcfc;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .filter-img-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgba(0,0,0,0.1); }
+        .filter-img-btn.active-filter { border-color: #b39c6e; background-color: #fdfbf7; }
+
+        /* Estilo Cuadrado Especial para Marcas */
+        .marca-btn {
+            aspect-ratio: 1 / 1;
+            width: 180px;
+            margin: 0 auto; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .marca-btn img { max-width: 90%; max-height: 90%; object-fit: contain; }
+
+        /* Estilo Rectangular para Sucursales */
+        .sucursal-btn { text-align: center; }
+        .sucursal-btn img { max-width: 100%; height: 60px; object-fit: contain; }
+
+        /* * LISTA DE RESULTADOS DINÁMICOS */
+        .filter-results {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px 10px;
+            background-color: #fafafa;
+            border-radius: 8px;
+            border-left: 4px solid #daccaa;
+            margin-top: 10px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .filter-results.active { display: flex; }
+
+        .filter-results a {
+            color: #daccaa;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+            display: block;
+            padding: 4px 0;
+        }
+
+        .filter-results a:hover { color: #b39c6e; text-decoration: underline; }
+
+    </style>
 </head>
 <body>
 
-  <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
-
-  <div class="flip-container" id="flip-container">
-    <div class="flipper">
-      
-      <div class="front">
-        <img src="fondo.jpg" class="base-img" alt="Exhibidores Yar-Yur">
+    <div id="app-container">
+        <div id="map"></div>
+        <img src="CAPA.png" id="capa-superior" alt="Capa Decorativa Superior">
         
-        <img src="1-1.png" class="person-img" id="img-1-1">
-        <img src="1-2.png" class="person-img" id="img-1-2">
-        <img src="1-3.png" class="person-img" id="img-1-3">
-        <img src="1-4.png" class="person-img" id="img-1-4">
-        <img src="1-5.png" class="person-img" id="img-1-5">
+        <button id="hamburger-btn">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
 
-        <img src="2-1.png" class="person-img" id="img-2-1">
-        <img src="2-2.png" class="person-img" id="img-2-2">
-        <img src="2-3.png" class="person-img" id="img-2-3">
-        <img src="2-4.png" class="person-img" id="img-2-4">
-        <img src="2-5.png" class="person-img" id="img-2-5">
+        <button id="fullscreen-btn" title="Pantalla Completa">
+            <!-- Icono Entrar a Pantalla Completa -->
+            <svg id="icon-enter-fs" viewBox="0 0 24 24" width="22" height="22" stroke="#b39c6e" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+            </svg>
+            <!-- Icono Salir de Pantalla Completa -->
+            <svg id="icon-exit-fs" viewBox="0 0 24 24" width="22" height="22" stroke="#b39c6e" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+            </svg>
+        </button>
 
-        <img src="3-1.png" class="person-img" id="img-3-1">
-        <img src="3-2.png" class="person-img" id="img-3-2">
-        <img src="3-3.png" class="person-img" id="img-3-3">
-        <img src="3-4.png" class="person-img" id="img-3-4">
-        <img src="3-5.png" class="person-img" id="img-3-5">
+        <div id="nav-panel" class="side-panel">
+            <h2 style="color: #333; margin-bottom: 20px; font-size: 22px;">Filtros de Búsqueda</h2>
+            
+            <div class="accordion-item">
+                <button class="accordion-btn">Marcas <span>+</span></button>
+                <div class="accordion-content">
+                    
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn marca-btn" data-type="marca" data-val="NIDO.png">
+                            <img src="NIDO.png" alt="NIDO">
+                        </div>
+                        <div class="filter-results"></div>
+                    </div>
 
-        <div class="click-zone left" onclick="flipToChart(1)"></div>
-        <div class="click-zone center" onclick="flipToChart(2)"></div>
-        <div class="click-zone right" onclick="flipToChart(3)"></div>
-      </div>
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn marca-btn" data-type="marca" data-val="RECETAS.png">
+                            <img src="RECETAS.png" alt="RECETAS">
+                        </div>
+                        <div class="filter-results"></div>
+                    </div>
 
-      <div class="back">
-        <div class="back-content">
-          <h1 id="chart-title">YAR-YUR SYSTEM</h1>
-          <div id="chart-subtitle" class="subtitle">Tráfico de personas</div>
-          <div class="chart-container">
-            <canvas id="main-chart"></canvas>
-          </div>
-          <div class="hint" onclick="flipToFront()">Toca aquí para volver al exhibidor interactivo</div>
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn marca-btn" data-type="marca" data-val="MULTIMARCA.png">
+                            <img src="MULTIMARCA.png" alt="Multimarca">
+                        </div>
+                        <div class="filter-results"></div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-btn">Sucursales <span>+</span></button>
+                <div class="accordion-content">
+                    
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-REDVITAL.jpg">
+                            <img src="logo-REDVITAL.jpg" alt="REDVITAL">
+                        </div>
+                        <div class="filter-results"></div>
+                    </div>
+
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-LUXOR.jpg">
+                            <img src="logo-LUXOR.jpg" alt="LUXOR">
+                        </div>
+                        <div class="filter-results"></div>
+                    </div>
+
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-KROMI.jpg">
+                            <img src="logo-KROMI.jpg" alt="KROMI">
+                        </div>
+                        <div class="filter-results"></div>
+                    </div>
+
+                    <div class="filter-wrapper">
+                        <div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-GARZON.jpg">
+                            <img src="logo-GARZON.jpg" alt="Garzón">
+                        </div>
+                        <div class="filter-results"></div>
+                    </div>
+
+                </div>
+            </div>
         </div>
-      </div>
+
+        <div id="info-panel" class="side-panel">
+            <button id="close-info-btn">&times;</button>
+            <div class="panel-header">
+                <div id="panel-subtitle">ESTADO</div>
+                <h2 id="panel-title">Nombre Sucursal</h2>
+            </div>
+            <div id="panel-images" class="panel-images-container"></div>
+            <div class="panel-footer-logo">
+                <img id="panel-logo-img" src="" alt="Logo Aliado">
+            </div>
+        </div>
 
     </div>
-  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, onValue, query, orderByChild, startAt, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
-      authDomain: "canal-moderno-2655e.firebaseapp.com",
-      databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
-      projectId: "canal-moderno-2655e",
-      storageBucket: "canal-moderno-2655e.firebasestorage.app",
-      messagingSenderId: "947512040134",
-      appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    document.getElementById('fullscreen-btn').addEventListener('click', () => {
-      const elem = document.documentElement;
-      if (!document.fullscreenElement) {
-        elem.requestFullscreen?.() || elem.webkitRequestFullscreen?.() || elem.msRequestFullscreen?.();
-      } else {
-        document.exitFullscreen?.() || document.webkitExitFullscreen?.() || document.msExitFullscreen?.();
-      }
-    });
-
-    const currentHour = new Date().getHours();
-    setInterval(() => {
-      if (new Date().getHours() !== currentHour) location.reload(); 
-    }, 60000);
-
-    const startOfHourDate = new Date();
-    startOfHourDate.setMinutes(0, 0, 0);
-    const startTimestamp = startOfHourDate.getTime();
-    const labelsMinutos = Array.from({length: 60}, (_, i) => i.toString().padStart(2, '0'));
-
-    // Títulos y colores actualizados
-    const configTablets = {
-      1: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 206, 86, 0.8)', colorBorder: 'rgb(255, 206, 86)', name: 'MUEBLE NIDO' },
-      2: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(54, 162, 235, 0.8)', colorBorder: 'rgb(54, 162, 235)', name: 'MUEBLE MULTICATEGORÍA' },
-      3: { ids: [1, 2, 3, 4, 5], colorBg: 'rgba(255, 99, 132, 0.8)', colorBorder: 'rgb(255, 99, 132)', name: 'MUEBLE RECETAS' }
-    };
-
-    const estadoVisual = { 1: [], 2: [], 3: [] }; 
-    const dataHistogramas = { 1: new Array(60).fill(0), 2: new Array(60).fill(0), 3: new Array(60).fill(0) };
-    let tabletActualEnGrafico = null; 
-
-    // --- CONFIGURACIÓN DEL TOOLTIP PERSONALIZADO ---
-    const ctx = document.getElementById('main-chart').getContext('2d');
-    const mainChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labelsMinutos,
-        datasets: [{
-          label: 'Personas',
-          data: [],
-          backgroundColor: '#000',
-          borderColor: '#000',
-          borderWidth: 1,
-          borderRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 500, easing: 'easeOutQuart' },
-        scales: {
-          y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#eaeaea' } },
-          x: { grid: { display: false } }
-        },
-        interaction: {
-          mode: 'index',
-          intersect: false,
-        },
-        plugins: { 
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            titleFont: { size: 16, family: "'Segoe UI', sans-serif" },
-            bodyFont: { size: 14, family: "'Segoe UI', sans-serif" },
-            padding: 12,
-            displayColors: false,
-            callbacks: {
-              title: function(context) {
-                const minuto = context[0].label;
-                let hr = currentHour;
-                const ampm = hr >= 12 ? 'pm' : 'am';
-                hr = hr % 12;
-                hr = hr ? hr : 12; // Formato 12 horas (la hora 0 es 12)
-                return `${hr}:${minuto}${ampm}`;
-              },
-              label: function(context) {
-                const cantidad = context.raw;
-                if(cantidad === 1) return cantidad + ' persona';
-                return cantidad + ' personas';
-              }
-            }
-          }
-        }
-      }
-    });
-
-    window.flipToChart = function(tabletId) {
-      tabletActualEnGrafico = tabletId;
-      
-      // Cálculo del formato de hora (ej. 8:00pm - 8:59pm)
-      let hr = currentHour % 12;
-      hr = hr ? hr : 12;
-      const ampm = currentHour >= 12 ? 'pm' : 'am';
-      const formatTime = `${hr}:00${ampm} - ${hr}:59${ampm}`;
-      
-      document.getElementById('chart-title').innerText = configTablets[tabletId].name;
-      document.getElementById('chart-subtitle').innerText = `Hora: ${formatTime}`;
-      
-      mainChart.data.datasets[0].data = dataHistogramas[tabletId];
-      mainChart.data.datasets[0].backgroundColor = configTablets[tabletId].colorBg;
-      mainChart.data.datasets[0].borderColor = configTablets[tabletId].colorBorder;
-      mainChart.update();
-
-      document.getElementById('flip-container').classList.add('flipped');
-    }
-
-    window.flipToFront = function() {
-      document.getElementById('flip-container').classList.remove('flipped');
-      tabletActualEnGrafico = null;
-    }
-
-    function actualizarSiluetas(tabletId, nuevoConteo) {
-      const objetivo = Math.min(nuevoConteo, 5); 
-      let activasActuales = estadoVisual[tabletId];
-
-      if (objetivo > activasActuales.length) {
-        const cantidadAEncender = objetivo - activasActuales.length;
-        let inactivas = configTablets[tabletId].ids.filter(id => !activasActuales.includes(id));
-        inactivas = inactivas.sort(() => Math.random() - 0.5);
-
-        for (let j = 0; j < cantidadAEncender; j++) {
-          const imgId = inactivas[j];
-          if (imgId) {
-            document.getElementById(`img-${tabletId}-${imgId}`).classList.add('active');
-            activasActuales.push(imgId);
-          }
-        }
-      } else if (objetivo < activasActuales.length) {
-        const cantidadAApagar = activasActuales.length - objetivo;
-        activasActuales = activasActuales.sort(() => Math.random() - 0.5);
-        const paraApagar = activasActuales.splice(0, cantidadAApagar); 
-        
-        for (let j = 0; j < paraApagar.length; j++) {
-          const imgId = paraApagar[j];
-          document.getElementById(`img-${tabletId}-${imgId}`).classList.remove('active');
-        }
-      }
-      
-      estadoVisual[tabletId] = activasActuales; 
-    }
-
-    for (let i = 1; i <= 3; i++) {
-      const numFormat = i.toString().padStart(2, '0'); 
-      
-      const eventosQuery = query(
-        ref(db, `muebles/tablet_${numFormat}/eventos`), 
-        orderByChild('timestamp'), 
-        startAt(startTimestamp)
-      );
-
-      onChildAdded(eventosQuery, (snapshot) => {
-        const data = snapshot.val();
-        
-        if (data && data.timestamp && data.conteoActual !== undefined) {
-          
-          actualizarSiluetas(i, data.conteoActual);
-
-          const conteoAnterior = data.conteoAnterior || 0;
-          if (data.conteoActual > conteoAnterior) {
-            const eventDate = new Date(data.timestamp);
-            const minutoDelEvento = eventDate.getMinutes();
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
             
-            const nuevasDetecciones = data.conteoActual - conteoAnterior;
-            dataHistogramas[i][minutoDelEvento] += nuevasDetecciones;
-            
-            if (tabletActualEnGrafico === i) {
-              mainChart.update(); 
+            let chartInstance = null;
+            const navPanel = document.getElementById('nav-panel');
+            const infoPanel = document.getElementById('info-panel');
+            const hamburgerBtn = document.getElementById('hamburger-btn');
+            const closeInfoBtn = document.getElementById('close-info-btn');
+
+            /* * DATOS DE LOS NODOS */
+            const retailNodes = [
+                { 
+                    id: 1, sucursal: "Kromi Market", 
+                    estadoNombre: "Carabobo", estadoId: "ve-ca", 
+                    lat: 10.2225, lon: -68.0160, logo: "logo-KROMI.jpg",
+                    images: [ { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Kromi_Market_Valencia.html" } ]
+                },
+                { 
+                    id: 2, sucursal: "Redvital San Diego", 
+                    estadoNombre: "Carabobo", estadoId: "ve-ca",
+                    lat: 10.2540, lon: -67.9510, logo: "logo-REDVITAL.jpg",
+                    images: [ { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Redvital_San_Diego_Valencia.html" } ]
+                },
+                { 
+                    id: 3, sucursal: "Redvital La Yaguara", 
+                    estadoNombre: "Distrito Capital", estadoId: "ve-df",
+                    lat: 10.4772, lon: -66.9597, logo: "logo-REDVITAL.jpg",
+                    images: [
+                        { src: "NIDO.png", link: "https://yaryur-nestle.github.io/canal-moderno/NIDO_Redvital_La_Yaguara.html" },
+                        { src: "RECETAS.png", link: "https://yaryur-nestle.github.io/canal-moderno/RECETAS_Redvital_La_Yaguara.html" }
+                    ]
+                },
+                { 
+                    id: 4, sucursal: "Garzón Hiperahorro", 
+                    estadoNombre: "Táchira", estadoId: "ve-ta",
+                    lat: 7.7669, lon: -72.2250, logo: "logo-GARZON.jpg",
+                    images: [ { src: "MULTIMARCA.png", link: "https://yaryur-nestle.github.io/canal-moderno/MULTIMARCA_Garzon_Hiperahorro_San_Cristobal.html" } ]
+                },
+                { 
+                    id: 5, sucursal: "Luxor Círculo Militar", 
+                    estadoNombre: "Aragua", estadoId: "ve-ar",
+                    lat: 10.2670, lon: -67.5950, logo: "logo-LUXOR.jpg",
+                    images: [ { src: "MULTIMARCA.png", link: "https://yaryur-nestle.github.io/canal-moderno/MULTIMARCA_Luxor_Circulo_Militar_Maracay.html" } ]
+                }
+            ];
+
+            /* * ILUMINAR ESTADOS EN EL MAPA */
+            function iluminarEstados(arrayDeEstadosActivos) {
+                if (!chartInstance) return;
+                const stateSeries = chartInstance.get('capa-estados');
+                if (stateSeries) {
+                    stateSeries.points.forEach(p => {
+                        if (arrayDeEstadosActivos.length === 0) {
+                            p.update({ color: '#daccaa', opacity: 1, borderWidth: 1, borderColor: '#ffffff' }, false);
+                        } else {
+                            if (arrayDeEstadosActivos.includes(p['hc-key'])) {
+                                p.update({ color: '#b39c6e', opacity: 1, borderWidth: 3, borderColor: '#000000' }, false);
+                            } else {
+                                p.update({ color: '#daccaa', opacity: 0.1, borderWidth: 1, borderColor: '#ffffff' }, false);
+                            }
+                        }
+                    });
+                    chartInstance.redraw();
+                }
             }
-          }
-        }
-      });
-    }
-  </script>
+
+            /* * LÓGICA PANELES */
+            function abrirMenuFiltros() {
+                infoPanel.classList.remove('active'); 
+                navPanel.classList.add('active');
+                hamburgerBtn.style.display = 'flex'; 
+                hamburgerBtn.classList.add('open');
+            }
+
+            function cerrarPanelesYResetear() {
+                navPanel.classList.remove('active');
+                infoPanel.classList.remove('active');
+                hamburgerBtn.classList.remove('open');
+                
+                hamburgerBtn.style.display = 'flex'; 
+                
+                document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
+                document.querySelectorAll('.filter-results').forEach(r => {
+                    r.classList.remove('active');
+                    r.innerHTML = '';
+                });
+                
+                iluminarEstados([]);
+            }
+
+            function abrirPanelInfo(sucursal, images, estadoNombre, logo) {
+                navPanel.classList.remove('active');
+                hamburgerBtn.classList.remove('open');
+                
+                hamburgerBtn.style.display = 'none'; 
+
+                document.getElementById('panel-subtitle').textContent = estadoNombre;
+                document.getElementById('panel-title').textContent = sucursal;
+                document.getElementById('panel-logo-img').src = logo; 
+                
+                const panelImages = document.getElementById('panel-images');
+                panelImages.innerHTML = ''; 
+                images.forEach(img => {
+                    const enlace = document.createElement('a');
+                    enlace.href = img.link;
+                    enlace.target = "_blank"; 
+                    const imagen = document.createElement('img');
+                    imagen.src = img.src;
+                    enlace.appendChild(imagen);
+                    panelImages.appendChild(enlace);
+                });
+
+                infoPanel.classList.add('active');
+            }
+
+            hamburgerBtn.addEventListener('click', () => {
+                if (hamburgerBtn.classList.contains('open')) {
+                    cerrarPanelesYResetear(); 
+                } else {
+                    abrirMenuFiltros(); 
+                }
+            });
+
+            closeInfoBtn.addEventListener('click', cerrarPanelesYResetear);
+
+            /* * LÓGICA ACORDEÓN ÚNICO */
+            document.querySelectorAll('.accordion-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const span = this.querySelector('span');
+                    const isOpen = content.classList.contains('open');
+
+                    document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
+                    document.querySelectorAll('.accordion-btn span').forEach(s => s.textContent = '+');
+
+                    if (!isOpen) {
+                        content.classList.add('open');
+                        span.textContent = '-';
+                    }
+                });
+            });
+
+            /* * FILTRADO DINÁMICO + LISTA DE LINKS */
+            document.querySelectorAll('.filter-img-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    
+                    document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
+                    document.querySelectorAll('.filter-results').forEach(r => {
+                        r.classList.remove('active');
+                        r.innerHTML = ''; 
+                    });
+
+                    this.classList.add('active-filter');
+                    
+                    const type = this.getAttribute('data-type'); 
+                    const val = this.getAttribute('data-val');   
+                    const resultsContainer = this.nextElementSibling; 
+                    
+                    let estadosAEncender = new Set(); 
+                    let matchingLinks = []; 
+
+                    retailNodes.forEach(node => {
+                        if (type === 'marca') {
+                            const matchedImg = node.images.find(img => img.src === val);
+                            if (matchedImg) {
+                                estadosAEncender.add(node.estadoId);
+                                matchingLinks.push({ title: node.sucursal, link: matchedImg.link });
+                            }
+                        } else if (type === 'sucursal') {
+                            if (node.logo === val) {
+                                estadosAEncender.add(node.estadoId);
+                                node.images.forEach(img => {
+                                    let brandName = img.src.replace('.png', '').replace('.jpg', '');
+                                    matchingLinks.push({ title: `${node.sucursal} (${brandName})`, link: img.link });
+                                });
+                            }
+                        }
+                    });
+
+                    matchingLinks.forEach(item => {
+                        const a = document.createElement('a');
+                        a.href = item.link;
+                        a.target = '_blank';
+                        a.innerHTML = `&bull; ${item.title}`;
+                        resultsContainer.appendChild(a);
+                    });
+
+                    if (matchingLinks.length > 0) {
+                        resultsContainer.classList.add('active'); 
+                    }
+
+                    iluminarEstados(Array.from(estadosAEncender));
+                });
+            });
+
+
+            /* * LÓGICA DE PANTALLA COMPLETA */
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const iconEnter = document.getElementById('icon-enter-fs');
+            const iconExit = document.getElementById('icon-exit-fs');
+
+            fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.warn(`No se pudo activar el modo pantalla completa: ${err.message}`);
+                    });
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+
+            document.addEventListener('fullscreenchange', () => {
+                if (document.fullscreenElement) {
+                    iconEnter.style.display = 'none';
+                    iconExit.style.display = 'block';
+                    fullscreenBtn.title = "Salir de Pantalla Completa";
+                } else {
+                    iconEnter.style.display = 'block';
+                    iconExit.style.display = 'none';
+                    fullscreenBtn.title = "Pantalla Completa";
+                }
+                
+                // Forzar el redibujado de Highcharts para que llene el nuevo espacio de pantalla
+                if (chartInstance) {
+                    setTimeout(() => chartInstance.reflow(), 150);
+                }
+            });
+
+
+            /* * MAPA DE HIGHCHARTS */
+            const mapData = Highcharts.maps['countries/ve/ve-all'];
+            const baseData = mapData.features.map(function(feature, index) {
+                return [feature.properties['hc-key'], index];
+            });
+
+            chartInstance = Highcharts.mapChart('map', {
+                chart: {
+                    map: 'countries/ve/ve-all',
+                    backgroundColor: 'transparent',
+                    events: {
+                        click: function () { cerrarPanelesYResetear(); }
+                    }
+                },
+                title: { text: null },
+                credits: { enabled: false },
+                legend: { enabled: false },
+                mapNavigation: {
+                    enabled: true,
+                    buttonOptions: { verticalAlign: 'bottom' }
+                },
+
+                /* *** EVENTO: SENSOR DE ZOOM PARA LA CAPA SUPERIOR *** */
+                xAxis: {
+                    events: {
+                        afterSetExtremes: function (e) {
+                            const capa = document.getElementById('capa-superior');
+                            // Comparamos el rango de zoom actual con los extremos totales del mapa
+                            if (e.min !== undefined && e.dataMin !== undefined) {
+                                const rangoActual = e.max - e.min;
+                                const rangoTotal = e.dataMax - e.dataMin;
+                                // Si el encuadre es menor al 99% del país, estamos haciendo zoom
+                                if (rangoActual < rangoTotal * 0.99) {
+                                    capa.style.opacity = '0.1'; // Clarita al hacer zoom
+                                } else {
+                                    capa.style.opacity = '1';   // 100% al restablecer
+                                }
+                            } else {
+                                capa.style.opacity = '1';
+                            }
+                        }
+                    }
+                },
+                
+                plotOptions: {
+                    series: {
+                        states: { inactive: { opacity: 1 } },
+                        point: {
+                            events: {
+                                click: function () {
+                                    if (this.options && this.options.images) {
+                                        abrirPanelInfo(
+                                            this.options.sucursal, 
+                                            this.options.images, 
+                                            this.options.estadoNombre,
+                                            this.options.logo
+                                        );
+                                        iluminarEstados([this.options.estadoId]);
+                                    } else {
+                                        cerrarPanelesYResetear();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                
+                tooltip: { enabled: false },
+
+                series: [
+                    {
+                        id: 'capa-estados',
+                        data: baseData,
+                        name: 'Estado',
+                        color: '#daccaa',
+                        borderColor: '#ffffff',
+                        borderWidth: 1,
+                        states: { hover: { enabled: false } },
+                        dataLabels: {
+                            enabled: false // Etiquetas de estados ocultas
+                        }
+                    },
+                    {
+                        type: 'mappoint',
+                        name: 'Sucursales',
+                        data: retailNodes,
+                        cursor: 'pointer',
+                        marker: {
+                            symbol: 'circle',
+                            radius: 8,
+                            fillColor: '#ff2a2a',
+                            lineColor: '#ffffff',
+                            lineWidth: 2,
+                            states: { hover: { radius: 12, fillColor: '#ff2a2a' } }
+                        }
+                    }
+                ]
+            });
+        });
+    </script>
 </body>
 </html>
