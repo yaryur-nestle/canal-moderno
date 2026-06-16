@@ -3,51 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TABLET 03</title>
+  <title>TABLET 03 - Sincronizada</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
     
     /* === ESTILOS DEL LOGIN === */
-    #login-screen {
-      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: #000; z-index: 1000;
-      display: flex; justify-content: center; align-items: center;
-    }
-    .login-box {
-      border: 1px solid #00FFFF; padding: 40px; background: rgba(0, 255, 255, 0.05);
-      text-align: center; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-      border-radius: 8px; backdrop-filter: blur(10px); width: 300px;
-    }
+    #login-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1000; display: flex; justify-content: center; align-items: center; }
+    .login-box { border: 1px solid #00FFFF; padding: 40px; background: rgba(0, 255, 255, 0.05); text-align: center; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); border-radius: 8px; backdrop-filter: blur(10px); width: 300px; }
     .login-box h2 { color: #00FFFF; margin-top: 0; margin-bottom: 25px; text-shadow: 0 0 5px #00FFFF; letter-spacing: 2px; }
-    .login-box input {
-      display: block; width: 100%; box-sizing: border-box; margin-bottom: 15px;
-      padding: 12px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00FFFF;
-      color: #00FFFF; font-family: inherit; font-size: 1rem; text-align: center;
-    }
+    .login-box input { display: block; width: 100%; box-sizing: border-box; margin-bottom: 15px; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00FFFF; color: #00FFFF; font-family: inherit; font-size: 1rem; text-align: center; }
     .login-box input:focus { outline: none; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); background: rgba(0, 255, 255, 0.1); }
-    .login-box button {
-      background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF;
-      padding: 12px 20px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1rem;
-      width: 100%; transition: all 0.3s; letter-spacing: 1px;
-    }
+    .login-box button { background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; padding: 12px 20px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1rem; width: 100%; transition: all 0.3s; letter-spacing: 1px; }
     .login-box button:hover { background: #00FFFF; color: #000; box-shadow: 0 0 15px #00FFFF; }
     .error-msg { color: #FF0055; margin-top: 15px; font-size: 0.85rem; display: none; text-shadow: 0 0 5px #FF0055; }
 
     /* === ESTILOS DE LA APLICACIÓN === */
-    .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; display: none; } /* Oculto por defecto */
-    
-    .fullscreen-btn {
-      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-      z-index: 100; width: 150px; height: 80px; background: transparent;
-      border: none; outline: none; cursor: pointer;
-    }
-    
-    .logout-btn {
-      position: absolute; top: 20px; right: 20px; z-index: 100;
-      background: rgba(255, 0, 85, 0.15); border: 1px solid #FF0055; color: #FF0055;
-      padding: 8px 15px; cursor: pointer; font-family: inherit; border-radius: 4px;
-      transition: all 0.3s; backdrop-filter: blur(5px);
-    }
+    .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; display: none; }
+    .fullscreen-btn { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 100; width: 150px; height: 80px; background: transparent; border: none; outline: none; cursor: pointer; }
+    .logout-btn { position: absolute; top: 20px; right: 20px; z-index: 100; background: rgba(255, 0, 85, 0.15); border: 1px solid #FF0055; color: #FF0055; padding: 8px 15px; cursor: pointer; font-family: inherit; border-radius: 4px; transition: all 0.3s; backdrop-filter: blur(5px); }
     .logout-btn:hover { background: #FF0055; color: #000; box-shadow: 0 0 10px #FF0055; }
 
     .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
@@ -56,15 +30,23 @@
     
     .face-front { background-image: url('TABLET 03.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
     .face-back { transform: rotateY(180deg); }
-    
-    .flip-btn { 
-      position: absolute; bottom: 12%; right: 5%; z-index: 50; 
-      background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; 
-      width: 50px; height: 50px; border-radius: 50%; cursor: pointer; 
-      display: flex; justify-content: center; align-items: center; 
-      backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); 
-      transition: all 0.3s ease; opacity: 0; pointer-events: none; 
+
+    /* Capa superpuesta para la receta al 75% */
+    #overlayReceta {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        display: none; /* Oculto por defecto */
+        justify-content: center;
+        align-items: center;
+        z-index: 50; /* Por encima del fondo, por debajo de botones full screen si aplican */
     }
+    #imgReceta { max-width: 75%; max-height: 75%; object-fit: contain; }
+    
+    .flip-btn { position: absolute; bottom: 12%; right: 5%; z-index: 50; background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.3s ease; opacity: 0; pointer-events: none; }
     .card.is-flipped ~ .flip-btn { opacity: 1; pointer-events: auto; }
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
     
@@ -72,7 +54,7 @@
     canvas { z-index: 10; }
     .panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
     .left { top: 0; left: 0; }
-    .right { top: 0; right: 0; align-items: flex-end; margin-top: 50px; } /* Margen para botón logout */
+    .right { top: 0; right: 0; align-items: flex-end; margin-top: 50px; }
     .counter-box { padding: 10px 20px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; backdrop-filter: blur(8px); border: 1px solid; min-width: 150px; text-shadow: 0 0 5px currentColor; }
     #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
     #total-counter { background: rgba(0, 255, 255, 0.15); color: #00FFFF; border-color: #00FFFF; }
@@ -99,13 +81,14 @@
   </div>
 
   <div id="app-screen" class="scene">
-    
     <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
     <button id="logout-btn" class="logout-btn" title="Cerrar Sesión">DESCONECTAR</button>
 
     <div id="card" class="card">
       <div class="face face-front">
-        <video id="front-video" src="video.mp4" playsinline preload="metadata" style="display: none; width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 5; transform: scaleX(1);"></video>
+        <div id="overlayReceta">
+            <img id="imgReceta" src="" alt="Receta">
+        </div>
       </div>
       
       <div class="face face-back">
@@ -149,28 +132,25 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
-    // Referencias BD adaptadas para TABLET 03
     const eventosRef = ref(db, 'muebles/tablet_03/eventos');
     const statusRef = ref(db, 'muebles/tablet_03/status');
+    const estadoRef = ref(db, 'muebles/tablet_03/estado_actual'); // Nodo de Sincronización
     const connectedRef = ref(db, ".info/connected");
 
-    // Elementos del DOM - Auth
+    // UI Auth
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const loginForm = document.getElementById('login-form');
     const errorMsg = document.getElementById('error-msg');
     const logoutBtn = document.getElementById('logout-btn');
 
-    // Lógica de Autenticación
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // Usuario Logueado
         loginScreen.style.display = 'none';
         appScreen.style.display = 'block';
         conectarBD();
         iniciarCamaraYReconocimiento();
       } else {
-        // Usuario no Logueado
         loginScreen.style.display = 'flex';
         appScreen.style.display = 'none';
       }
@@ -186,112 +166,101 @@
       loginBtn.innerText = 'CARGANDO...';
       
       signInWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          loginBtn.innerText = 'AUTENTICAR';
-          loginForm.reset();
-        })
+        .then(() => { loginBtn.innerText = 'AUTENTICAR'; loginForm.reset(); })
         .catch((error) => {
           loginBtn.innerText = 'AUTENTICAR';
           errorMsg.innerText = "Error: Verifica tus credenciales.";
           errorMsg.style.display = 'block';
-          console.error(error.message);
         });
     });
 
-    logoutBtn.addEventListener('click', () => {
-      signOut(auth).then(() => {
-        window.location.reload(); 
-      });
-    });
+    logoutBtn.addEventListener('click', () => { signOut(auth).then(() => { window.location.reload(); }); });
 
-    // Conexión de Base de Datos
     function conectarBD() {
       onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
           onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
+          onDisconnect(ref(db, 'muebles/tablet_03/estado_actual/hayPersonas')).set(false);
         }
       });
     }
 
-    // Lógica de UI Principal
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     fullscreenBtn.addEventListener('click', () => {
       const elem = document.documentElement;
       if (!document.fullscreenElement) {
         if (elem.requestFullscreen) elem.requestFullscreen();
-        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
       } else {
         if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.msExitFullscreen) document.msExitFullscreen();
       }
     });
 
     const btnFlip = document.getElementById('flip-btn');
     const card = document.getElementById('card');
-    const frontVideo = document.getElementById('front-video');
-    let isPlayingVideo = false;
-    
-    let systemReady = false;
-    setTimeout(() => { systemReady = true; }, 2000);
-    
-    btnFlip.addEventListener('click', () => { 
-        card.classList.remove('is-flipped'); 
-    });
+    btnFlip.addEventListener('click', () => { card.classList.remove('is-flipped'); });
 
     let clickCount = 0;
     let clickTimeout;
     document.addEventListener('click', (e) => {
       if(loginScreen.style.display !== 'none') return;
-
       if (card.classList.contains('is-flipped')) return;
 
       if (e.target !== fullscreenBtn && e.target !== btnFlip && e.target !== logoutBtn) {
         clickCount++;
         clearTimeout(clickTimeout);
-        
         if (clickCount >= 5) {
           card.classList.add('is-flipped');
           clickCount = 0;
-          
-          if (isPlayingVideo) {
-            frontVideo.pause();
-            frontVideo.currentTime = 0;
-            frontVideo.style.display = 'none';
-            isPlayingVideo = false;
-          }
           inicioSesionActual = null;
           tiempoSesionActual = 0;
-          
         } else {
           clickTimeout = setTimeout(() => { clickCount = 0; }, 500);
         }
       }
     });
 
+    // Elementos UI
     const videoElement = document.getElementById('video');
     const canvasElement = document.getElementById('canvas');
     const canvasCtx = canvasElement.getContext('2d');
-    const faceElement = document.getElementById('face-counter');
-    const totalElement = document.getElementById('total-counter');
-    const timeElement = document.getElementById('time-counter');
-    const avgElement = document.getElementById('avg-counter');
+    const overlayReceta = document.getElementById('overlayReceta');
+    const imgReceta = document.getElementById('imgReceta');
 
+    // Variables lógicas
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
     let currentFacesCount = 0;
     let lastLoggedFaceCount = 0;
     let pendingFaceCount = 0;
     let stabilityTimer = null;
     let camaraIniciada = false;
+    let hayPersonasActual = false; // Flag para sync firebase
+    let confettiInterval;
 
-    frontVideo.addEventListener('ended', () => {
-      if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
-        frontVideo.currentTime = 0;
-        frontVideo.play().catch(e => console.error("Error reproduciendo:", e));
+    // --- ESCUCHADOR FIREBASE PARA RECETAS Y CONFETI ---
+    onValue(estadoRef, (snapshot) => {
+      const estado = snapshot.val();
+      if(!estado) return;
+
+      // Confeti
+      if (estado.hayPersonas) {
+        if (!confettiInterval) {
+          confettiInterval = setInterval(() => {
+            confetti({ particleCount: 15, spread: 60, origin: { y: -0.1, x: Math.random() }, zIndex: 9999 });
+          }, 250);
+        }
       } else {
-        frontVideo.style.display = 'none';
-        isPlayingVideo = false;
+        clearInterval(confettiInterval);
+        confettiInterval = null;
+      }
+
+      // Recetas
+      if (estado.recetaActiva && estado.recetaActiva !== "") {
+        // En Tablet se llama 01RECETA.png, 02RECETA.png...
+        imgReceta.src = `${estado.recetaActiva}RECETA.png`;
+        overlayReceta.style.display = 'flex';
+      } else {
+        overlayReceta.style.display = 'none';
+        imgReceta.src = '';
       }
     });
 
@@ -306,31 +275,34 @@
 
       const rostrosActuales = results.multiFaceLandmarks ? results.multiFaceLandmarks.length : 0;
       const ahora = Date.now();
-      
       currentFacesCount = rostrosActuales;
 
+      // --- LOGICA DE ACTUALIZACIÓN DE SINCRONIZACIÓN DE PERSONAS ---
+      const personasDetectadas = rostrosActuales > 0;
+      if (personasDetectadas !== hayPersonasActual) {
+        hayPersonasActual = personasDetectadas;
+        set(ref(db, 'muebles/tablet_03/estado_actual/hayPersonas'), hayPersonasActual);
+      }
+
+      // --- LÓGICA ORIGINAL DE REGISTRO EN FIREBASE (Eventos de Conteo) ---
       if (rostrosActuales !== pendingFaceCount) {
         pendingFaceCount = rostrosActuales;
         clearTimeout(stabilityTimer); 
-        
         stabilityTimer = setTimeout(() => {
           if (pendingFaceCount !== lastLoggedFaceCount) {
-            const fechaISO = new Date().toISOString();
-            
             push(eventosRef, {
               timestamp: Date.now(),
-              fecha: fechaISO,
+              fecha: new Date().toISOString(),
               conteoAnterior: lastLoggedFaceCount,
               conteoActual: pendingFaceCount
             });
-
             set(statusRef, 'ONLINE');
-
             lastLoggedFaceCount = pendingFaceCount;
           }
         }, 1000); 
       }
 
+      // Lógica interna de sesión y estadisticas de depuración
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) { inicioSesionActual = ahora; }
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
@@ -339,14 +311,6 @@
           tiempoAcumuladoTotal += (ahora - inicioSesionActual) / 1000;
           inicioSesionActual = null; tiempoSesionActual = 0;
         }
-      }
-
-      if (systemReady && currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo && !card.classList.contains('is-flipped')) {
-        isPlayingVideo = true;
-        frontVideo.style.display = 'block';
-        frontVideo.play().catch(e => {
-          console.log("Autoplay bloqueado:", e);
-        });
       }
 
       if (rostrosActuales > rostrosActivos.length) {
@@ -360,13 +324,10 @@
         }
       }
 
-      let tiempoTotalParaCalculo = tiempoAcumuladoTotal + tiempoSesionActual;
-      let promedio = totalHistorico > 0 ? (tiempoTotalParaCalculo / totalHistorico) : 0;
-
-      faceElement.innerText = `ACTUAL: ${rostrosActuales}`;
-      totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
-      timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
-      avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
+      document.getElementById('face-counter').innerText = `ACTUAL: ${rostrosActuales}`;
+      document.getElementById('total-counter').innerText = `HISTÓRICO: ${totalHistorico}`;
+      document.getElementById('time-counter').innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
+      document.getElementById('avg-counter').innerText = `PROMEDIO: ${(totalHistorico > 0 ? ((tiempoAcumuladoTotal + tiempoSesionActual) / totalHistorico) : 0).toFixed(1)}s`;
 
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -376,14 +337,12 @@
     function iniciarCamaraYReconocimiento() {
       if (camaraIniciada) return;
       camaraIniciada = true;
-      
       const faceMesh = new window.FaceMesh({locateFile: (file) => { return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`; }});
       faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
       faceMesh.onResults(onResults);
       const camera = new window.Camera(videoElement, { onFrame: async () => { await faceMesh.send({image: videoElement}); }, width: 1280, height: 720 });
       camera.start();
     }
-
   </script>
 </body>
 </html>
