@@ -79,12 +79,6 @@
             object-fit: contain;
         }
 
-        #scannerInput {
-            opacity: 0.01;
-            position: absolute;
-            top: -1000px;
-        }
-
         .bg-error { background-color: #ef4444 !important; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -114,8 +108,6 @@
         <div id="overlayReceta">
             <img id="imgReceta" src="" alt="Receta">
         </div>
-        
-        <input type="text" id="scannerInput" autocomplete="off">
     </div>
 
     <script type="module">
@@ -143,12 +135,15 @@
         const appScreen = document.getElementById('app-screen');
         const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
-        const input = document.getElementById('scannerInput');
         const overlayReceta = document.getElementById('overlayReceta');
         const imgReceta = document.getElementById('imgReceta');
         
         let resetTimeout;
         let confettiInterval;
+        
+        // Variables para la captura silenciosa del lector
+        let scannerBuffer = "";
+        let lastKeyTime = Date.now();
 
         const baseDeDatos = {
             "7591016855096": "01",
@@ -167,7 +162,6 @@
                 loginScreen.style.display = 'none';
                 appScreen.style.display = 'block';
                 iniciarSincronizacion();
-                setTimeout(() => input.focus(), 500);
             } else {
                 loginScreen.style.display = 'flex';
                 appScreen.style.display = 'none';
@@ -192,18 +186,24 @@
                 });
         });
 
-        document.addEventListener('click', () => {
-            if (appScreen.style.display === 'block') input.focus();
-        });
-        input.addEventListener('blur', () => {
-            if (appScreen.style.display === 'block') setTimeout(() => input.focus(), 10);
-        });
+        // ESCUCHADOR GLOBAL DE TECLADO (Reemplaza al campo input)
+        document.addEventListener('keydown', function(event) {
+            // Solo procesar si la pantalla de la app está activa (para no interferir con el login)
+            if (appScreen.style.display !== 'block') return;
 
-        input.addEventListener('keydown', function(event) {
+            const currentTime = Date.now();
+            
+            // Los lectores de códigos leen muy rápido. Si pasan más de 200ms entre teclas,
+            // asumimos que fue un botón del control remoto u otra cosa y limpiamos el buffer.
+            if (currentTime - lastKeyTime > 200) {
+                scannerBuffer = "";
+            }
+            lastKeyTime = currentTime;
+
             if (event.key === 'Enter') {
                 event.preventDefault();
-                const scannedValue = input.value.trim();
-                input.value = '';
+                const scannedValue = scannerBuffer.trim();
+                scannerBuffer = ''; // Limpiar tras el Enter
                 clearTimeout(resetTimeout);
 
                 if (baseDeDatos[scannedValue]) {
@@ -218,6 +218,9 @@
                 } else if (scannedValue !== "") {
                     lanzarError();
                 }
+            } else if (event.key.length === 1) { 
+                // Añadir al buffer solo caracteres imprimibles (ignora Shift, Ctrl, F1, etc)
+                scannerBuffer += event.key;
             }
         });
 
