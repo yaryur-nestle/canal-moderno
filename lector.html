@@ -3,52 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lector de Código de Barras</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <title>Lector de Código de Barras - Recetas</title>
     <style>
         body {
             margin: 0;
             height: 100vh;
+            width: 100vw;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1e293b; /* Color oscuro por defecto */
-            color: white;
+            background-color: #000; /* Fondo negro para que resalten las imágenes */
             transition: background-color 0.3s ease;
             overflow: hidden;
         }
 
-        h1 {
-            font-size: 3rem;
-            text-align: center;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        /* La imagen ocupa toda la pantalla */
+        #visorImagen {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 'contain' asegura que la imagen no se recorte. Puedes cambiarlo a 'cover' si prefieres que llene cada pixel aunque se recorte un poco */
         }
 
-        p {
-            font-size: 1.5rem;
-            opacity: 0.8;
-        }
-
-        /* El input es casi invisible pero sigue ahí para recibir el código */
+        /* El input es invisible pero sigue ahí para recibir el código */
         #scannerInput {
             opacity: 0.01;
             position: absolute;
             top: -1000px;
         }
 
-        /* Clases de estado */
-        .bg-success {
-            background-color: #22c55e !important; /* Verde victoria */
-        }
-
+        /* Clases de estado (opcional: para dar retroalimentación visual en errores) */
         .bg-error {
             background-color: #ef4444 !important; /* Rojo error */
         }
 
-        /* Animación de temblor */
+        /* Animación de temblor en caso de error */
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             10% { transform: translate(-1px, -2px) rotate(-1deg); }
@@ -70,21 +58,34 @@
 </head>
 <body>
 
-    <h1 id="statusTitle">Esperando lectura...</h1>
-    <p id="statusSub">Escanea un código para comenzar</p>
+    <img id="visorImagen" src="TABLET 03.jpg" alt="Pantalla de inicio">
     
     <input type="text" id="scannerInput" autofocus autocomplete="off">
 
     <script>
-        const TARGET_CODE = "7506475104425";
+        const imagenDefault = "TABLET 03.jpg";
+        const visorImagen = document.getElementById('visorImagen');
         const input = document.getElementById('scannerInput');
-        const statusTitle = document.getElementById('statusTitle');
-        const statusSub = document.getElementById('statusSub');
         
         let resetTimeout;
 
+        // Base de datos de códigos vinculados a su receta
+        const baseDeDatos = {
+            "7591016955096": "RECETA01.png",
+            "75910161551097": "RECETA01.png",
+            
+            "7506475104425": "RECETA02.png",
+            "17506475104422": "RECETA02.png",
+            "789100107263": "RECETA02.png",
+            
+            "7591016206409": "RECETA03.png",
+            "7591016406403": "RECETA03.png",
+            "17591016206406": "RECETA03.png",
+            
+            "7591016204894": "RECETA04.png"
+        };
+
         // --- MANTENER SIEMPRE EL FOCO ---
-        // Esto asegura que el lector de barras siempre escriba en el input
         document.addEventListener('click', () => input.focus());
         input.addEventListener('blur', () => {
             setTimeout(() => input.focus(), 10);
@@ -96,73 +97,47 @@
             if (event.key === 'Enter') {
                 event.preventDefault();
                 const scannedValue = input.value.trim();
-                input.value = ''; // Borrar input de inmediato para el siguiente escaneo
+                input.value = ''; // Borrar input de inmediato
                 
                 clearTimeout(resetTimeout); // Limpiar temporizadores anteriores
 
-                if (scannedValue === TARGET_CODE) {
-                    lanzarVictoria();
+                // Si el código está en nuestra base de datos
+                if (baseDeDatos[scannedValue]) {
+                    lanzarVictoria(baseDeDatos[scannedValue]);
                 } else if (scannedValue !== "") {
                     lanzarError();
                 }
             }
         });
 
-        // --- FUNCIÓN DE VICTORIA ---
-        function lanzarVictoria() {
-            // Estilos
-            document.body.className = 'bg-success';
-            statusTitle.innerText = "¡CÓDIGO CORRECTO!";
-            statusSub.innerText = "¡Victoria! 🎉🎉";
+        // --- FUNCIÓN DE ÉXITO ---
+        function lanzarVictoria(imagenReceta) {
+            // Quitar clases de error si las hubiera
+            document.body.className = '';
             
-            // Confeti de celebración
-            let duration = 3 * 1000;
-            let animationEnd = Date.now() + duration;
-            let defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-            function randomInRange(min, max) {
-                return Math.random() * (max - min) + min;
-            }
-
-            let interval = setInterval(function() {
-                let timeLeft = animationEnd - Date.now();
-
-                if (timeLeft <= 0) {
-                    return clearInterval(interval);
-                }
-
-                let particleCount = 50 * (timeLeft / duration);
-                // Lanzar confeti desde dos puntos (izquierda y derecha)
-                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
-                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
-            }, 250);
-
-            // Volver al estado normal después de unos segundos (Opcional)
-            resetTimeout = setTimeout(resetPantalla, 4000);
+            // Cambiar la imagen a la receta correspondiente
+            visorImagen.src = imagenReceta;
+            
+            // Volver a la imagen de la tablet después de 3 segundos (3000 ms)
+            resetTimeout = setTimeout(resetPantalla, 3000);
         }
 
-        // --- FUNCIÓN DE ERROR ---
+        // --- FUNCIÓN DE ERROR (Opcional, mantiene la imagen de la tablet pero da un aviso visual) ---
         function lanzarError() {
-            // Quitar animación previa si existe para poder relanzarla
             document.body.classList.remove('shake');
+            void document.body.offsetWidth; // Forzar reinicio de animación
             
-            // Forzar un "reflow" para que la animación de temblor se reinicie
-            void document.body.offsetWidth;
-            
-            // Aplicar estilos de error
             document.body.className = 'bg-error shake';
-            statusTitle.innerText = "¡NO ES!";
-            statusSub.innerText = "Código incorrecto ❌";
+            visorImagen.src = imagenDefault; // Asegurar que está en la imagen por defecto
 
-            // Volver al estado normal rápido
-            resetTimeout = setTimeout(resetPantalla, 1500);
+            // Quitar el rojo de error rápido
+            resetTimeout = setTimeout(resetPantalla, 1000);
         }
 
         // --- FUNCIÓN PARA RESETEAR LA PANTALLA ---
         function resetPantalla() {
-            document.body.className = ''; // Quitar clases de fondo
-            statusTitle.innerText = "Esperando lectura...";
-            statusSub.innerText = "Escanea un código para comenzar";
+            document.body.className = ''; // Quitar clases de fondo de error
+            visorImagen.src = imagenDefault; // Volver a la tablet
         }
 
     </script>
