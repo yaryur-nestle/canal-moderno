@@ -168,9 +168,11 @@
 
         /* Contenido Trasero (Gráficos y UI Reducida) */
         .back-content { background: #ffffff; padding: 20px 30px; border-radius: 15px; width: 95%; max-width: 1200px; box-shadow: 0 5px 25px rgba(0,0,0,0.08); border: 1px solid #eaeaea; text-align: center; position: relative; height: 85vh; display: flex; flex-direction: column; }
-        .top-controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 5px; }
-        .top-controls h1 { color: #111; letter-spacing: 2px; margin: 0; text-transform: uppercase; font-weight: 800; font-size: 1.5rem; }
-        .subtitle { color: #666; margin-bottom: 10px; font-weight: bold; text-transform: uppercase; font-size: 1rem; }
+        
+        /* Nuevo orden de los Títulos */
+        .static-title { color: #888; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; text-align: center; }
+        .top-controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .top-controls h1 { color: #111; letter-spacing: 1px; margin: 0; text-transform: uppercase; font-weight: 900; font-size: 1.8rem; }
         
         .icon-btn { background: #fff; border: 1px solid #ccc; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
         .icon-btn:hover { background: #f4f4f4; transform: scale(1.1); border-color: #b39c6e; }
@@ -347,36 +349,44 @@
                                 <svg id="icon-user" viewBox="0 0 24 24" style="display:none;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                             </button>
 
+                            <!-- Título estático y discreto arriba -->
+                            <div id="chart-title" class="static-title">YAR-YUR SYSTEM</div>
+
+                            <!-- Controles interactivos con el Título del Contexto -->
                             <div class="top-controls">
                                 <button id="btn-zoom-out" class="icon-btn" title="Alejar Vista"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg></button>
-                                <h1 id="chart-title">YAR-YUR SYSTEM</h1>
+                                <h1 id="chart-subtitle">HORA: --</h1>
                                 <button id="btn-zoom-in" class="icon-btn" style="display:none;" title="Acercar Vista"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7H9v2H7v1h2v2h1v-2h2V9h-2z"/></svg></button>
                             </div>
-                            <div id="chart-subtitle" class="subtitle">HORA: --</div>
                             
                             <div class="chart-layout">
                                 <button id="btn-prev" class="nav-arrow"><svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg></button>
                                 
                                 <div class="view-panel-wrapper" id="master-view-wrapper">
+                                    <!-- Gráfico -->
                                     <div id="view-chart-container" class="view-panel active">
                                         <canvas id="main-chart"></canvas>
                                     </div>
+                                    <!-- Calendario Mes -->
                                     <div id="view-calendar-day" class="view-panel">
                                         <div class="cal-container">
                                             <div class="cal-header"><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div></div>
                                             <div class="cal-grid" id="cal-grid"></div>
                                         </div>
                                     </div>
+                                    <!-- Calendario Año -->
                                     <div id="view-calendar-year" class="view-panel">
                                         <div class="year-grid" id="year-grid"></div>
                                     </div>
+                                    <!-- Reloj -->
                                     <div id="view-clock" class="view-panel">
                                         <div class="clock-wrapper">
                                             <div class="clock-face" id="clock-face">
                                                 <div class="clock-hand" id="clock-hand"></div>
                                                 <div class="clock-center"></div>
                                                 <div class="clock-ampm" id="clock-ampm">AM</div>
-                                                </div>
+                                                <!-- Números generados por JS -->
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -385,6 +395,7 @@
                             </div>
                             <div class="hint" onclick="flipToFront()">Toca aquí para volver al exhibidor en tiempo real</div>
                             
+                            <!-- Botón Flotante Actualizar -->
                             <button id="btn-refresh-live" onclick="goToCurrentTime()">⟳ EN VIVO</button>
                         </div>
                     </div>
@@ -870,14 +881,14 @@
                 document.getElementById('view-calendar-day').classList.add('active');
                 btnIn.style.display = 'flex';
                 btnOut.style.display = 'flex';
-                titleEl.innerText = currentViewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase();
+                titleEl.innerText = `MES: ${currentViewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase()}`;
                 renderCalMonth();
             }
             else if(viewState === 'CAL_YEAR') {
                 document.getElementById('view-calendar-year').classList.add('active');
                 btnIn.style.display = 'flex';
                 btnOut.style.display = 'none'; 
-                titleEl.innerText = `AÑO ${currentViewDate.getFullYear()}`;
+                titleEl.innerText = `AÑO: ${currentViewDate.getFullYear()}`;
                 renderCalYear();
             }
             else if(viewState === 'CLOCK') {
