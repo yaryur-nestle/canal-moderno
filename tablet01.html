@@ -7,6 +7,20 @@
   <style>
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
     
+    /* === BOTÓN INVISIBLE PANTALLA COMPLETA === */
+    #init-fullscreen-btn {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999; /* Asegura que esté por encima del login */
+      background: transparent;
+      border: none;
+      outline: none;
+      cursor: pointer;
+    }
+
     /* === ESTILOS DEL LOGIN === */
     #login-screen {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -36,20 +50,6 @@
     /* === ESTILOS DE LA APLICACIÓN === */
     .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; display: none; } /* Oculto por defecto */
     
-    .fullscreen-btn {
-      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-      z-index: 100; width: 150px; height: 80px; background: transparent;
-      border: none; outline: none; cursor: pointer;
-    }
-    
-    .logout-btn {
-      position: absolute; top: 20px; right: 20px; z-index: 100;
-      background: rgba(255, 0, 85, 0.15); border: 1px solid #FF0055; color: #FF0055;
-      padding: 8px 15px; cursor: pointer; font-family: inherit; border-radius: 4px;
-      transition: all 0.3s; backdrop-filter: blur(5px);
-    }
-    .logout-btn:hover { background: #FF0055; color: #000; box-shadow: 0 0 10px #FF0055; }
-
     .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
     .card.is-flipped { transform: rotateY(180deg); }
     .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: #000; }
@@ -72,7 +72,7 @@
     canvas { z-index: 10; }
     .panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
     .left { top: 0; left: 0; }
-    .right { top: 0; right: 0; align-items: flex-end; margin-top: 50px; } /* Margen para no chocar con el botón de logout */
+    .right { top: 0; right: 0; align-items: flex-end; }
     .counter-box { padding: 10px 20px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; backdrop-filter: blur(8px); border: 1px solid; min-width: 150px; text-shadow: 0 0 5px currentColor; }
     #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
     #total-counter { background: rgba(0, 255, 255, 0.15); color: #00FFFF; border-color: #00FFFF; }
@@ -85,6 +85,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 </head>
 <body>
+
+  <button id="init-fullscreen-btn" title="Activar Pantalla Completa"></button>
 
   <div id="login-screen">
     <div class="login-box">
@@ -100,9 +102,6 @@
 
   <div id="app-screen" class="scene">
     
-    <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
-    <button id="logout-btn" class="logout-btn" title="Cerrar Sesión">DESCONECTAR</button>
-
     <div id="card" class="card">
       <div class="face face-front">
         <video id="front-video" src="video.mp4" playsinline preload="metadata" style="display: none; width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 5; transform: scaleX(1);"></video>
@@ -133,7 +132,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, set, push, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
@@ -154,12 +153,23 @@
     const statusRef = ref(db, 'muebles/tablet_01/status');
     const connectedRef = ref(db, ".info/connected");
 
+    // Lógica Pantalla Completa Inicial
+    const initFullscreenBtn = document.getElementById('init-fullscreen-btn');
+    initFullscreenBtn.addEventListener('click', () => {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) elem.requestFullscreen();
+      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+      else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+      
+      // El botón desaparece para siempre tras hacer clic
+      initFullscreenBtn.remove();
+    });
+
     // Elementos del DOM - Auth
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const loginForm = document.getElementById('login-form');
     const errorMsg = document.getElementById('error-msg');
-    const logoutBtn = document.getElementById('logout-btn');
 
     // Lógica de Autenticación
     onAuthStateChanged(auth, (user) => {
@@ -198,13 +208,6 @@
         });
     });
 
-    logoutBtn.addEventListener('click', () => {
-      signOut(auth).then(() => {
-        // Opcional: Recargar la página para asegurar que la cámara se libere por completo
-        window.location.reload(); 
-      });
-    });
-
     // Conexión de Base de Datos
     function conectarBD() {
       onValue(connectedRef, (snap) => {
@@ -215,20 +218,6 @@
     }
 
     // Lógica de UI Principal
-    const fullscreenBtn = document.getElementById('fullscreen-btn');
-    fullscreenBtn.addEventListener('click', () => {
-      const elem = document.documentElement;
-      if (!document.fullscreenElement) {
-        if (elem.requestFullscreen) elem.requestFullscreen();
-        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.msExitFullscreen) document.msExitFullscreen();
-      }
-    });
-
     const btnFlip = document.getElementById('flip-btn');
     const card = document.getElementById('card');
     const frontVideo = document.getElementById('front-video');
@@ -249,7 +238,7 @@
 
       if (card.classList.contains('is-flipped')) return;
 
-      if (e.target !== fullscreenBtn && e.target !== btnFlip && e.target !== logoutBtn) {
+      if (e.target !== btnFlip) {
         clickCount++;
         clearTimeout(clickTimeout);
         
