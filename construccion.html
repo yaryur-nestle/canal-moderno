@@ -424,14 +424,11 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        /* --- CONFIGURACIONES ESTRICTAS POR MARCA Y TABLET --- 
-           Para aislar completamente las señales y evitar que la tablet 03 dispare
-           eventos en la visualización de la tablet 01. Se mapea un ID específico 
-           a una zona visual específica (ej. Zona 2 = Centro). */
+        /* --- CONFIGURACIONES ESTRICTAS POR MARCA Y TABLET --- */
         const brandConfigs = {
             'NIDO': {
                 bgImage: 'NIDO_MONITOR fondo.jpg',
-                tablets: [{ id: 1, zone: 2 }], // Asignamos Tablet 01 al área central del exhibidor
+                tablets: [{ id: 1, zone: 2 }],
                 zoneImages: {
                     1: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'],
                     2: ['2-1.png', '2-2.png', '2-3.png', '2-4.png', '2-5.png'],
@@ -440,7 +437,7 @@
             },
             'RECETAS': {
                 bgImage: 'RECETAS_MONITOR.jpg',
-                tablets: [{ id: 3, zone: 2 }], // Asignamos Tablet 03 al área central
+                tablets: [{ id: 3, zone: 2 }],
                 zoneImages: {
                     1: ['1-1.png', '1-2.png', '1-3.png', '1-4.png', '1-5.png'],
                     2: ['2-1.png', '2-2.png', '2-3.png', '2-4.png', '2-5.png'],
@@ -464,21 +461,20 @@
         const comingSoonView = document.getElementById('coming-soon-view');
 
         function toggleAppView(viewPathInput) {
-            // Ocultar todas
             loginView.style.display = 'none';
             welcomeView.style.display = 'none';
             mapView.style.display = 'none';
             monitorView.style.display = 'none';
             comingSoonView.style.display = 'none';
 
-            if (viewPathInput === 1) { // Monitor
+            if (viewPathInput === 1) { 
                 monitorView.style.display = 'block';
                 activeAppView = 1;
-            } else if (viewPathInput === 0) { // Mapa
+            } else if (viewPathInput === 0) { 
                 mapView.style.display = 'flex'; 
                 activeAppView = 0;
                 setTimeout(() => { if (chartInstance) chartInstance.reflow(); }, 200);
-            } else if (viewPathInput === 2) { // Próximamente
+            } else if (viewPathInput === 2) { 
                 comingSoonView.style.display = 'flex';
                 activeAppView = 2;
             }
@@ -490,10 +486,10 @@
 
         function checkDeviceOrientation() {
             if (welcomeView.style.display === 'flex') {
-                if (window.innerHeight > window.innerWidth) { // Vertical
+                if (window.innerHeight > window.innerWidth) {
                     rotateMsg.style.display = 'flex';
                     startContainer.style.display = 'none';
-                } else { // Horizontal
+                } else {
                     rotateMsg.style.display = 'none';
                     startContainer.style.display = 'flex';
                 }
@@ -555,9 +551,8 @@
 
         let isOverlayActive = false, overlayStartTime = 0, overlayTimerInterval = null, stopTimeout1 = null, stopTimeout2 = null, isInitialLoad = true;
 
-        /* --- CARGADOR DINÁMICO DEL MONITOR (NORMALIZADO) --- */
+        /* --- CARGADOR DINÁMICO DEL MONITOR --- */
         function cargarMonitor(brandName, sucursalName) {
-            // Filtro de "Próximamente" si no es la sucursal o marca lista
             if (sucursalName !== 'Redvital La Yaguara' || (brandName !== 'NIDO' && brandName !== 'RECETAS')) {
                 toggleAppView(2);
                 return;
@@ -589,7 +584,6 @@
                 const zoneId = t.zone;
                 const numFormat = t.id.toString().padStart(2, '0');
                 
-                // 1. Escuchar estado_actual para las siluetas en TIEMPO REAL (sin latencia de eventos pasados)
                 const estadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
                 const unsubEstado = onValue(estadoQuery, (snapshot) => {
                     const data = snapshot.val();
@@ -601,7 +595,6 @@
                 });
                 activeFirebaseListeners.push(unsubEstado);
 
-                // 2. Escuchar eventos solo para alimentar los GRÁFICOS HISTÓRICOS
                 const eventosQuery = query(ref(db, `muebles/tablet_${numFormat}/eventos`), orderByChild('timestamp'));
                 const unsubEventos = onChildAdded(eventosQuery, (snapshot) => {
                     const data = snapshot.val();
@@ -790,9 +783,22 @@
             const duracionesRealesMap = new Map(); 
             let colaSimulada = [];
             
+            // ASIGNACIÓN EXHAUSTIVA DE TIEMPOS
             events.forEach(ev => {
-                const prev = ev.conteoAnterior || 0, act = ev.conteoActual;
-                if (act > prev) { for(let k = 0; k < (act - prev); k++) colaSimulada.push(ev); } 
+                const prev = ev.conteoAnterior || 0;
+                const act = ev.conteoActual || 0;
+
+                // TRUCO DE ORO: Si cae a 0, forzamos el cierre de todos los tiempos abiertos
+                if (act === 0) {
+                    while (colaSimulada.length > 0) {
+                        const llegada = colaSimulada.shift();
+                        if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
+                        duracionesRealesMap.get(llegada).push((ev.timestamp - llegada.timestamp) / 1000);
+                    }
+                } 
+                else if (act > prev) { 
+                    for(let k = 0; k < (act - prev); k++) colaSimulada.push(ev); 
+                } 
                 else if (act < prev) {
                     for(let k = 0; k < (prev - act); k++) {
                         if (colaSimulada.length > 0) {
@@ -824,18 +830,37 @@
                     else if (currentViewLevel === 'day') idx = evDate.getHours();
                     else if (currentViewLevel === 'month') idx = evDate.getDate() - 1;
 
-                    if (currentMetric === 'count') { dataBuckets[idx] += nuevas; } 
+                    if (currentMetric === 'count') { 
+                        dataBuckets[idx] += nuevas; 
+                    } 
                     else {
                         const tiempos = duracionesRealesMap.get(ev) || [];
                         for (let k = 0; k < nuevas; k++) {
-                            let duracion = (k < tiempos.length) ? tiempos[k] : (isCurrentView ? (Date.now() - ev.timestamp) / 1000 : 0);
-                            dataBuckets[idx] += duracion; countBuckets[idx] += 1;
+                            if (k < tiempos.length) {
+                                // Evento cerrado (la persona ya se fue)
+                                dataBuckets[idx] += tiempos[k];
+                                countBuckets[idx] += 1;
+                            } else {
+                                // Evento abierto (la persona parece seguir ahí)
+                                // Validamos si en efecto hay gente en este instante
+                                if (isCurrentView && conteosActuales[tabletActualEnGrafico] > 0) {
+                                    let duracion = (Date.now() - ev.timestamp) / 1000;
+                                    // Limitamos a 5 min (300 segs) por si una tablet se apaga de golpe
+                                    duracion = Math.min(duracion, 300);
+                                    dataBuckets[idx] += duracion; 
+                                    countBuckets[idx] += 1;
+                                }
+                            }
                         }
                     }
                 }
             });
 
-            if (currentMetric === 'time') { for(let i = 0; i < dataBuckets.length; i++) { if (countBuckets[i] > 0) dataBuckets[i] = Math.round(dataBuckets[i] / countBuckets[i]); } }
+            if (currentMetric === 'time') { 
+                for(let i = 0; i < dataBuckets.length; i++) { 
+                    if (countBuckets[i] > 0) dataBuckets[i] = Math.round(dataBuckets[i] / countBuckets[i]); 
+                } 
+            }
 
             document.getElementById('chart-subtitle').innerText = `${titlePrefix} ${titleSuffix}`;
 
@@ -1058,7 +1083,6 @@
         }
         window.addEventListener('mouseup', finishClockDrag);
         window.addEventListener('touchend', finishClockDrag);
-
 
         document.getElementById('btn-metric').addEventListener('click', () => { currentMetric = currentMetric === 'count' ? 'time' : 'count'; document.getElementById('icon-chrono').style.display = currentMetric === 'count' ? 'block' : 'none'; document.getElementById('icon-user').style.display = currentMetric === 'time' ? 'block' : 'none'; if(viewState.startsWith('CHART_')) updateChartDisplay(); });
 
