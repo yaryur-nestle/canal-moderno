@@ -6,21 +6,49 @@
   <title>TABLET 01</title>
   <style>
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
-    .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; }
+    
+    /* === ESTILOS DEL LOGIN === */
+    #login-screen {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; z-index: 1000;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .login-box {
+      border: 1px solid #00FFFF; padding: 40px; background: rgba(0, 255, 255, 0.05);
+      text-align: center; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+      border-radius: 8px; backdrop-filter: blur(10px); width: 300px;
+    }
+    .login-box h2 { color: #00FFFF; margin-top: 0; margin-bottom: 25px; text-shadow: 0 0 5px #00FFFF; letter-spacing: 2px; }
+    .login-box input {
+      display: block; width: 100%; box-sizing: border-box; margin-bottom: 15px;
+      padding: 12px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00FFFF;
+      color: #00FFFF; font-family: inherit; font-size: 1rem; text-align: center;
+    }
+    .login-box input:focus { outline: none; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); background: rgba(0, 255, 255, 0.1); }
+    .login-box button {
+      background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF;
+      padding: 12px 20px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1rem;
+      width: 100%; transition: all 0.3s; letter-spacing: 1px;
+    }
+    .login-box button:hover { background: #00FFFF; color: #000; box-shadow: 0 0 15px #00FFFF; }
+    .error-msg { color: #FF0055; margin-top: 15px; font-size: 0.85rem; display: none; text-shadow: 0 0 5px #FF0055; }
+
+    /* === ESTILOS DE LA APLICACIÓN === */
+    .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; display: none; } /* Oculto por defecto */
     
     .fullscreen-btn {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 100;
-      width: 150px;
-      height: 80px;
-      background: transparent;
-      border: none;
-      outline: none;
-      cursor: pointer;
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      z-index: 100; width: 150px; height: 80px; background: transparent;
+      border: none; outline: none; cursor: pointer;
     }
+    
+    .logout-btn {
+      position: absolute; top: 20px; right: 20px; z-index: 100;
+      background: rgba(255, 0, 85, 0.15); border: 1px solid #FF0055; color: #FF0055;
+      padding: 8px 15px; cursor: pointer; font-family: inherit; border-radius: 4px;
+      transition: all 0.3s; backdrop-filter: blur(5px);
+    }
+    .logout-btn:hover { background: #FF0055; color: #000; box-shadow: 0 0 10px #FF0055; }
 
     .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
     .card.is-flipped { transform: rotateY(180deg); }
@@ -35,21 +63,16 @@
       width: 50px; height: 50px; border-radius: 50%; cursor: pointer; 
       display: flex; justify-content: center; align-items: center; 
       backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); 
-      transition: all 0.3s ease;
-      opacity: 0; 
-      pointer-events: none; 
+      transition: all 0.3s ease; opacity: 0; pointer-events: none; 
     }
-    .card.is-flipped ~ .flip-btn {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .card.is-flipped ~ .flip-btn { opacity: 1; pointer-events: auto; }
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
     
     video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
     canvas { z-index: 10; }
     .panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
     .left { top: 0; left: 0; }
-    .right { top: 0; right: 0; align-items: flex-end; }
+    .right { top: 0; right: 0; align-items: flex-end; margin-top: 50px; } /* Margen para no chocar con el botón de logout */
     .counter-box { padding: 10px 20px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; backdrop-filter: blur(8px); border: 1px solid; min-width: 150px; text-shadow: 0 0 5px currentColor; }
     #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
     #total-counter { background: rgba(0, 255, 255, 0.15); color: #00FFFF; border-color: #00FFFF; }
@@ -62,9 +85,23 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div class="scene">
+
+  <div id="login-screen">
+    <div class="login-box">
+      <h2>SISTEMA MUEBLE 01</h2>
+      <form id="login-form">
+        <input type="email" id="email" placeholder="Correo Electrónico" required autocomplete="email">
+        <input type="password" id="password" placeholder="Contraseña" required autocomplete="current-password">
+        <button type="submit" id="login-btn">AUTENTICAR</button>
+        <div id="error-msg" class="error-msg">Error de credenciales.</div>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-screen" class="scene">
     
     <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
+    <button id="logout-btn" class="logout-btn" title="Cerrar Sesión">DESCONECTAR</button>
 
     <div id="card" class="card">
       <div class="face face-front">
@@ -96,6 +133,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, set, push, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
@@ -109,17 +147,74 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const auth = getAuth(app);
 
+    // Referencias BD
     const eventosRef = ref(db, 'muebles/tablet_01/eventos');
     const statusRef = ref(db, 'muebles/tablet_01/status');
-
     const connectedRef = ref(db, ".info/connected");
-    onValue(connectedRef, (snap) => {
-      if (snap.val() === true) {
-        onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
+
+    // Elementos del DOM - Auth
+    const loginScreen = document.getElementById('login-screen');
+    const appScreen = document.getElementById('app-screen');
+    const loginForm = document.getElementById('login-form');
+    const errorMsg = document.getElementById('error-msg');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    // Lógica de Autenticación
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Usuario Logueado
+        loginScreen.style.display = 'none';
+        appScreen.style.display = 'block';
+        conectarBD();
+        iniciarCamaraYReconocimiento(); // Solo inicia cámara cuando está logueado
+      } else {
+        // Usuario no Logueado
+        loginScreen.style.display = 'flex';
+        appScreen.style.display = 'none';
       }
     });
 
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const loginBtn = document.getElementById('login-btn');
+      
+      errorMsg.style.display = 'none';
+      loginBtn.innerText = 'CARGANDO...';
+      
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          loginBtn.innerText = 'AUTENTICAR';
+          loginForm.reset();
+        })
+        .catch((error) => {
+          loginBtn.innerText = 'AUTENTICAR';
+          errorMsg.innerText = "Error: Verifica tus credenciales."; // Mensaje genérico de seguridad
+          errorMsg.style.display = 'block';
+          console.error(error.message);
+        });
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      signOut(auth).then(() => {
+        // Opcional: Recargar la página para asegurar que la cámara se libere por completo
+        window.location.reload(); 
+      });
+    });
+
+    // Conexión de Base de Datos
+    function conectarBD() {
+      onValue(connectedRef, (snap) => {
+        if (snap.val() === true) {
+          onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
+        }
+      });
+    }
+
+    // Lógica de UI Principal
     const fullscreenBtn = document.getElementById('fullscreen-btn');
     fullscreenBtn.addEventListener('click', () => {
       const elem = document.documentElement;
@@ -149,9 +244,12 @@
     let clickCount = 0;
     let clickTimeout;
     document.addEventListener('click', (e) => {
+      // Evitar que interactúe si está en el form de login
+      if(loginScreen.style.display !== 'none') return;
+
       if (card.classList.contains('is-flipped')) return;
 
-      if (e.target !== fullscreenBtn && e.target !== btnFlip) {
+      if (e.target !== fullscreenBtn && e.target !== btnFlip && e.target !== logoutBtn) {
         clickCount++;
         clearTimeout(clickTimeout);
         
@@ -174,6 +272,7 @@
       }
     });
 
+    // Variables del sistema de caras
     const videoElement = document.getElementById('video');
     const canvasElement = document.getElementById('canvas');
     const canvasCtx = canvasElement.getContext('2d');
@@ -184,10 +283,10 @@
 
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
     let currentFacesCount = 0;
-
     let lastLoggedFaceCount = 0;
     let pendingFaceCount = 0;
     let stabilityTimer = null;
+    let camaraIniciada = false;
 
     frontVideo.addEventListener('ended', () => {
       if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
@@ -200,7 +299,9 @@
     });
 
     function onResults(results) {
-      document.getElementById('loading').style.display = 'none';
+      const loadingEl = document.getElementById('loading');
+      if(loadingEl) loadingEl.style.display = 'none';
+      
       if (results.image) { 
         canvasElement.width = results.image.width; 
         canvasElement.height = results.image.height; 
@@ -275,11 +376,18 @@
       canvasCtx.restore();
     }
 
-    const faceMesh = new window.FaceMesh({locateFile: (file) => { return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`; }});
-    faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-    faceMesh.onResults(onResults);
-    const camera = new window.Camera(videoElement, { onFrame: async () => { await faceMesh.send({image: videoElement}); }, width: 1280, height: 720 });
-    camera.start();
+    // Inicialización de MediaPipe (Solo ocurre cuando se llama)
+    function iniciarCamaraYReconocimiento() {
+      if (camaraIniciada) return;
+      camaraIniciada = true;
+      
+      const faceMesh = new window.FaceMesh({locateFile: (file) => { return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`; }});
+      faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      faceMesh.onResults(onResults);
+      const camera = new window.Camera(videoElement, { onFrame: async () => { await faceMesh.send({image: videoElement}); }, width: 1280, height: 720 });
+      camera.start();
+    }
+
   </script>
 </body>
 </html>
