@@ -8,7 +8,6 @@
   <style>
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
     
-    /* === ESTILOS DEL LOGIN === */
     #login-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1000; display: flex; justify-content: center; align-items: center; }
     .login-box { border: 1px solid #00FFFF; padding: 40px; background: rgba(0, 255, 255, 0.05); text-align: center; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); border-radius: 8px; backdrop-filter: blur(10px); width: 300px; }
     .login-box h2 { color: #00FFFF; margin-top: 0; margin-bottom: 25px; text-shadow: 0 0 5px #00FFFF; letter-spacing: 2px; }
@@ -18,11 +17,8 @@
     .login-box button:hover { background: #00FFFF; color: #000; box-shadow: 0 0 15px #00FFFF; }
     .error-msg { color: #FF0055; margin-top: 15px; font-size: 0.85rem; display: none; text-shadow: 0 0 5px #FF0055; }
 
-    /* === ESTILOS DE LA APLICACIÓN === */
     .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; display: none; }
     .fullscreen-btn { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 100; width: 150px; height: 80px; background: transparent; border: none; outline: none; cursor: pointer; }
-    .logout-btn { position: absolute; top: 20px; right: 20px; z-index: 100; background: rgba(255, 0, 85, 0.15); border: 1px solid #FF0055; color: #FF0055; padding: 8px 15px; cursor: pointer; font-family: inherit; border-radius: 4px; transition: all 0.3s; backdrop-filter: blur(5px); }
-    .logout-btn:hover { background: #FF0055; color: #000; box-shadow: 0 0 10px #FF0055; }
 
     .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
     .card.is-flipped { transform: rotateY(180deg); }
@@ -31,7 +27,6 @@
     .face-front { background-image: url('TABLET 03.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
     .face-back { transform: rotateY(180deg); }
 
-    /* Capa superpuesta para la receta al 75% */
     #overlayReceta {
         position: absolute;
         top: 0;
@@ -39,10 +34,10 @@
         width: 100%;
         height: 100%;
         background-color: rgba(0, 0, 0, 0.6);
-        display: none; /* Oculto por defecto */
+        display: none; 
         justify-content: center;
         align-items: center;
-        z-index: 50; /* Por encima del fondo, por debajo de botones full screen si aplican */
+        z-index: 50; 
     }
     #imgReceta { max-width: 75%; max-height: 75%; object-fit: contain; }
     
@@ -54,7 +49,7 @@
     canvas { z-index: 10; }
     .panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
     .left { top: 0; left: 0; }
-    .right { top: 0; right: 0; align-items: flex-end; margin-top: 50px; }
+    .right { top: 0; right: 0; align-items: flex-end; }
     .counter-box { padding: 10px 20px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; backdrop-filter: blur(8px); border: 1px solid; min-width: 150px; text-shadow: 0 0 5px currentColor; }
     #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
     #total-counter { background: rgba(0, 255, 255, 0.15); color: #00FFFF; border-color: #00FFFF; }
@@ -82,7 +77,6 @@
 
   <div id="app-screen" class="scene">
     <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
-    <button id="logout-btn" class="logout-btn" title="Cerrar Sesión">DESCONECTAR</button>
 
     <div id="card" class="card">
       <div class="face face-front">
@@ -116,7 +110,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, set, push, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
@@ -134,15 +128,13 @@
 
     const eventosRef = ref(db, 'muebles/tablet_03/eventos');
     const statusRef = ref(db, 'muebles/tablet_03/status');
-    const estadoRef = ref(db, 'muebles/tablet_03/estado_actual'); // Nodo de Sincronización
+    const estadoRef = ref(db, 'muebles/tablet_03/estado_actual'); 
     const connectedRef = ref(db, ".info/connected");
 
-    // UI Auth
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const loginForm = document.getElementById('login-form');
     const errorMsg = document.getElementById('error-msg');
-    const logoutBtn = document.getElementById('logout-btn');
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -174,8 +166,6 @@
         });
     });
 
-    logoutBtn.addEventListener('click', () => { signOut(auth).then(() => { window.location.reload(); }); });
-
     function conectarBD() {
       onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
@@ -205,7 +195,7 @@
       if(loginScreen.style.display !== 'none') return;
       if (card.classList.contains('is-flipped')) return;
 
-      if (e.target !== fullscreenBtn && e.target !== btnFlip && e.target !== logoutBtn) {
+      if (e.target !== fullscreenBtn && e.target !== btnFlip) {
         clickCount++;
         clearTimeout(clickTimeout);
         if (clickCount >= 5) {
@@ -219,33 +209,38 @@
       }
     });
 
-    // Elementos UI
     const videoElement = document.getElementById('video');
     const canvasElement = document.getElementById('canvas');
     const canvasCtx = canvasElement.getContext('2d');
     const overlayReceta = document.getElementById('overlayReceta');
     const imgReceta = document.getElementById('imgReceta');
 
-    // Variables lógicas
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
     let currentFacesCount = 0;
     let lastLoggedFaceCount = 0;
     let pendingFaceCount = 0;
     let stabilityTimer = null;
     let camaraIniciada = false;
-    let hayPersonasActual = false; // Flag para sync firebase
+    let hayPersonasActual = false;
     let confettiInterval;
 
-    // --- ESCUCHADOR FIREBASE PARA RECETAS Y CONFETI ---
     onValue(estadoRef, (snapshot) => {
       const estado = snapshot.val();
       if(!estado) return;
 
-      // Confeti
+      // Lógica de Confeti Denso
       if (estado.hayPersonas) {
         if (!confettiInterval) {
           confettiInterval = setInterval(() => {
-            confetti({ particleCount: 15, spread: 60, origin: { y: -0.1, x: Math.random() }, zIndex: 9999 });
+            confetti({
+                particleCount: 150,
+                angle: 90,
+                spread: 180,
+                origin: { x: Math.random(), y: -0.1 },
+                startVelocity: 45,
+                gravity: 1.2,
+                zIndex: 9999
+            });
           }, 250);
         }
       } else {
@@ -253,9 +248,7 @@
         confettiInterval = null;
       }
 
-      // Recetas
       if (estado.recetaActiva && estado.recetaActiva !== "") {
-        // En Tablet se llama 01RECETA.png, 02RECETA.png...
         imgReceta.src = `${estado.recetaActiva}RECETA.png`;
         overlayReceta.style.display = 'flex';
       } else {
@@ -277,14 +270,12 @@
       const ahora = Date.now();
       currentFacesCount = rostrosActuales;
 
-      // --- LOGICA DE ACTUALIZACIÓN DE SINCRONIZACIÓN DE PERSONAS ---
       const personasDetectadas = rostrosActuales > 0;
       if (personasDetectadas !== hayPersonasActual) {
         hayPersonasActual = personasDetectadas;
         set(ref(db, 'muebles/tablet_03/estado_actual/hayPersonas'), hayPersonasActual);
       }
 
-      // --- LÓGICA ORIGINAL DE REGISTRO EN FIREBASE (Eventos de Conteo) ---
       if (rostrosActuales !== pendingFaceCount) {
         pendingFaceCount = rostrosActuales;
         clearTimeout(stabilityTimer); 
@@ -302,7 +293,6 @@
         }, 1000); 
       }
 
-      // Lógica interna de sesión y estadisticas de depuración
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) { inicioSesionActual = ahora; }
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
