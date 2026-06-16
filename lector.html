@@ -44,7 +44,7 @@
 
         /* === ESTILOS DE LA APP === */
         #app-screen {
-            display: none; /* Se oculta hasta el login */
+            display: none; 
             width: 100vw;
             height: 100vh;
             position: relative;
@@ -162,7 +162,6 @@
             "7591016204894": "04"
         };
 
-        // Lógica de Autenticación
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 loginScreen.style.display = 'none';
@@ -193,7 +192,6 @@
                 });
         });
 
-        // Mantener Foco
         document.addEventListener('click', () => {
             if (appScreen.style.display === 'block') input.focus();
         });
@@ -201,7 +199,6 @@
             if (appScreen.style.display === 'block') setTimeout(() => input.focus(), 10);
         });
 
-        // Escaneo de Códigos
         input.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -212,10 +209,8 @@
                 if (baseDeDatos[scannedValue]) {
                     const recetaID = baseDeDatos[scannedValue];
                     
-                    // Actualiza en Firebase
                     set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
                     
-                    // Apaga después de 3 segundos
                     resetTimeout = setTimeout(() => {
                         set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
                     }, 3000);
@@ -226,18 +221,18 @@
             }
         });
 
-        // Sincronización con Firebase
         function iniciarSincronizacion() {
             onValue(estadoRef, (snapshot) => {
                 const estado = snapshot.val();
                 if (!estado) return;
 
-                // Lógica de Confeti Denso
+                // Lógica de Confeti Optimizado (Más grande, menos cantidad)
                 if (estado.hayPersonas) {
                     if (!confettiInterval) {
                         confettiInterval = setInterval(() => {
                             confetti({
-                                particleCount: 150,
+                                particleCount: 25,     // Menos cantidad por ráfaga
+                                scalar: 2.5,          // Tamaño mucho más grande
                                 angle: 90,
                                 spread: 180,
                                 origin: { x: Math.random(), y: -0.1 },
@@ -245,14 +240,13 @@
                                 gravity: 1.2,
                                 zIndex: 9999
                             });
-                        }, 250);
+                        }, 400); // Intervalo más relajado
                     }
                 } else {
                     clearInterval(confettiInterval);
                     confettiInterval = null;
                 }
 
-                // Lógica Mostrar Receta
                 if (estado.recetaActiva && estado.recetaActiva !== "") {
                     imgReceta.src = `RECETA${estado.recetaActiva}.png`;
                     overlayReceta.style.display = 'flex';
