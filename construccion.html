@@ -199,14 +199,14 @@
         .cal-cell.active { background: #b39c6e; color: #fff; border-color: #b39c6e; }
 
         /* Calendario Año */
-        .year-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 12px; flex-grow: 1; padding: 10px 0;}
+        .year-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 12px; height: 100%; padding: 10px 0;}
         .year-cell { display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #eaeaea; border-radius: 12px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: all 0.2s; color: #444; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
         .year-cell:hover { background: #fdfbf7; border-color: #b39c6e; color: #b39c6e; transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.05);}
         .year-cell.active { background: #b39c6e; color: #fff; border-color: #b39c6e; }
 
-        /* Reloj Interactivo */
-        .clock-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; flex-direction: column;}
-        .clock-face { position: relative; width: 280px; height: 280px; border-radius: 50%; border: 6px solid #f4f4f4; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05), inset 0 0 20px rgba(0,0,0,0.03); cursor: pointer; touch-action: none; }
+        /* Reloj Interactivo Ajustado a Círculo Perfecto */
+        .clock-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; flex-direction: column; padding: 10px;}
+        .clock-face { position: relative; aspect-ratio: 1 / 1; width: 100%; max-width: 280px; max-height: 280px; flex-shrink: 0; border-radius: 50%; border: 6px solid #f4f4f4; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05), inset 0 0 20px rgba(0,0,0,0.03); cursor: pointer; touch-action: none; margin: auto;}
         .clock-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; background: #b39c6e; border-radius: 50%; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .clock-hand { position: absolute; top: 15%; left: 50%; width: 4px; height: 35%; background: #b39c6e; transform-origin: bottom center; border-radius: 4px; z-index: 5; pointer-events: none; margin-left: -2px; }
         .clock-ampm { position: absolute; top: 65%; left: 50%; transform: translate(-50%, -50%); font-size: 1.4rem; font-weight: 900; color: #ccc; z-index: 1;}
@@ -383,7 +383,7 @@
 
                                 <button id="btn-next" class="nav-arrow" disabled><svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></button>
                             </div>
-                            <div class="hint" onclick="flipToFront()">Toca aquí para volver al exhibidor interactivo</div>
+                            <div class="hint" onclick="flipToFront()">Toca aquí para volver al exhibidor en tiempo real</div>
                             
                             <button id="btn-refresh-live" onclick="goToCurrentTime()">⟳ EN VIVO</button>
                         </div>
@@ -958,13 +958,10 @@
             const face = document.getElementById('clock-face');
             for(let i=1; i<=12; i++) {
                 let angle = i * 30 * (Math.PI / 180);
-                let r = 110; 
-                let x = 140 + r * Math.sin(angle); 
-                let y = 140 - r * Math.cos(angle);
                 let num = document.createElement('div');
                 num.className = 'clock-number';
-                num.style.left = x + 'px';
-                num.style.top = y + 'px';
+                num.style.left = `calc(50% + ${38 * Math.sin(angle)}%)`;
+                num.style.top = `calc(50% - ${38 * Math.cos(angle)}%)`;
                 num.innerText = i;
                 face.appendChild(num);
             }
@@ -1061,12 +1058,14 @@
             viewState = 'CHART_HOUR';
             currentViewDate = new Date(); currentMetric = 'count'; 
             document.getElementById('icon-chrono').style.display = 'block'; document.getElementById('icon-user').style.display = 'none';
+            document.getElementById('btn-volver-mapa').style.display = 'none'; // Oculta el botón Volver al Mapa
             updateDashboardView();
             document.getElementById('flip-container').classList.add('flipped');
         }
 
         window.flipToFront = function() {
             document.getElementById('flip-container').classList.remove('flipped');
+            document.getElementById('btn-volver-mapa').style.display = 'block'; // Muestra el botón Volver al Mapa
             setTimeout(() => { tabletActualEnGrafico = null; }, 500); 
         }
 
