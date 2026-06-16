@@ -12,7 +12,7 @@
 
     <style>
         /* =========================================
-           NORMALIZACIÓN Y CONTENEDOR 16:9 (NUEVO)
+           NORMALIZACIÓN Y CONTENEDOR 16:9 
            ========================================= */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
         
@@ -20,32 +20,30 @@
             width: 100%; 
             height: 100%; 
             overflow: hidden; 
-            background-color: #ffffff; /* Este color crea las barras blancas a los lados/arriba/abajo */
+            background-color: #ffffff; 
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* Contenedor Maestro que fuerza el 16:9 */
         #aspect-ratio-wrapper {
             position: relative;
             width: 100%;
             height: 100%;
-            /* La magia matemática para mantener la proporción: */
             max-width: calc(100vh * (16 / 9));
             max-height: calc(100vw * (9 / 16));
             overflow: hidden;
-            background-color: #f4f4f9; /* Fondo de base del sistema */
-            box-shadow: 0 0 30px rgba(0,0,0,0.15); /* Sombra para resaltar la app sobre el fondo blanco */
+            background-color: #ffffff;
+            box-shadow: 0 0 30px rgba(0,0,0,0.15); 
         }
 
         .spa-view { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 
         /* =========================================
-           VISTA 1: LOGIN
+           VISTA 1: LOGIN (Fondo Blanco)
            ========================================= */
-        #login-view { background-color: #000000; display: flex; justify-content: center; align-items: center; z-index: 9999; }
-        .login-box { background: #ffffff; padding: 40px; border-radius: 12px; text-align: center; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #login-view { background-color: #ffffff; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .login-box { background: #ffffff; padding: 40px; border-radius: 12px; text-align: center; width: 350px; border: 1px solid #eaeaea; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .login-box h2 { color: #333; margin-bottom: 20px; font-weight: 800; text-transform: uppercase;}
         .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
         .login-box button { width: 100%; padding: 12px; background: #b39c6e; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
@@ -53,9 +51,9 @@
         #login-error { color: red; margin-top: 10px; font-size: 14px; display: none; }
 
         /* =========================================
-           VISTA 1.5: BIENVENIDA / START
+           VISTA 1.5: BIENVENIDA / START (Fondo Blanco)
            ========================================= */
-        #welcome-view { background-color: #000000; justify-content: center; align-items: center; z-index: 9998; color: white; }
+        #welcome-view { background-color: #ffffff; justify-content: center; align-items: center; z-index: 9998; color: #333; }
         
         #rotate-device-msg { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px; }
         #rotate-device-msg svg { width: 80px; height: 80px; animation: rotatePhone 2s infinite ease-in-out; }
@@ -64,12 +62,12 @@
             50% { transform: rotate(-90deg); } 
             100% { transform: rotate(-90deg); } 
         }
-        #rotate-device-msg p { font-size: 1.4rem; font-weight: 600; color: #daccaa; max-width: 80%; }
+        #rotate-device-msg p { font-size: 1.4rem; font-weight: 600; color: #666; max-width: 80%; }
 
         #start-container { display: none; justify-content: center; align-items: center; text-align: center; flex-direction: column; }
         .pulse-btn { 
-            background-color: #b39c6e; color: #fff; border: 2px solid #daccaa; border-radius: 12px; 
-            padding: 25px 50px; font-size: 1.8rem; font-weight: 900; text-transform: uppercase; 
+            background-color: #b39c6e; color: #fff; border: none; border-radius: 12px; 
+            padding: 25px 50px; font-size: 1.5rem; font-weight: 900; text-transform: uppercase; 
             cursor: pointer; box-shadow: 0 0 15px rgba(179, 156, 110, 0.5); 
             animation: slowPulse 2.5s infinite; transition: transform 0.3s, background-color 0.3s; 
             line-height: 1.4; letter-spacing: 1px;
@@ -77,15 +75,14 @@
         .pulse-btn:hover { background-color: #968157; transform: scale(1.02); animation-play-state: paused; }
         @keyframes slowPulse {
             0% { box-shadow: 0 0 0 0 rgba(179, 156, 110, 0.7); transform: scale(1); }
-            50% { box-shadow: 0 0 0 25px rgba(179, 156, 110, 0); transform: scale(1.03); }
+            50% { box-shadow: 0 0 0 20px rgba(179, 156, 110, 0); transform: scale(1.03); }
             100% { box-shadow: 0 0 0 0 rgba(179, 156, 110, 0); transform: scale(1); }
         }
 
         /* =========================================
            VISTA 2: MAPA (Canal Moderno)
            ========================================= */
-        #map-view { background-color: #f4f4f9; justify-content: center; align-items: center; }
-        /* Cambiado vw/vh por % para que responda al contenedor maestro */
+        #map-view { background-color: #ffffff; justify-content: center; align-items: center; }
         #app-container { width: 90%; height: 90%; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; overflow: hidden; transition: width 0.3s, height 0.3s, border-radius 0.3s; }
         :fullscreen #app-container { width: 100%; height: 100%; border-radius: 0; border: none; }
         #map { width: 100%; height: 100%; position: relative; z-index: 1; background-color: transparent;}
@@ -105,47 +102,46 @@
         #close-info-btn:hover { color: #ff2a2a; }
 
         .panel-header { text-align: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; }
-        #panel-subtitle { font-size: 18px; font-weight: 900; color: #daccaa; margin-bottom: 15px; text-transform: uppercase; }
-        #panel-title { font-size: 22px; font-weight: 600; color: #333; }
-        .panel-images-container { display: flex; flex-direction: column; gap: 20px; align-items: center; }
+        #panel-subtitle { font-size: 16px; font-weight: 900; color: #b39c6e; margin-bottom: 10px; text-transform: uppercase; }
+        #panel-title { font-size: 20px; font-weight: 600; color: #333; }
+        .panel-images-container { display: flex; flex-direction: column; gap: 15px; align-items: center; }
         .panel-images-container a { display: block; width: 100%; text-align: center; outline: none; }
-        .panel-images-container img { width: 200px; height: 200px; object-fit: cover; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); transition: transform 0.2s; cursor: pointer; }
+        .panel-images-container img { width: 180px; height: 180px; object-fit: cover; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); transition: transform 0.2s; cursor: pointer; }
         .panel-images-container img:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
         .panel-footer-logo { margin-top: auto; padding-top: 25px; text-align: center; }
-        #panel-logo-img { max-width: 180px; max-height: 80px; object-fit: contain; }
+        #panel-logo-img { max-width: 150px; max-height: 70px; object-fit: contain; }
 
-        .accordion-btn { background: none; border: none; border-bottom: 2px solid #f0f0f0; font-size: 20px; font-weight: 600; color: #daccaa; width: 100%; text-align: left; padding: 15px 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: color 0.2s; }
-        .accordion-btn:hover { color: #b39c6e; }
-        .accordion-content { display: none; flex-direction: column; gap: 15px; padding: 20px 0; }
+        .accordion-btn { background: none; border: none; border-bottom: 2px solid #f0f0f0; font-size: 18px; font-weight: 600; color: #b39c6e; width: 100%; text-align: left; padding: 12px 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: color 0.2s; }
+        .accordion-btn:hover { color: #968157; }
+        .accordion-content { display: none; flex-direction: column; gap: 15px; padding: 15px 0; }
         .accordion-content.open { display: flex; }
         .filter-wrapper { display: flex; flex-direction: column; width: 100%; margin-bottom: 5px; }
         .filter-img-btn { border: 2px solid transparent; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s ease; background-color: #fcfcfc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .filter-img-btn:hover { transform: translateY(-2px); }
         .filter-img-btn.active-filter { border-color: #b39c6e; background-color: #fdfbf7; }
-        .marca-btn { aspect-ratio: 1 / 1; width: 180px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
+        .marca-btn { aspect-ratio: 1 / 1; width: 160px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
         .marca-btn img { max-width: 90%; max-height: 90%; object-fit: contain; }
         .sucursal-btn { text-align: center; }
-        .sucursal-btn img { max-width: 100%; height: 60px; object-fit: contain; }
-        .filter-results { display: none; flex-direction: column; gap: 8px; padding: 12px 10px; background-color: #fafafa; border-radius: 8px; border-left: 4px solid #daccaa; margin-top: 10px; }
+        .sucursal-btn img { max-width: 100%; height: 50px; object-fit: contain; }
+        .filter-results { display: none; flex-direction: column; gap: 8px; padding: 12px 10px; background-color: #fafafa; border-radius: 8px; border-left: 4px solid #b39c6e; margin-top: 10px; }
         .filter-results.active { display: flex; }
-        .filter-results a { color: #daccaa; font-weight: 700; text-decoration: none; font-size: 14px; display: block; padding: 4px 0; cursor: pointer;}
-        .filter-results a:hover { color: #b39c6e; text-decoration: underline; }
+        .filter-results a { color: #b39c6e; font-weight: 700; text-decoration: none; font-size: 13px; display: block; padding: 4px 0; cursor: pointer;}
+        .filter-results a:hover { color: #968157; text-decoration: underline; }
 
         /* =========================================
-           VISTA 3: MONITOR INTERACTIVO
+           VISTA 3: MONITOR INTERACTIVO (Fondo Blanco)
            ========================================= */
-        #monitor-view { background-color: #000000; }
-        #btn-volver-mapa { position: absolute; top: 15px; left: 15px; padding: 10px 20px; background: rgba(179, 156, 110, 0.8); color: #fff; border: 2px solid rgba(255, 255, 255, 0.5); border-radius: 8px; font-weight: bold; cursor: pointer; z-index: 1000; transition: background 0.3s; }
-        #btn-volver-mapa:hover { background: rgba(179, 156, 110, 1); }
+        #monitor-view { background-color: #ffffff; }
+        #btn-volver-mapa { position: absolute; top: 15px; left: 15px; padding: 8px 15px; background: rgba(179, 156, 110, 0.9); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; z-index: 1000; transition: background 0.3s; font-size: 0.9rem;}
+        #btn-volver-mapa:hover { background: rgba(150, 129, 87, 1); }
 
-        /* Cambiado vw/vh por % para que responda al contenedor maestro */
         .flip-container { perspective: 1500px; width: 100%; height: 100%; }
-        .flipper { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 1s cubic-bezier(0.68, -0.15, 0.265, 1.15); }
+        .flipper { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.68, -0.15, 0.265, 1.15); }
         .flip-container.flipped .flipper { transform: rotateY(180deg); }
         
-        .front, .back { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backface-visibility: hidden; }
-        .front { background-color: #ffffff; pointer-events: auto; }
-        .back { transform: rotateY(180deg); background-color: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; pointer-events: none;}
+        .front, .back { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backface-visibility: hidden; background-color: #ffffff; }
+        .front { pointer-events: auto; }
+        .back { transform: rotateY(180deg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; pointer-events: none;}
         .flip-container.flipped .front { pointer-events: none; }
         .flip-container.flipped .back { pointer-events: auto; }
 
@@ -160,32 +156,63 @@
 
         /* En Vivo Overlay */
         .live-overlay { position: absolute; top: 50%; left: 40%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; z-index: 100; pointer-events: none; }
-        .en-vivo-badge { color: #ff3333; border: 3px solid #ff3333; border-radius: 50px; padding: 5px 25px; font-weight: 900; font-size: 1.8rem; letter-spacing: 2px; box-shadow: 0 0 10px #ff3333, inset 0 0 10px #ff3333; animation: heartbeat 2s infinite; margin-bottom: 10px; }
+        .en-vivo-badge { color: #ff3333; border: 2px solid #ff3333; border-radius: 50px; padding: 4px 20px; font-weight: 900; font-size: 1.4rem; letter-spacing: 2px; box-shadow: 0 0 8px #ff3333, inset 0 0 8px #ff3333; animation: heartbeat 2s infinite; margin-bottom: 5px; background: rgba(255,255,255,0.8); }
         @keyframes heartbeat { 0%, 20%, 40%, 100% { transform: scale(1); opacity: 1; } 10%, 30% { transform: scale(1.1); opacity: 0.8; } }
-        .live-count { font-size: 4.5rem; font-weight: 900; color: #000; text-transform: uppercase; }
-        .live-timer { font-size: 3.5rem; font-weight: 900; color: #d4af37; text-shadow: 3px 3px 6px rgba(0,0,0,0.9); }
+        .live-count { font-size: 3.5rem; font-weight: 900; color: #000; text-transform: uppercase; text-shadow: 2px 2px 0px #fff; }
+        .live-timer { font-size: 2.5rem; font-weight: 900; color: #d4af37; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
         .live-timer.recorded { color: #2aa12a; animation: timerPulseTwice 0.8s forwards; }
         @keyframes timerPulseTwice { 0% { transform: scale(1); } 30%, 75% { transform: scale(1.3); } 50% { transform: scale(1.05); } 100% { transform: scale(1.2); } }
-        .live-datetime { font-size: 1.3rem; color: #bbb; margin-top: 5px; font-weight: 600; }
+        .live-datetime { font-size: 1rem; color: #555; margin-top: 5px; font-weight: 600; background: rgba(255,255,255,0.7); padding: 2px 10px; border-radius: 10px; }
         .fade-out-up { animation: fadeOutUp 0.5s forwards ease-in; }
         @keyframes fadeOutUp { 0% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-70%); } }
 
-        /* Contenido Trasero (Gráficos) */
-        .back-content { background: #f8f9fa; padding: 40px 60px; border-radius: 20px; width: 95%; max-width: 1400px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid #e0e0e0; text-align: center; position: relative; }
-        .top-controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 5px; }
-        .top-controls h1 { color: #111; letter-spacing: 3px; margin: 0; text-transform: uppercase; font-weight: 800; font-size: 2.2rem; }
-        .subtitle { color: #666; margin-bottom: 20px; font-weight: bold; text-transform: uppercase; font-size: 1.2rem; }
+        /* Contenido Trasero (Gráficos y UI Reducida) */
+        .back-content { background: #ffffff; padding: 20px 30px; border-radius: 15px; width: 95%; max-width: 1200px; box-shadow: 0 5px 25px rgba(0,0,0,0.08); border: 1px solid #eaeaea; text-align: center; position: relative; height: 85vh; display: flex; flex-direction: column; }
+        .top-controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .top-controls h1 { color: #111; letter-spacing: 2px; margin: 0; text-transform: uppercase; font-weight: 800; font-size: 1.5rem; }
+        .subtitle { color: #666; margin-bottom: 10px; font-weight: bold; text-transform: uppercase; font-size: 1rem; }
         
-        .icon-btn { background: #fff; border: 2px solid #ddd; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .icon-btn:hover { background: #f0f0f0; transform: scale(1.1); }
-        .metric-toggle { position: absolute; top: 0; right: 0; width: 55px; height: 55px; border-color: #ccc; }
+        .icon-btn { background: #fff; border: 1px solid #ccc; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .icon-btn:hover { background: #f4f4f4; transform: scale(1.1); border-color: #b39c6e; }
+        .icon-btn svg { width: 18px; height: 18px; fill: #333; }
+        .metric-toggle { position: absolute; top: 15px; right: 20px; width: 40px; height: 40px; border-color: #ccc; }
 
-        .chart-layout { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 50vh; overflow: hidden; }
-        .nav-arrow { background: rgba(0,0,0,0.05); border: none; border-radius: 12px; width: 50px; height: 100px; cursor: pointer; transition: background 0.3s; z-index: 10; }
-        .nav-arrow:hover { background: rgba(0,0,0,0.15); transform: scale(1.05); }
+        .chart-layout { display: flex; align-items: center; justify-content: space-between; width: 100%; flex-grow: 1; overflow: hidden; position: relative; }
+        .nav-arrow { background: rgba(0,0,0,0.03); border: none; border-radius: 8px; width: 35px; height: 70px; cursor: pointer; transition: background 0.3s; z-index: 10; display: flex; align-items: center; justify-content: center;}
+        .nav-arrow:hover { background: rgba(179,156,110,0.2); transform: scale(1.05); }
+        .nav-arrow svg { width: 24px; height: 24px; fill: #666; }
         .nav-arrow:disabled { opacity: 0; pointer-events: none; }
-        .chart-container { position: relative; height: 100%; flex-grow: 1; padding: 0 20px; }
         
+        /* Contenedores de vistas (Chart, Calendario, Reloj) */
+        .view-panel-wrapper { position: relative; height: 100%; flex-grow: 1; padding: 0 15px; display: flex; flex-direction: column; justify-content: center; }
+        .view-panel { display: none; width: 100%; height: 100%; animation: fadeIn 0.4s ease; }
+        .view-panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        /* Calendario Mes */
+        .cal-container { display: flex; flex-direction: column; width: 100%; height: 100%; padding: 10px 0; }
+        .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; color: #999; font-size: 0.85rem; padding-bottom: 10px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; flex-grow: 1; gap: 6px; }
+        .cal-cell { display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #eaeaea; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: bold; font-size: 1rem; color: #444; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+        .cal-cell:hover { background: #fdfbf7; border-color: #b39c6e; color: #b39c6e; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05);}
+        .cal-cell.empty { background: transparent; border: none; pointer-events: none; box-shadow: none; }
+        .cal-cell.active { background: #b39c6e; color: #fff; border-color: #b39c6e; }
+
+        /* Calendario Año */
+        .year-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 12px; flex-grow: 1; padding: 10px 0;}
+        .year-cell { display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #eaeaea; border-radius: 12px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: all 0.2s; color: #444; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+        .year-cell:hover { background: #fdfbf7; border-color: #b39c6e; color: #b39c6e; transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.05);}
+        .year-cell.active { background: #b39c6e; color: #fff; border-color: #b39c6e; }
+
+        /* Reloj Interactivo */
+        .clock-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; flex-direction: column;}
+        .clock-face { position: relative; width: 280px; height: 280px; border-radius: 50%; border: 6px solid #f4f4f4; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05), inset 0 0 20px rgba(0,0,0,0.03); cursor: pointer; touch-action: none; }
+        .clock-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; background: #b39c6e; border-radius: 50%; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .clock-hand { position: absolute; top: 15%; left: 50%; width: 4px; height: 35%; background: #b39c6e; transform-origin: bottom center; border-radius: 4px; z-index: 5; pointer-events: none; margin-left: -2px; }
+        .clock-ampm { position: absolute; top: 65%; left: 50%; transform: translate(-50%, -50%); font-size: 1.4rem; font-weight: 900; color: #ccc; z-index: 1;}
+        .clock-number { position: absolute; font-weight: 800; color: #555; font-size: 1.1rem; transform: translate(-50%, -50%); pointer-events: none; }
+
+        /* Animaciones Desplazamiento Gráfico */
         .slide-out-left { animation: slideOutLeft 0.4s forwards; }
         .slide-in-right { animation: slideInRight 0.4s forwards; }
         .slide-out-right { animation: slideOutRight 0.4s forwards; }
@@ -195,9 +222,14 @@
         @keyframes slideOutRight { to { transform: translateX(100%); opacity: 0; } }
         @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        .hint { margin-top: 25px; color: #888; font-size: 0.9rem; animation: pulse 2s infinite; cursor: pointer; padding: 10px 20px; display: inline-block; border-radius: 8px; transition: background-color 0.3s; }
-        .hint:hover { background-color: rgba(0,0,0,0.05); color: #333; }
-        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; transform: scale(1.02); } 100% { opacity: 0.8; } }
+        .hint { margin-top: 15px; color: #888; font-size: 0.85rem; animation: pulse 2s infinite; cursor: pointer; padding: 6px 15px; display: inline-block; border-radius: 20px; transition: background-color 0.3s; background: #f9f9f9; font-weight: 600;}
+        .hint:hover { background-color: #f0f0f0; color: #333; animation-play-state: paused; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(179,156,110,0.4); } 70% { box-shadow: 0 0 0 10px rgba(179,156,110,0); } 100% { box-shadow: 0 0 0 0 rgba(179,156,110,0); } }
+
+        /* Botón Actualizar En Vivo */
+        #btn-refresh-live { position: absolute; bottom: 20px; right: 20px; background: #b39c6e; color: white; border: none; padding: 10px 18px; border-radius: 25px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(179,156,110,0.4); transition: transform 0.2s, background 0.2s; z-index: 100; display: none; font-size: 0.9rem; letter-spacing: 0.5px;}
+        #btn-refresh-live:hover { background: #968157; transform: translateY(-2px); }
+
     </style>
 </head>
 <body>
@@ -237,7 +269,7 @@
                 </button>
 
                 <div id="nav-panel" class="side-panel">
-                    <h2 style="color: #333; margin-bottom: 20px; font-size: 22px;">Filtros de Búsqueda</h2>
+                    <h2 style="color: #333; margin-bottom: 20px; font-size: 20px;">Filtros de Búsqueda</h2>
                     <div class="accordion-item">
                         <button class="accordion-btn">Marcas <span>+</span></button>
                         <div class="accordion-content">
@@ -316,25 +348,53 @@
                             </button>
 
                             <div class="top-controls">
-                                <button id="btn-zoom-out" class="icon-btn"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg></button>
+                                <button id="btn-zoom-out" class="icon-btn" title="Alejar Vista"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg></button>
                                 <h1 id="chart-title">YAR-YUR SYSTEM</h1>
-                                <button id="btn-zoom-in" class="icon-btn" style="display:none;"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7H9v2H7v1h2v2h1v-2h2V9h-2z"/></svg></button>
+                                <button id="btn-zoom-in" class="icon-btn" style="display:none;" title="Acercar Vista"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7H9v2H7v1h2v2h1v-2h2V9h-2z"/></svg></button>
                             </div>
                             <div id="chart-subtitle" class="subtitle">HORA: --</div>
                             
                             <div class="chart-layout">
                                 <button id="btn-prev" class="nav-arrow"><svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg></button>
-                                <div class="chart-container" id="chart-wrapper"><canvas id="main-chart"></canvas></div>
+                                
+                                <div class="view-panel-wrapper" id="master-view-wrapper">
+                                    <div id="view-chart-container" class="view-panel active">
+                                        <canvas id="main-chart"></canvas>
+                                    </div>
+                                    <div id="view-calendar-day" class="view-panel">
+                                        <div class="cal-container">
+                                            <div class="cal-header"><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div></div>
+                                            <div class="cal-grid" id="cal-grid"></div>
+                                        </div>
+                                    </div>
+                                    <div id="view-calendar-year" class="view-panel">
+                                        <div class="year-grid" id="year-grid"></div>
+                                    </div>
+                                    <div id="view-clock" class="view-panel">
+                                        <div class="clock-wrapper">
+                                            <div class="clock-face" id="clock-face">
+                                                <div class="clock-hand" id="clock-hand"></div>
+                                                <div class="clock-center"></div>
+                                                <div class="clock-ampm" id="clock-ampm">AM</div>
+                                                </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <button id="btn-next" class="nav-arrow" disabled><svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></button>
                             </div>
                             <div class="hint" onclick="flipToFront()">Toca aquí para volver al exhibidor interactivo</div>
+                            
+                            <button id="btn-refresh-live" onclick="goToCurrentTime()">⟳ EN VIVO</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-    </div> <script type="module">
+    </div> 
+    
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { getDatabase, ref, query, orderByChild, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
@@ -407,7 +467,7 @@
                 welcomeView.style.display = 'none';
                 mapView.style.display = 'flex'; 
                 activeAppView = 0;
-                setTimeout(() => { if (chartInstance) chartInstance.reflow(); }, 200); // Ajuste de mapa al entrar
+                setTimeout(() => { if (chartInstance) chartInstance.reflow(); }, 200);
             }
         }
 
@@ -417,10 +477,10 @@
 
         function checkDeviceOrientation() {
             if (welcomeView.style.display === 'flex') {
-                if (window.innerHeight > window.innerWidth) { // Vertical / Portrait
+                if (window.innerHeight > window.innerWidth) { // Vertical
                     rotateMsg.style.display = 'flex';
                     startContainer.style.display = 'none';
-                } else { // Horizontal / Landscape
+                } else { // Horizontal
                     rotateMsg.style.display = 'none';
                     startContainer.style.display = 'flex';
                 }
@@ -431,13 +491,10 @@
         window.addEventListener('orientationchange', checkDeviceOrientation);
 
         document.getElementById('btn-start-system').addEventListener('click', () => {
-            // Solicitar Pantalla Completa
             const elem = document.documentElement;
             if (elem.requestFullscreen) { elem.requestFullscreen(); }
             else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
             else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
-            
-            // Iniciar aplicación mostrando el mapa
             toggleAppView(0);
         });
 
@@ -445,7 +502,7 @@
         onAuthStateChanged(auth, (user) => {
             if (user) { 
                 loginView.style.display = 'none'; 
-                welcomeView.style.display = 'flex'; // Ir a pantalla de bienvenida y orientación
+                welcomeView.style.display = 'flex';
                 checkDeviceOrientation();
             } 
             else { 
@@ -467,15 +524,16 @@
             if(document.getElementById('flip-container').classList.contains('flipped')) flipToFront();
         });
 
-        /* --- VARIABLES GLOBALES DEL MONITOR --- */
+        /* --- VARIABLES GLOBALES DEL MONITOR Y ESTADO DE VISTAS --- */
         let activeFirebaseListeners = [];
         let todosLosEventos = { 1: [], 2: [], 3: [] }; 
         let estadoVisual = { 1: [], 2: [], 3: [] }; 
         let conteosActuales = { 1: 0, 2: 0, 3: 0 };
         let tabletActualEnGrafico = null; 
         
-        const VIEW_LEVELS = ['hour', 'day', 'month', 'year'];
-        let currentViewLevel = 'hour'; 
+        // ESTADOS: 'CHART_HOUR', 'CHART_DAY', 'CHART_MONTH', 'CAL_MONTH', 'CAL_YEAR', 'CLOCK'
+        let viewState = 'CHART_HOUR'; 
+        let currentViewLevel = 'hour'; // Para el render del chart js
         let currentViewDate = new Date(); 
         let currentMetric = 'count'; 
 
@@ -519,7 +577,7 @@
                         
                         if (!isInitialLoad) {
                             updateLiveOverlay();
-                            if (tabletActualEnGrafico === zoneId) updateChartDisplay();
+                            if (tabletActualEnGrafico === zoneId && viewState.startsWith('CHART_')) updateChartDisplay();
                         }
                     }
                 });
@@ -660,12 +718,12 @@
             data: { labels: [], datasets: [{ label: 'Data', data: [], backgroundColor: '#000', borderRadius: 4 }] },
             options: {
                 responsive: true, maintainAspectRatio: false, animation: { duration: 400, easing: 'easeOutQuart' },
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eaeaea' } }, x: { grid: { display: false } } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f0f0f0' } }, x: { grid: { display: false } } },
                 interaction: { mode: 'index', intersect: false },
                 plugins: { 
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)', titleFont: { size: 16 }, bodyFont: { size: 14 }, padding: 12, displayColors: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)', titleFont: { size: 14 }, bodyFont: { size: 13 }, padding: 10, displayColors: false,
                         callbacks: {
                             title: function(c) { return c[0].label; },
                             label: function(c) { return currentMetric === 'time' ? c.raw + ' segs (promedio)' : (c.raw === 1 ? '1 persona' : c.raw + ' personas'); }
@@ -697,11 +755,6 @@
                 for(let i=1; i<=daysInMonth; i++) labels.push(`${i}`);
                 dataBuckets = new Array(daysInMonth).fill(0); countBuckets = new Array(daysInMonth).fill(0);
             }
-            else if (currentViewLevel === 'year') {
-                titlePrefix = "AÑO:"; titleSuffix = date.getFullYear().toString();
-                labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                dataBuckets = new Array(12).fill(0); countBuckets = new Array(12).fill(0);
-            }
 
             const duracionesRealesMap = new Map(); 
             let colaSimulada = [];
@@ -724,14 +777,12 @@
             if (currentViewLevel === 'hour') isCurrentView = (date.getHours() === now.getHours() && date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
             if (currentViewLevel === 'day') isCurrentView = (date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
             if (currentViewLevel === 'month') isCurrentView = (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
-            if (currentViewLevel === 'year') isCurrentView = (date.getFullYear() === now.getFullYear());
 
             events.forEach(ev => {
                 const evDate = new Date(ev.timestamp);
                 if (currentViewLevel === 'hour' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate() || evDate.getHours() !== date.getHours())) return;
                 if (currentViewLevel === 'day' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate())) return;
                 if (currentViewLevel === 'month' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth())) return;
-                if (currentViewLevel === 'year' && (evDate.getFullYear() !== date.getFullYear())) return;
 
                 const conteoPrevio = ev.conteoAnterior || 0;
                 
@@ -741,7 +792,6 @@
                     if (currentViewLevel === 'hour') idx = evDate.getMinutes();
                     else if (currentViewLevel === 'day') idx = evDate.getHours();
                     else if (currentViewLevel === 'month') idx = evDate.getDate() - 1;
-                    else if (currentViewLevel === 'year') idx = evDate.getMonth();
 
                     if (currentMetric === 'count') { dataBuckets[idx] += nuevas; } 
                     else {
@@ -757,10 +807,6 @@
             if (currentMetric === 'time') { for(let i = 0; i < dataBuckets.length; i++) { if (countBuckets[i] > 0) dataBuckets[i] = Math.round(dataBuckets[i] / countBuckets[i]); } }
 
             document.getElementById('chart-subtitle').innerText = `${titlePrefix} ${titleSuffix}`;
-            const idxLevel = VIEW_LEVELS.indexOf(currentViewLevel);
-            document.getElementById('btn-zoom-in').style.display = idxLevel > 0 ? 'flex' : 'none';
-            document.getElementById('btn-zoom-out').style.display = idxLevel < VIEW_LEVELS.length - 1 ? 'flex' : 'none';
-            document.getElementById('btn-next').disabled = isCurrentView;
 
             mainChart.data.labels = labels;
             mainChart.data.datasets[0].data = dataBuckets;
@@ -772,21 +818,235 @@
             mainChart.options.animation = { duration: 400, easing: 'easeOutQuart' }; 
         }
 
-        document.getElementById('btn-metric').addEventListener('click', () => { currentMetric = currentMetric === 'count' ? 'time' : 'count'; document.getElementById('icon-chrono').style.display = currentMetric === 'count' ? 'block' : 'none'; document.getElementById('icon-user').style.display = currentMetric === 'time' ? 'block' : 'none'; updateChartDisplay(); });
-        document.getElementById('btn-zoom-out').addEventListener('click', () => { let idx = VIEW_LEVELS.indexOf(currentViewLevel); if (idx < VIEW_LEVELS.length - 1) { currentViewLevel = VIEW_LEVELS[idx + 1]; updateChartDisplay(); } });
-        document.getElementById('btn-zoom-in').addEventListener('click', () => { let idx = VIEW_LEVELS.indexOf(currentViewLevel); if (idx > 0) { currentViewLevel = VIEW_LEVELS[idx - 1]; currentViewDate = new Date(); updateChartDisplay(); } });
+        /* --- CONTROL MAESTRO DE VISTAS (SPA Interna) --- */
+        function isSameDay(d1, d2) { return d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear(); }
+        
+        window.goToCurrentTime = function() {
+            currentViewDate = new Date();
+            viewState = 'CHART_HOUR';
+            updateDashboardView();
+        }
+
+        function checkRefreshLiveButton() {
+            const now = new Date();
+            let showBtn = false;
+            if(viewState === 'CHART_HOUR' && (!isSameDay(currentViewDate, now) || currentViewDate.getHours() !== now.getHours())) showBtn = true;
+            if(viewState === 'CHART_DAY' && !isSameDay(currentViewDate, now)) showBtn = true;
+            if(viewState === 'CHART_MONTH' && (currentViewDate.getMonth() !== now.getMonth() || currentViewDate.getFullYear() !== now.getFullYear())) showBtn = true;
+            if(viewState === 'CAL_MONTH' && (currentViewDate.getMonth() !== now.getMonth() || currentViewDate.getFullYear() !== now.getFullYear())) showBtn = true;
+            if(viewState === 'CAL_YEAR' && currentViewDate.getFullYear() !== now.getFullYear()) showBtn = true;
+            
+            document.getElementById('btn-refresh-live').style.display = showBtn ? 'block' : 'none';
+        }
+
+        function updateDashboardView(skipAnim = false) {
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+            const btnIn = document.getElementById('btn-zoom-in');
+            const btnOut = document.getElementById('btn-zoom-out');
+            const titleEl = document.getElementById('chart-subtitle');
+
+            if(viewState === 'CHART_HOUR') {
+                document.getElementById('view-chart-container').classList.add('active');
+                currentViewLevel = 'hour';
+                btnIn.style.display = 'none'; 
+                btnOut.style.display = 'flex';
+                updateChartDisplay(skipAnim);
+            }
+            else if(viewState === 'CHART_DAY') {
+                document.getElementById('view-chart-container').classList.add('active');
+                currentViewLevel = 'day';
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'flex';
+                updateChartDisplay(skipAnim);
+            }
+            else if(viewState === 'CHART_MONTH') {
+                document.getElementById('view-chart-container').classList.add('active');
+                currentViewLevel = 'month';
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'flex';
+                updateChartDisplay(skipAnim);
+            }
+            else if(viewState === 'CAL_MONTH') {
+                document.getElementById('view-calendar-day').classList.add('active');
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'flex';
+                titleEl.innerText = currentViewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase();
+                renderCalMonth();
+            }
+            else if(viewState === 'CAL_YEAR') {
+                document.getElementById('view-calendar-year').classList.add('active');
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'none'; 
+                titleEl.innerText = `AÑO ${currentViewDate.getFullYear()}`;
+                renderCalYear();
+            }
+            else if(viewState === 'CLOCK') {
+                document.getElementById('view-clock').classList.add('active');
+                btnIn.style.display = 'none';
+                btnOut.style.display = 'flex';
+                updateClockUIFromDate();
+            }
+
+            let now = new Date();
+            let isCurrent = false;
+            if(['CHART_HOUR', 'CLOCK'].includes(viewState)) isCurrent = isSameDay(currentViewDate, now) && currentViewDate.getHours() === now.getHours();
+            else if(['CHART_DAY'].includes(viewState)) isCurrent = isSameDay(currentViewDate, now);
+            else if(['CAL_MONTH', 'CHART_MONTH'].includes(viewState)) isCurrent = currentViewDate.getMonth() === now.getMonth() && currentViewDate.getFullYear() === now.getFullYear();
+            else if(viewState === 'CAL_YEAR') isCurrent = currentViewDate.getFullYear() === now.getFullYear();
+            
+            document.getElementById('btn-next').disabled = isCurrent;
+            checkRefreshLiveButton();
+        }
+
+        /* --- INTERACCIONES DE ZOOM --- */
+        document.getElementById('btn-zoom-out').addEventListener('click', () => { 
+            if (viewState === 'CHART_HOUR' || viewState === 'CLOCK' || viewState === 'CHART_DAY') viewState = 'CAL_MONTH';
+            else if (viewState === 'CAL_MONTH' || viewState === 'CHART_MONTH') viewState = 'CAL_YEAR';
+            updateDashboardView(); 
+        });
+
+        document.getElementById('btn-zoom-in').addEventListener('click', () => { 
+            if (viewState === 'CAL_YEAR' || viewState === 'CHART_MONTH') viewState = 'CAL_MONTH';
+            else if (viewState === 'CAL_MONTH' || viewState === 'CHART_DAY') viewState = 'CLOCK';
+            updateDashboardView(); 
+        });
+
+        /* --- RENDERIZADORES DE CALENDARIO --- */
+        function renderCalMonth() {
+            const grid = document.getElementById('cal-grid');
+            grid.innerHTML = '';
+            let d = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), 1);
+            let firstDay = d.getDay() === 0 ? 6 : d.getDay() - 1; 
+            let daysInMonth = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 0).getDate();
+            
+            for(let i = 0; i < firstDay; i++) { grid.innerHTML += `<div class="cal-cell empty"></div>`; }
+            
+            for(let i = 1; i <= daysInMonth; i++) {
+                let cell = document.createElement('div');
+                cell.className = 'cal-cell';
+                if(i === currentViewDate.getDate()) cell.classList.add('active');
+                cell.innerText = i;
+                cell.onclick = () => {
+                    currentViewDate.setDate(i);
+                    viewState = 'CHART_DAY';
+                    updateDashboardView();
+                };
+                grid.appendChild(cell);
+            }
+        }
+
+        function renderCalYear() {
+            const grid = document.getElementById('year-grid');
+            grid.innerHTML = '';
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            months.forEach((m, i) => {
+                let cell = document.createElement('div');
+                cell.className = 'year-cell';
+                if(i === currentViewDate.getMonth()) cell.classList.add('active');
+                cell.innerText = m;
+                cell.onclick = () => {
+                    currentViewDate.setMonth(i);
+                    viewState = 'CHART_MONTH';
+                    updateDashboardView();
+                };
+                grid.appendChild(cell);
+            });
+        }
+
+        /* --- LÓGICA DEL RELOJ INTERACTIVO --- */
+        function renderClockNumbers() {
+            const face = document.getElementById('clock-face');
+            for(let i=1; i<=12; i++) {
+                let angle = i * 30 * (Math.PI / 180);
+                let r = 110; 
+                let x = 140 + r * Math.sin(angle); 
+                let y = 140 - r * Math.cos(angle);
+                let num = document.createElement('div');
+                num.className = 'clock-number';
+                num.style.left = x + 'px';
+                num.style.top = y + 'px';
+                num.innerText = i;
+                face.appendChild(num);
+            }
+        }
+        renderClockNumbers();
+
+        let clockDragging = false, clockPreviousAngle = 0, clockIsAm = true, clockCurrentSelected = 12;
+        const clockFace = document.getElementById('clock-face'), clockHand = document.getElementById('clock-hand'), clockAmPm = document.getElementById('clock-ampm');
+
+        function updateClockUIFromDate() {
+            let h = currentViewDate.getHours();
+            clockIsAm = h < 12;
+            clockCurrentSelected = h % 12 || 12;
+            let startAngle = clockCurrentSelected * 30;
+            clockPreviousAngle = startAngle;
+            clockHand.style.transform = `rotate(${startAngle}deg)`;
+            clockAmPm.innerText = clockIsAm ? 'AM' : 'PM';
+            document.getElementById('chart-subtitle').innerText = `SELECCIONANDO: ${clockCurrentSelected}:00 ${clockIsAm ? 'AM' : 'PM'}`;
+        }
+
+        function handleClockInteraction(e) {
+            let rect = clockFace.getBoundingClientRect();
+            let cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            let angle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) + 90;
+            if (angle < 0) angle += 360;
+            
+            let diff = angle - clockPreviousAngle;
+            if (diff > 180) diff -= 360; 
+            else if (diff < -180) diff += 360; 
+            
+            if (Math.abs(diff) > 0) { 
+                if (clockPreviousAngle > 270 && angle < 90) clockIsAm = !clockIsAm; 
+                if (clockPreviousAngle < 90 && angle > 270) clockIsAm = !clockIsAm; 
+            }
+            
+            clockPreviousAngle = angle;
+            clockCurrentSelected = Math.round(angle / 30);
+            if(clockCurrentSelected === 0) clockCurrentSelected = 12;
+            
+            clockHand.style.transform = `rotate(${clockCurrentSelected * 30}deg)`;
+            clockAmPm.innerText = clockIsAm ? 'AM' : 'PM';
+            document.getElementById('chart-subtitle').innerText = `SELECCIONANDO: ${clockCurrentSelected}:00 ${clockIsAm ? 'AM' : 'PM'}`;
+        }
+
+        clockFace.addEventListener('mousedown', (e) => { clockDragging = true; clockHand.style.transition='none'; handleClockInteraction(e); });
+        clockFace.addEventListener('touchstart', (e) => { clockDragging = true; clockHand.style.transition='none'; handleClockInteraction(e); }, {passive: false});
+        
+        window.addEventListener('mousemove', (e) => { if(clockDragging) handleClockInteraction(e); });
+        window.addEventListener('touchmove', (e) => { if(clockDragging) handleClockInteraction(e); }, {passive: false});
+        
+        function finishClockDrag() {
+            if(clockDragging) {
+                clockDragging = false;
+                clockHand.style.transition='transform 0.05s linear';
+                let finalHour = clockIsAm ? (clockCurrentSelected % 12) : (clockCurrentSelected % 12) + 12;
+                currentViewDate.setHours(finalHour);
+                viewState = 'CHART_HOUR';
+                updateDashboardView();
+            }
+        }
+        window.addEventListener('mouseup', finishClockDrag);
+        window.addEventListener('touchend', finishClockDrag);
+
+
+        document.getElementById('btn-metric').addEventListener('click', () => { currentMetric = currentMetric === 'count' ? 'time' : 'count'; document.getElementById('icon-chrono').style.display = currentMetric === 'count' ? 'block' : 'none'; document.getElementById('icon-user').style.display = currentMetric === 'time' ? 'block' : 'none'; if(viewState.startsWith('CHART_')) updateChartDisplay(); });
 
         function changeTime(direction) { 
-            const wrapper = document.getElementById('chart-wrapper');
+            const wrapper = document.getElementById('master-view-wrapper');
             wrapper.classList.add(direction < 0 ? 'slide-out-right' : 'slide-out-left');
             setTimeout(() => {
-                const d = new Date(currentViewDate);
-                if (currentViewLevel === 'hour') d.setHours(d.getHours() + direction);
-                if (currentViewLevel === 'day') d.setDate(d.getDate() + direction);
-                if (currentViewLevel === 'month') d.setMonth(d.getMonth() + direction);
-                if (currentViewLevel === 'year') d.setFullYear(d.getFullYear() + direction);
+                let d = new Date(currentViewDate);
+                if (viewState === 'CHART_HOUR' || viewState === 'CLOCK') d.setHours(d.getHours() + direction);
+                if (viewState === 'CHART_DAY') d.setDate(d.getDate() + direction);
+                if (viewState === 'CAL_MONTH' || viewState === 'CHART_MONTH') d.setMonth(d.getMonth() + direction);
+                if (viewState === 'CAL_YEAR') d.setFullYear(d.getFullYear() + direction);
                 currentViewDate = d;
-                updateChartDisplay(true); 
+                
+                updateDashboardView(true); 
+                
                 wrapper.classList.remove('slide-out-right', 'slide-out-left');
                 wrapper.classList.add(direction < 0 ? 'slide-in-left' : 'slide-in-right');
                 setTimeout(() => { wrapper.classList.remove('slide-in-left', 'slide-in-right'); }, 400); 
@@ -798,9 +1058,10 @@
 
         window.flipToChart = function(zoneId) {
             tabletActualEnGrafico = zoneId;
-            currentViewLevel = 'hour'; currentViewDate = new Date(); currentMetric = 'count'; 
+            viewState = 'CHART_HOUR';
+            currentViewDate = new Date(); currentMetric = 'count'; 
             document.getElementById('icon-chrono').style.display = 'block'; document.getElementById('icon-user').style.display = 'none';
-            updateChartDisplay();
+            updateDashboardView();
             document.getElementById('flip-container').classList.add('flipped');
         }
 
