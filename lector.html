@@ -10,32 +10,64 @@
             margin: 0;
             height: 100vh;
             width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             background-color: #000;
             overflow: hidden;
             position: relative;
+            font-family: 'Courier New', Courier, monospace;
         }
 
-        /* Imagen de fondo de la tablet */
+        /* === ESTILOS DEL LOGIN === */
+        #login-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .login-box {
+            border: 1px solid #00FFFF; padding: 40px; background: rgba(0, 255, 255, 0.05);
+            text-align: center; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            border-radius: 8px; backdrop-filter: blur(10px); width: 300px;
+        }
+        .login-box h2 { color: #00FFFF; margin-top: 0; margin-bottom: 25px; text-shadow: 0 0 5px #00FFFF; letter-spacing: 2px; }
+        .login-box input {
+            display: block; width: 100%; box-sizing: border-box; margin-bottom: 15px;
+            padding: 12px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00FFFF;
+            color: #00FFFF; font-family: inherit; font-size: 1rem; text-align: center;
+        }
+        .login-box input:focus { outline: none; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); background: rgba(0, 255, 255, 0.1); }
+        .login-box button {
+            background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF;
+            padding: 12px 20px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1rem;
+            width: 100%; transition: all 0.3s; letter-spacing: 1px;
+        }
+        .login-box button:hover { background: #00FFFF; color: #000; box-shadow: 0 0 15px #00FFFF; }
+        .error-msg { color: #FF0055; margin-top: 15px; font-size: 0.85rem; display: none; text-shadow: 0 0 5px #FF0055; }
+
+        /* === ESTILOS DE LA APP === */
+        #app-screen {
+            display: none; /* Se oculta hasta el login */
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
         #visorImagen {
             position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
             z-index: 1;
         }
 
-        /* Capa superpuesta para la receta al 75% */
         #overlayReceta {
             position: absolute;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: rgba(0, 0, 0, 0.6); /* Fondo oscuro semitransparente */
-            display: none; /* Oculto por defecto */
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
             justify-content: center;
             align-items: center;
             z-index: 10;
@@ -47,14 +79,12 @@
             object-fit: contain;
         }
 
-        /* Input invisible */
         #scannerInput {
             opacity: 0.01;
             position: absolute;
             top: -1000px;
         }
 
-        /* Estilos de error */
         .bg-error { background-color: #ef4444 !important; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -66,20 +96,33 @@
 </head>
 <body>
 
-    <img id="visorImagen" src="TABLET 03.jpg" alt="Pantalla de inicio">
-    
-    <div id="overlayReceta">
-        <img id="imgReceta" src="" alt="Receta">
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>LECTOR RECETAS</h2>
+            <form id="login-form">
+                <input type="email" id="email" placeholder="Correo Electrónico" required autocomplete="email">
+                <input type="password" id="password" placeholder="Contraseña" required autocomplete="current-password">
+                <button type="submit" id="login-btn">CONECTAR</button>
+                <div id="error-msg" class="error-msg">Error de credenciales.</div>
+            </form>
+        </div>
     </div>
-    
-    <input type="text" id="scannerInput" autofocus autocomplete="off">
+
+    <div id="app-screen">
+        <img id="visorImagen" src="TABLET 03.jpg" alt="Pantalla de inicio">
+        
+        <div id="overlayReceta">
+            <img id="imgReceta" src="" alt="Receta">
+        </div>
+        
+        <input type="text" id="scannerInput" autocomplete="off">
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-        // Configuración Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
             authDomain: "canal-moderno-2655e.firebaseapp.com",
@@ -94,9 +137,12 @@
         const db = getDatabase(app);
         const auth = getAuth(app);
         
-        // Referencia al estado de sincronización
         const estadoRef = ref(db, 'muebles/tablet_03/estado_actual');
 
+        const loginScreen = document.getElementById('login-screen');
+        const appScreen = document.getElementById('app-screen');
+        const loginForm = document.getElementById('login-form');
+        const errorMsg = document.getElementById('error-msg');
         const input = document.getElementById('scannerInput');
         const overlayReceta = document.getElementById('overlayReceta');
         const imgReceta = document.getElementById('imgReceta');
@@ -104,7 +150,6 @@
         let resetTimeout;
         let confettiInterval;
 
-        // Base de datos de códigos vinculados al ID de receta
         const baseDeDatos = {
             "7591016955096": "01",
             "7591016155097": "01",
@@ -117,14 +162,46 @@
             "7591016204894": "04"
         };
 
-        // Iniciar sesión silenciosa para poder escribir/leer en DB
-        signInAnonymously(auth).catch(error => console.error("Error Auth:", error));
+        // Lógica de Autenticación
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginScreen.style.display = 'none';
+                appScreen.style.display = 'block';
+                iniciarSincronizacion();
+                setTimeout(() => input.focus(), 500);
+            } else {
+                loginScreen.style.display = 'flex';
+                appScreen.style.display = 'none';
+            }
+        });
 
-        // --- MANTENER FOCO ---
-        document.addEventListener('click', () => input.focus());
-        input.addEventListener('blur', () => setTimeout(() => input.focus(), 10));
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+            
+            errorMsg.style.display = 'none';
+            loginBtn.innerText = 'CARGANDO...';
+            
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => { loginBtn.innerText = 'CONECTAR'; loginForm.reset(); })
+                .catch((error) => {
+                    loginBtn.innerText = 'CONECTAR';
+                    errorMsg.innerText = "Error: Verifica tus credenciales.";
+                    errorMsg.style.display = 'block';
+                });
+        });
 
-        // --- LÓGICA DE ESCANEO ---
+        // Mantener Foco
+        document.addEventListener('click', () => {
+            if (appScreen.style.display === 'block') input.focus();
+        });
+        input.addEventListener('blur', () => {
+            if (appScreen.style.display === 'block') setTimeout(() => input.focus(), 10);
+        });
+
+        // Escaneo de Códigos
         input.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -135,10 +212,10 @@
                 if (baseDeDatos[scannedValue]) {
                     const recetaID = baseDeDatos[scannedValue];
                     
-                    // Disparamos el evento a Firebase (Esto actualiza AMBAS pantallas)
+                    // Actualiza en Firebase
                     set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
                     
-                    // Apagamos la receta en Firebase después de 3 segundos
+                    // Apaga después de 3 segundos
                     resetTimeout = setTimeout(() => {
                         set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
                     }, 3000);
@@ -149,40 +226,53 @@
             }
         });
 
-        // --- ESCUCHADOR DE FIREBASE (Para Confeti y Recetas) ---
-        onValue(estadoRef, (snapshot) => {
-            const estado = snapshot.val();
-            if (!estado) return;
+        // Sincronización con Firebase
+        function iniciarSincronizacion() {
+            onValue(estadoRef, (snapshot) => {
+                const estado = snapshot.val();
+                if (!estado) return;
 
-            // Lógica Confeti
-            if (estado.hayPersonas) {
-                if (!confettiInterval) {
-                    confettiInterval = setInterval(() => {
-                        confetti({ particleCount: 15, spread: 60, origin: { y: -0.1, x: Math.random() }, zIndex: 9999 });
-                    }, 250);
+                // Lógica de Confeti Denso
+                if (estado.hayPersonas) {
+                    if (!confettiInterval) {
+                        confettiInterval = setInterval(() => {
+                            confetti({
+                                particleCount: 150,
+                                angle: 90,
+                                spread: 180,
+                                origin: { x: Math.random(), y: -0.1 },
+                                startVelocity: 45,
+                                gravity: 1.2,
+                                zIndex: 9999
+                            });
+                        }, 250);
+                    }
+                } else {
+                    clearInterval(confettiInterval);
+                    confettiInterval = null;
                 }
-            } else {
-                clearInterval(confettiInterval);
-                confettiInterval = null;
-            }
 
-            // Lógica Mostrar Receta
-            if (estado.recetaActiva && estado.recetaActiva !== "") {
-                // El Lector muestra RECETA01.png
-                imgReceta.src = `RECETA${estado.recetaActiva}.png`;
-                overlayReceta.style.display = 'flex';
-                document.body.className = ''; // Quita el error si había
-            } else {
-                overlayReceta.style.display = 'none';
-                imgReceta.src = '';
-            }
-        });
+                // Lógica Mostrar Receta
+                if (estado.recetaActiva && estado.recetaActiva !== "") {
+                    imgReceta.src = `RECETA${estado.recetaActiva}.png`;
+                    overlayReceta.style.display = 'flex';
+                    document.body.className = ''; 
+                } else {
+                    overlayReceta.style.display = 'none';
+                    imgReceta.src = '';
+                }
+            });
+        }
 
         function lanzarError() {
-            document.body.classList.remove('shake');
-            void document.body.offsetWidth;
-            document.body.className = 'bg-error shake';
-            setTimeout(() => document.body.className = '', 1000);
+            document.getElementById('app-screen').classList.remove('shake');
+            void document.getElementById('app-screen').offsetWidth;
+            document.body.className = 'bg-error';
+            document.getElementById('app-screen').classList.add('shake');
+            setTimeout(() => {
+                document.body.className = '';
+                document.getElementById('app-screen').classList.remove('shake');
+            }, 1000);
         }
     </script>
 </body>
