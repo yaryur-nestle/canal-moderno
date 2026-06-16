@@ -28,16 +28,9 @@
     .face-back { transform: rotateY(180deg); }
 
     #overlayReceta {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.6);
-        display: none; 
-        justify-content: center;
-        align-items: center;
-        z-index: 50; 
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.6); display: none; 
+        justify-content: center; align-items: center; z-index: 50; 
     }
     #imgReceta { max-width: 75%; max-height: 75%; object-fit: contain; }
     
@@ -128,7 +121,7 @@
 
     const eventosRef = ref(db, 'muebles/tablet_03/eventos');
     const statusRef = ref(db, 'muebles/tablet_03/status');
-    const estadoRef = ref(db, 'muebles/tablet_03/estado_actual'); 
+    const estadoActualRef = ref(db, 'muebles/tablet_03/estado_actual'); 
     const connectedRef = ref(db, ".info/connected");
 
     const loginScreen = document.getElementById('login-screen');
@@ -170,7 +163,7 @@
       onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
           onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
-          onDisconnect(ref(db, 'muebles/tablet_03/estado_actual/hayPersonas')).set(false);
+          onDisconnect(estadoActualRef).update({ hayPersonas: false, conteoActual: 0 });
         }
       });
     }
@@ -224,17 +217,16 @@
     let hayPersonasActual = false;
     let confettiInterval;
 
-    onValue(estadoRef, (snapshot) => {
+    onValue(estadoActualRef, (snapshot) => {
       const estado = snapshot.val();
       if(!estado) return;
 
-      // Lógica de Confeti Optimizado (Más grande, menos cantidad)
       if (estado.hayPersonas) {
         if (!confettiInterval) {
           confettiInterval = setInterval(() => {
             confetti({
-                particleCount: 25,    // Menos cantidad por ráfaga
-                scalar: 2.5,         // Tamaño mucho más grande
+                particleCount: 25,
+                scalar: 2.5,
                 angle: 90,
                 spread: 180,
                 origin: { x: Math.random(), y: -0.1 },
@@ -242,7 +234,7 @@
                 gravity: 1.2,
                 zIndex: 9999
             });
-          }, 400); // Intervalo más relajado
+          }, 400); 
         }
       } else {
         clearInterval(confettiInterval);
@@ -271,12 +263,18 @@
       const ahora = Date.now();
       currentFacesCount = rostrosActuales;
 
+      /* NORMALIZACIÓN: Publicación en tiempo real al nodo estado_actual */
       const personasDetectadas = rostrosActuales > 0;
-      if (personasDetectadas !== hayPersonasActual) {
+      if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
         hayPersonasActual = personasDetectadas;
-        set(ref(db, 'muebles/tablet_03/estado_actual/hayPersonas'), hayPersonasActual);
+        set(estadoActualRef, {
+            hayPersonas: hayPersonasActual,
+            conteoActual: rostrosActuales,
+            ultimaActividad: Date.now()
+        });
       }
 
+      /* NORMALIZACIÓN: Logs Históricos */
       if (rostrosActuales !== pendingFaceCount) {
         pendingFaceCount = rostrosActuales;
         clearTimeout(stabilityTimer); 
