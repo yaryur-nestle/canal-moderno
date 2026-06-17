@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TABLET 03 - Sincronizada</title>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <title>TABLET 03 - Sincronizada (Modo Silencioso)</title>
   <style>
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
     
@@ -215,32 +214,13 @@
     let stabilityTimer = null;
     let camaraIniciada = false;
     let hayPersonasActual = false;
-    let confettiInterval;
 
+    // Escucha el estado para la receta interactiva (el confeti ha sido eliminado)
     onValue(estadoActualRef, (snapshot) => {
       const estado = snapshot.val();
       if(!estado) return;
 
-      if (estado.hayPersonas) {
-        if (!confettiInterval) {
-          confettiInterval = setInterval(() => {
-            confetti({
-                particleCount: 25,
-                scalar: 2.5,
-                angle: 90,
-                spread: 180,
-                origin: { x: Math.random(), y: -0.1 },
-                startVelocity: 45,
-                gravity: 1.2,
-                zIndex: 9999
-            });
-          }, 400); 
-        }
-      } else {
-        clearInterval(confettiInterval);
-        confettiInterval = null;
-      }
-
+      // Mostrar u ocultar receta si es enviada desde el servidor
       if (estado.recetaActiva && estado.recetaActiva !== "") {
         imgReceta.src = `${estado.recetaActiva}RECETA.png`;
         overlayReceta.style.display = 'flex';
@@ -265,6 +245,8 @@
 
       /* NORMALIZACIÓN: Publicación en tiempo real al nodo estado_actual */
       const personasDetectadas = rostrosActuales > 0;
+      
+      // Aquí está la magia silenciosa: La tablet actualiza Firebase sin mostrar nada en su pantalla del frente
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
         hayPersonasActual = personasDetectadas;
         set(estadoActualRef, {
