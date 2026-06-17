@@ -33,7 +33,7 @@
     }
     #imgReceta { max-width: 75%; max-height: 75%; object-fit: contain; }
     
-    /* Nuevos estilos para el video de la receta (Sobrescriben el estilo general de video) */
+    /* El video no hereda el efecto espejo de la cámara */
     #videoReceta { 
         position: relative; width: auto; height: auto; 
         max-width: 75%; max-height: 75%; object-fit: contain; 
@@ -214,7 +214,7 @@
     const canvasCtx = canvasElement.getContext('2d');
     const overlayReceta = document.getElementById('overlayReceta');
     const imgReceta = document.getElementById('imgReceta');
-    const videoReceta = document.getElementById('videoReceta'); // Nuevo elemento de video
+    const videoReceta = document.getElementById('videoReceta');
 
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
     let currentFacesCount = 0;
@@ -224,41 +224,40 @@
     let camaraIniciada = false;
     let hayPersonasActual = false;
 
-    // Escucha el estado para la receta interactiva
+    // === ESCUCHADOR DE LA RECETA DESDE EL ESCÁNER ===
     onValue(estadoActualRef, (snapshot) => {
       const estado = snapshot.val();
       if(!estado) return;
 
-      // Mostrar u ocultar receta o video si es enviado desde el servidor
       if (estado.recetaActiva && estado.recetaActiva !== "") {
         overlayReceta.style.display = 'flex';
         
-        // Comprobar si el código de receta corresponde a Leche Condensada
-        // NOTA: Modifica 'VIDEO_1' o 'LECHE' según lo que envíe tu escáner a Firebase
-        if (estado.recetaActiva.includes('VIDEO_1') || estado.recetaActiva.toUpperCase().includes('LECHE')) {
+        // El escáner manda "02" para Leche Condensada
+        if (estado.recetaActiva === "02") {
           
-          imgReceta.style.display = 'none'; // Ocultamos la imagen
+          imgReceta.style.display = 'none'; 
           
-          // Solo actualizamos el SRC y damos play si no se está reproduciendo ya (Evita parpadeos)
           if (videoReceta.style.display !== 'block') {
-              videoReceta.src = 'VIDEO_1RECETA.mp4';
+              // Nombre del video según solicitaste (o VIDEO_RECETA1.mp4 según tu código original)
+              videoReceta.src = 'VIDEO_1RECETA.mp4'; 
               videoReceta.style.display = 'block';
               videoReceta.play();
           }
 
         } else {
-          // Lógica normal para el resto de las recetas (Imágenes)
+          // El escáner manda "01", "03", etc. para las imágenes
           videoReceta.style.display = 'none';
           videoReceta.pause();
           
-          const newImageSrc = `${estado.recetaActiva}RECETA.png`;
+          // Nomenclatura ajustada a lo que genera tu escáner: RECETA01.png, RECETA03.png...
+          const newImageSrc = `RECETA${estado.recetaActiva}.png`;
           if (imgReceta.getAttribute('src') !== newImageSrc) {
               imgReceta.src = newImageSrc;
           }
           imgReceta.style.display = 'block';
         }
       } else {
-        // Ocultar todo si se limpia la receta en Firebase
+        // Limpieza si la receta se apaga en Firebase
         overlayReceta.style.display = 'none';
         imgReceta.src = '';
         imgReceta.style.display = 'none';
@@ -280,7 +279,7 @@
       const ahora = Date.now();
       currentFacesCount = rostrosActuales;
 
-      /* NORMALIZACIÓN: Publicación en tiempo real al nodo estado_actual */
+      // ACTUALIZACIÓN DE PRESENCIA EN FIREBASE EN TIEMPO REAL
       const personasDetectadas = rostrosActuales > 0;
       
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
@@ -292,7 +291,7 @@
         });
       }
 
-      /* NORMALIZACIÓN: Logs Históricos */
+      // LOGS HISTÓRICOS
       if (rostrosActuales !== pendingFaceCount) {
         pendingFaceCount = rostrosActuales;
         clearTimeout(stabilityTimer); 
@@ -310,6 +309,7 @@
         }, 1000); 
       }
 
+      // MÉTRICAS VISUALES (Se ven en la cara trasera del Mueble 03)
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) { inicioSesionActual = ahora; }
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
