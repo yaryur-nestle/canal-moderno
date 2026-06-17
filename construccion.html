@@ -162,10 +162,8 @@
         .person-img { opacity: 0; transition: opacity 0.8s ease-in-out; }
         .person-img.active { opacity: 1; }
 
-        .click-zone { position: absolute; top: 0; height: 100%; width: 33.33%; cursor: pointer; z-index: 50; }
-        .click-zone.left { left: 0; }
-        .click-zone.center { left: 33.33%; }
-        .click-zone.right { right: 0; }
+        /* Zona de Clic Centralizada */
+        .click-zone { position: absolute; top: 0; height: 100%; width: 100%; left: 0; cursor: pointer; z-index: 50; }
 
         .live-overlay { position: absolute; top: 50%; left: 40%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; z-index: 100; pointer-events: none; }
         .en-vivo-badge { color: #ff3333; border: 2px solid #ff3333; border-radius: 50px; padding: 4px 20px; font-weight: 900; font-size: 1.4rem; letter-spacing: 2px; box-shadow: 0 0 8px #ff3333, inset 0 0 8px #ff3333; animation: heartbeat 2s infinite; margin-bottom: 5px; background: rgba(255,255,255,0.8); }
@@ -212,10 +210,12 @@
         .year-cell:hover { background: #fdfbf7; border-color: #b39c6e; color: #b39c6e; transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.05);}
         .year-cell.active { background: #b39c6e; color: #fff; border-color: #b39c6e; }
 
+        /* Ajustes de Agujas del Reloj */
         .clock-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; flex-direction: column; padding: 10px;}
         .clock-face { position: relative; aspect-ratio: 1 / 1; width: 100%; max-width: 280px; max-height: 280px; flex-shrink: 0; border-radius: 50%; border: 6px solid #f4f4f4; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05), inset 0 0 20px rgba(0,0,0,0.03); cursor: pointer; touch-action: none; margin: auto;}
         .clock-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; background: #b39c6e; border-radius: 50%; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .clock-hand { position: absolute; top: 15%; left: 50%; width: 4px; height: 35%; background: #b39c6e; transform-origin: bottom center; border-radius: 4px; z-index: 5; pointer-events: none; margin-left: -2px; }
+        .clock-minute-hand { position: absolute; top: 10%; left: 50%; width: 3px; height: 40%; background: #ccc; transform-origin: bottom center; border-radius: 3px; z-index: 4; pointer-events: none; margin-left: -1.5px; }
+        .clock-hand { position: absolute; top: 25%; left: 50%; width: 6px; height: 25%; background: #b39c6e; transform-origin: bottom center; border-radius: 4px; z-index: 5; pointer-events: none; margin-left: -3px; }
         .clock-ampm { position: absolute; top: 65%; left: 50%; transform: translate(-50%, -50%); font-size: 1.4rem; font-weight: 900; color: #ccc; z-index: 1;}
         .clock-number { position: absolute; font-weight: 800; color: #555; font-size: 1.1rem; transform: translate(-50%, -50%); pointer-events: none; }
 
@@ -346,9 +346,7 @@
                             <div class="live-datetime" id="live-datetime">--</div>
                         </div>
 
-                        <div class="click-zone left" onclick="flipToChart(1)"></div>
-                        <div class="click-zone center" onclick="flipToChart(2)"></div>
-                        <div class="click-zone right" onclick="flipToChart(3)"></div>
+                        <div class="click-zone full" onclick="flipToChart(2)"></div>
                     </div>
 
                     <div class="back">
@@ -382,9 +380,13 @@
                                     <div id="view-calendar-year" class="view-panel">
                                         <div class="year-grid" id="year-grid"></div>
                                     </div>
+                                    <div id="view-calendar-decade" class="view-panel">
+                                        <div class="year-grid" id="decade-grid"></div>
+                                    </div>
                                     <div id="view-clock" class="view-panel">
                                         <div class="clock-wrapper">
                                             <div class="clock-face" id="clock-face">
+                                                <div class="clock-minute-hand"></div>
                                                 <div class="clock-hand" id="clock-hand"></div>
                                                 <div class="clock-center"></div>
                                                 <div class="clock-ampm" id="clock-ampm">AM</div>
@@ -891,6 +893,10 @@
             if(viewState === 'CHART_MONTH' && (currentViewDate.getMonth() !== now.getMonth() || currentViewDate.getFullYear() !== now.getFullYear())) showBtn = true;
             if(viewState === 'CAL_MONTH' && (currentViewDate.getMonth() !== now.getMonth() || currentViewDate.getFullYear() !== now.getFullYear())) showBtn = true;
             if(viewState === 'CAL_YEAR' && currentViewDate.getFullYear() !== now.getFullYear()) showBtn = true;
+            if(viewState === 'CAL_DECADE') {
+                let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
+                if(now.getFullYear() < startYear || now.getFullYear() > startYear + 11) showBtn = true;
+            }
             
             document.getElementById('btn-refresh-live').style.display = showBtn ? 'block' : 'none';
         }
@@ -932,9 +938,15 @@
             else if(viewState === 'CAL_YEAR') {
                 document.getElementById('view-calendar-year').classList.add('active');
                 btnIn.style.display = 'flex';
-                btnOut.style.display = 'none'; 
+                btnOut.style.display = 'flex'; 
                 titleEl.innerText = `AÑO: ${currentViewDate.getFullYear()}`;
                 renderCalYear();
+            }
+            else if(viewState === 'CAL_DECADE') {
+                document.getElementById('view-calendar-decade').classList.add('active');
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'none'; 
+                renderCalDecade();
             }
             else if(viewState === 'CLOCK') {
                 document.getElementById('view-clock').classList.add('active');
@@ -949,6 +961,10 @@
             else if(['CHART_DAY'].includes(viewState)) isCurrent = isSameDay(currentViewDate, now);
             else if(['CAL_MONTH', 'CHART_MONTH'].includes(viewState)) isCurrent = currentViewDate.getMonth() === now.getMonth() && currentViewDate.getFullYear() === now.getFullYear();
             else if(viewState === 'CAL_YEAR') isCurrent = currentViewDate.getFullYear() === now.getFullYear();
+            else if(viewState === 'CAL_DECADE') {
+                let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
+                isCurrent = (now.getFullYear() >= startYear && now.getFullYear() <= startYear + 11);
+            }
             
             document.getElementById('btn-next').disabled = isCurrent;
             checkRefreshLiveButton();
@@ -958,11 +974,13 @@
         document.getElementById('btn-zoom-out').addEventListener('click', () => { 
             if (viewState === 'CHART_HOUR' || viewState === 'CLOCK' || viewState === 'CHART_DAY') viewState = 'CAL_MONTH';
             else if (viewState === 'CAL_MONTH' || viewState === 'CHART_MONTH') viewState = 'CAL_YEAR';
+            else if (viewState === 'CAL_YEAR') viewState = 'CAL_DECADE';
             updateDashboardView(); 
         });
 
         document.getElementById('btn-zoom-in').addEventListener('click', () => { 
-            if (viewState === 'CAL_YEAR' || viewState === 'CHART_MONTH') viewState = 'CAL_MONTH';
+            if (viewState === 'CAL_DECADE') viewState = 'CAL_YEAR';
+            else if (viewState === 'CAL_YEAR' || viewState === 'CHART_MONTH') viewState = 'CAL_MONTH';
             else if (viewState === 'CAL_MONTH' || viewState === 'CHART_DAY') viewState = 'CLOCK';
             updateDashboardView(); 
         });
@@ -1007,6 +1025,28 @@
                 };
                 grid.appendChild(cell);
             });
+        }
+
+        function renderCalDecade() {
+            const grid = document.getElementById('decade-grid');
+            grid.innerHTML = '';
+            // Bloque dinámico de 12 años basado en la fecha actual de la vista, partiendo de 2021
+            let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
+            document.getElementById('chart-subtitle').innerText = `AÑOS: ${startYear} - ${startYear + 11}`;
+            
+            for (let i = 0; i < 12; i++) {
+                let y = startYear + i;
+                let cell = document.createElement('div');
+                cell.className = 'year-cell';
+                if(y === currentViewDate.getFullYear()) cell.classList.add('active');
+                cell.innerText = y;
+                cell.onclick = () => {
+                    currentViewDate.setFullYear(y);
+                    viewState = 'CAL_YEAR';
+                    updateDashboardView();
+                };
+                grid.appendChild(cell);
+            }
         }
 
         /* --- LÓGICA DEL RELOJ INTERACTIVO --- */
@@ -1095,6 +1135,7 @@
                 if (viewState === 'CHART_DAY') d.setDate(d.getDate() + direction);
                 if (viewState === 'CAL_MONTH' || viewState === 'CHART_MONTH') d.setMonth(d.getMonth() + direction);
                 if (viewState === 'CAL_YEAR') d.setFullYear(d.getFullYear() + direction);
+                if (viewState === 'CAL_DECADE') d.setFullYear(d.getFullYear() + (direction * 12));
                 currentViewDate = d;
                 
                 updateDashboardView(true); 
