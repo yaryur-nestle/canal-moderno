@@ -108,8 +108,9 @@
   </div>
 
   <script type="module">
+    // IMPORTANTE: Se agregó 'update' a las importaciones de Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, set, push, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, set, update, push, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -226,23 +227,34 @@
 
     let isVideoPlaying = false;
     let estadoRecetaPendiente = "";
+    
+    // Variables para detectar un nuevo escaneo real (evita reinicios por la cámara)
+    let ultimaRecetaProcesada = null;
+    let ultimoTimestampScan = null; 
 
     videoReceta.addEventListener('ended', () => {
         isVideoPlaying = false;
-        procesarEstadoReceta(estadoRecetaPendiente);
+        // Si no quieres que el video se repita en bucle automáticamente, puedes omitir esta línea
+        // procesarEstadoReceta(estadoRecetaPendiente); 
     });
 
     onValue(estadoActualRef, (snapshot) => {
       const estado = snapshot.val();
       if(!estado) return;
 
-      estadoRecetaPendiente = estado.recetaActiva || "";
+      const nuevaReceta = estado.recetaActiva || "";
+      // Usamos timestampReceta si tu app de escaneo lo envía, para saber cuándo es un escaneo nuevo 
+      // idéntico al anterior. Si no lo envía, se guiará solo por si cambió el valor de la receta.
+      const nuevoTimestamp = estado.timestampReceta || null; 
 
-      if (isVideoPlaying) {
-          return; 
+      // Solo procesamos la receta si el valor cambió OR si el escáner envió un timestamp nuevo
+      if (nuevaReceta !== ultimaRecetaProcesada || (nuevoTimestamp && nuevoTimestamp !== ultimoTimestampScan)) {
+          ultimaRecetaProcesada = nuevaReceta;
+          ultimoTimestampScan = nuevoTimestamp;
+          estadoRecetaPendiente = nuevaReceta;
+          
+          procesarEstadoReceta(estadoRecetaPendiente);
       }
-
-      procesarEstadoReceta(estadoRecetaPendiente);
     });
 
     function procesarEstadoReceta(recetaActiva) {
@@ -252,16 +264,14 @@
         if (recetaActiva === "02") {
           imgReceta.style.display = 'none'; 
           
-          if (videoReceta.style.display !== 'block') {
-              // MODIFICACIÓN CLAVE: Ya no asignamos el 'src' aquí. Simplemente lo mostramos y reproducimos.
-              videoReceta.style.display = 'block';
-              videoReceta.currentTime = 0; 
-              
-              // El catch evita errores en la consola si el navegador bloquea la reproducción
-              videoReceta.play().catch(e => console.log("Reproducción automática pendiente:", e));
-              
-              isVideoPlaying = true; 
-          }
+          // FORZAMOS EL REINICIO DEL VIDEO
+          videoReceta.style.display = 'block';
+          videoReceta.pause(); // Pausamos por precaución
+          videoReceta.currentTime = 0; // REINICIAR AL SEGUNDO 0
+          
+          videoReceta.play().catch(e => console.log("Reproducción automática pendiente:", e));
+          
+          isVideoPlaying = true; 
 
         } else {
           videoReceta.style.display = 'none';
@@ -299,7 +309,9 @@
       
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
         hayPersonasActual = personasDetectadas;
-        set(estadoActualRef, {
+        
+        // CRÍTICO: Usar 'update' en lugar de 'set' para no borrar la receta que el usuario haya escaneado.
+        update(estadoActualRef, {
             hayPersonas: hayPersonasActual,
             conteoActual: rostrosActuales,
             ultimaActividad: Date.now()
