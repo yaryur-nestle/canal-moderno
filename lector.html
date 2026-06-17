@@ -234,13 +234,17 @@
 
                 if (baseDeDatos[scannedValue]) {
                     const recetaID = baseDeDatos[scannedValue];
+                    
+                    // Activamos la receta en la base de datos
                     set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
                     
-                    const tiempoDeEspera = (recetaID === "02") ? 27000 : 3000;
-                    
-                    resetTimeout = setTimeout(() => {
-                        set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
-                    }, tiempoDeEspera);
+                    // Si NO es el video (02), usamos el temporizador normal de 3 segundos para las imágenes
+                    if (recetaID !== "02") {
+                        resetTimeout = setTimeout(() => {
+                            set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
+                        }, 3000);
+                    }
+                    // Si ES "02", no hay temporizador. El evento 'ended' del video lo limpiará.
                     
                 } else if (scannedValue !== "") {
                     lanzarError();
@@ -278,6 +282,13 @@
                 isVideo2Playing = false;
                 video2.style.display = 'none';
             }
+        });
+
+        // NUEVO: Cuando finaliza el VIDEO DE LA RECETA 1
+        videoReceta1.addEventListener('ended', () => {
+            // El video ha terminado su reproducción natural. Limpiamos la receta en Firebase.
+            // Esto disparará 'onValue' en todos los dispositivos conectados para volver a la normalidad.
+            set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
         });
 
         function iniciarSincronizacion() {
@@ -324,7 +335,7 @@
                             isVideo2Playing = false;
                         }
 
-                        // Muestra y reproduce el Video de la Receta de 27 segundos
+                        // Muestra y reproduce el Video de la Receta (Se cerrará solo al disparar su evento 'ended')
                         videoReceta1.style.display = 'block';
                         if (videoReceta1.paused) {
                             videoReceta1.currentTime = 0;
@@ -343,7 +354,7 @@
                     }
 
                 } else {
-                    // LIMPIEZA CUANDO LA RECETA DESAPARECE (Fin de los 27s o 3s)
+                    // LIMPIEZA CUANDO LA RECETA DESAPARECE (Fin del video o fin de los 3s)
                     overlayReceta.style.display = 'none';
                     imgReceta.src = '';
                     
