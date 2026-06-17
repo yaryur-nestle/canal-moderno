@@ -33,10 +33,9 @@
     }
     #imgReceta { max-width: 75%; max-height: 75%; object-fit: contain; }
     
-    /* MODIFICACIÓN: El video ahora ocupa toda la pantalla */
     #videoReceta { 
         position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-        object-fit: cover; /* Cambia a 'contain' si no quieres que el video se recorte en los bordes */
+        object-fit: cover; 
         background-color: #000;
         transform: none; display: none; z-index: 55; 
     }
@@ -82,7 +81,7 @@
       <div class="face face-front">
         <div id="overlayReceta">
             <img id="imgReceta" src="" alt="Receta">
-            <video id="videoReceta" src="" autoplay muted playsinline></video>
+            <video id="videoReceta" src="VIDEO_1RECETA.mp4" preload="auto" muted playsinline style="background-color: #000;"></video>
         </div>
       </div>
       
@@ -225,25 +224,20 @@
     let camaraIniciada = false;
     let hayPersonasActual = false;
 
-    // MODIFICACIÓN: Lógica de protección del video
     let isVideoPlaying = false;
     let estadoRecetaPendiente = "";
 
-    // Evento que se dispara cuando el video termina naturalmente
     videoReceta.addEventListener('ended', () => {
         isVideoPlaying = false;
-        // Al terminar, actualiza la pantalla con el estado más reciente de Firebase
         procesarEstadoReceta(estadoRecetaPendiente);
     });
 
-    // === ESCUCHADOR DE LA RECETA DESDE EL ESCÁNER ===
     onValue(estadoActualRef, (snapshot) => {
       const estado = snapshot.val();
       if(!estado) return;
 
       estadoRecetaPendiente = estado.recetaActiva || "";
 
-      // Si el video se está reproduciendo, IGNORA el corte y deja que termine
       if (isVideoPlaying) {
           return; 
       }
@@ -251,7 +245,6 @@
       procesarEstadoReceta(estadoRecetaPendiente);
     });
 
-    // Función separada para procesar los cambios de receta
     function procesarEstadoReceta(recetaActiva) {
       if (recetaActiva && recetaActiva !== "") {
         overlayReceta.style.display = 'flex';
@@ -260,15 +253,17 @@
           imgReceta.style.display = 'none'; 
           
           if (videoReceta.style.display !== 'block') {
-              videoReceta.src = 'VIDEO_1RECETA.mp4'; 
+              // MODIFICACIÓN CLAVE: Ya no asignamos el 'src' aquí. Simplemente lo mostramos y reproducimos.
               videoReceta.style.display = 'block';
-              videoReceta.currentTime = 0; // Reiniciar video
-              videoReceta.play();
-              isVideoPlaying = true; // Bloquea interrupciones hasta que termine
+              videoReceta.currentTime = 0; 
+              
+              // El catch evita errores en la consola si el navegador bloquea la reproducción
+              videoReceta.play().catch(e => console.log("Reproducción automática pendiente:", e));
+              
+              isVideoPlaying = true; 
           }
 
         } else {
-          // Es una imagen (01, 03, etc.)
           videoReceta.style.display = 'none';
           videoReceta.pause();
           
@@ -279,7 +274,6 @@
           imgReceta.style.display = 'block';
         }
       } else {
-        // Limpieza si no hay receta o si las personas se fueron (y el video ya no está bloqueando)
         overlayReceta.style.display = 'none';
         imgReceta.src = '';
         imgReceta.style.display = 'none';
@@ -301,7 +295,6 @@
       const ahora = Date.now();
       currentFacesCount = rostrosActuales;
 
-      // ACTUALIZACIÓN DE PRESENCIA EN FIREBASE EN TIEMPO REAL
       const personasDetectadas = rostrosActuales > 0;
       
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
@@ -313,7 +306,6 @@
         });
       }
 
-      // LOGS HISTÓRICOS
       if (rostrosActuales !== pendingFaceCount) {
         pendingFaceCount = rostrosActuales;
         clearTimeout(stabilityTimer); 
@@ -331,7 +323,6 @@
         }, 1000); 
       }
 
-      // MÉTRICAS VISUALES (Se ven en la cara trasera del Mueble 03)
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) { inicioSesionActual = ahora; }
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
