@@ -426,24 +426,26 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        /* --- CONFIGURACIONES ESTRICTAS POR MARCA Y TABLET --- */
+        /* --- CONFIGURACIONES ESTRICTAS POR MARCA Y TABLET --- 
+           Para asegurar que siempre aparezcan las personas en cualquier zona 
+           usaremos las imágenes normalizadas. */
         const brandConfigs = {
             'NIDO': {
                 bgImage: 'NIDO_MONITOR fondo.jpg',
                 tablets: [{ id: 1, zone: 2 }],
                 zoneImages: {
                     1: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'],
-                    2: ['2-1.png', '2-2.png', '2-3.png', '2-4.png', '2-5.png'],
-                    3: ['3-1.png', '3-2.png', '3-3.png', '3-4.png', '3-5.png']
+                    2: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'],
+                    3: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png']
                 }
             },
             'RECETAS': {
                 bgImage: 'RECETAS_MONITOR.jpg',
                 tablets: [{ id: 3, zone: 2 }],
                 zoneImages: {
-                    1: ['1-1.png', '1-2.png', '1-3.png', '1-4.png', '1-5.png'],
-                    2: ['2-1.png', '2-2.png', '2-3.png', '2-4.png', '2-5.png'],
-                    3: ['3-1.png', '3-2.png', '3-3.png', '3-4.png', '3-5.png']
+                    1: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'],
+                    2: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'],
+                    3: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png']
                 }
             }
         };
@@ -781,6 +783,12 @@
                 for(let i=1; i<=daysInMonth; i++) labels.push(`${i}`);
                 dataBuckets = new Array(daysInMonth).fill(0); countBuckets = new Array(daysInMonth).fill(0);
             }
+            else if (currentViewLevel === 'year') {
+                titlePrefix = "AÑO:"; titleSuffix = `${date.getFullYear()}`;
+                const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                labels = [...meses];
+                dataBuckets = new Array(12).fill(0); countBuckets = new Array(12).fill(0);
+            }
 
             const duracionesRealesMap = new Map(); 
             let colaSimulada = [];
@@ -790,7 +798,6 @@
                 const prev = ev.conteoAnterior || 0;
                 const act = ev.conteoActual || 0;
 
-                // TRUCO DE ORO: Si cae a 0, forzamos el cierre de todos los tiempos abiertos
                 if (act === 0) {
                     while (colaSimulada.length > 0) {
                         const llegada = colaSimulada.shift();
@@ -816,12 +823,14 @@
             if (currentViewLevel === 'hour') isCurrentView = (date.getHours() === now.getHours() && date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
             if (currentViewLevel === 'day') isCurrentView = (date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
             if (currentViewLevel === 'month') isCurrentView = (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
+            if (currentViewLevel === 'year') isCurrentView = (date.getFullYear() === now.getFullYear());
 
             events.forEach(ev => {
                 const evDate = new Date(ev.timestamp);
                 if (currentViewLevel === 'hour' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate() || evDate.getHours() !== date.getHours())) return;
                 if (currentViewLevel === 'day' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate())) return;
                 if (currentViewLevel === 'month' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth())) return;
+                if (currentViewLevel === 'year' && (evDate.getFullYear() !== date.getFullYear())) return;
 
                 const conteoPrevio = ev.conteoAnterior || 0;
                 
@@ -831,6 +840,7 @@
                     if (currentViewLevel === 'hour') idx = evDate.getMinutes();
                     else if (currentViewLevel === 'day') idx = evDate.getHours();
                     else if (currentViewLevel === 'month') idx = evDate.getDate() - 1;
+                    else if (currentViewLevel === 'year') idx = evDate.getMonth();
 
                     if (currentMetric === 'count') { 
                         dataBuckets[idx] += nuevas; 
@@ -844,7 +854,6 @@
                                 countBuckets[idx] += 1;
                             } else {
                                 // Evento abierto (la persona parece seguir ahí)
-                                // Validamos si en efecto hay gente en este instante
                                 if (isCurrentView && conteosActuales[tabletActualEnGrafico] > 0) {
                                     let duracion = (Date.now() - ev.timestamp) / 1000;
                                     // Limitamos a 5 min (300 segs) por si una tablet se apaga de golpe
@@ -893,6 +902,7 @@
             if(viewState === 'CHART_MONTH' && (currentViewDate.getMonth() !== now.getMonth() || currentViewDate.getFullYear() !== now.getFullYear())) showBtn = true;
             if(viewState === 'CAL_MONTH' && (currentViewDate.getMonth() !== now.getMonth() || currentViewDate.getFullYear() !== now.getFullYear())) showBtn = true;
             if(viewState === 'CAL_YEAR' && currentViewDate.getFullYear() !== now.getFullYear()) showBtn = true;
+            if(viewState === 'CHART_YEAR' && currentViewDate.getFullYear() !== now.getFullYear()) showBtn = true;
             if(viewState === 'CAL_DECADE') {
                 let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
                 if(now.getFullYear() < startYear || now.getFullYear() > startYear + 11) showBtn = true;
@@ -924,6 +934,13 @@
             else if(viewState === 'CHART_MONTH') {
                 document.getElementById('view-chart-container').classList.add('active');
                 currentViewLevel = 'month';
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'flex';
+                updateChartDisplay(skipAnim);
+            }
+            else if(viewState === 'CHART_YEAR') {
+                document.getElementById('view-chart-container').classList.add('active');
+                currentViewLevel = 'year';
                 btnIn.style.display = 'flex';
                 btnOut.style.display = 'flex';
                 updateChartDisplay(skipAnim);
@@ -960,7 +977,7 @@
             if(['CHART_HOUR', 'CLOCK'].includes(viewState)) isCurrent = isSameDay(currentViewDate, now) && currentViewDate.getHours() === now.getHours();
             else if(['CHART_DAY'].includes(viewState)) isCurrent = isSameDay(currentViewDate, now);
             else if(['CAL_MONTH', 'CHART_MONTH'].includes(viewState)) isCurrent = currentViewDate.getMonth() === now.getMonth() && currentViewDate.getFullYear() === now.getFullYear();
-            else if(viewState === 'CAL_YEAR') isCurrent = currentViewDate.getFullYear() === now.getFullYear();
+            else if(['CAL_YEAR', 'CHART_YEAR'].includes(viewState)) isCurrent = currentViewDate.getFullYear() === now.getFullYear();
             else if(viewState === 'CAL_DECADE') {
                 let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
                 isCurrent = (now.getFullYear() >= startYear && now.getFullYear() <= startYear + 11);
@@ -974,12 +991,13 @@
         document.getElementById('btn-zoom-out').addEventListener('click', () => { 
             if (viewState === 'CHART_HOUR' || viewState === 'CLOCK' || viewState === 'CHART_DAY') viewState = 'CAL_MONTH';
             else if (viewState === 'CAL_MONTH' || viewState === 'CHART_MONTH') viewState = 'CAL_YEAR';
-            else if (viewState === 'CAL_YEAR') viewState = 'CAL_DECADE';
+            else if (viewState === 'CAL_YEAR' || viewState === 'CHART_YEAR') viewState = 'CAL_DECADE';
             updateDashboardView(); 
         });
 
         document.getElementById('btn-zoom-in').addEventListener('click', () => { 
-            if (viewState === 'CAL_DECADE') viewState = 'CAL_YEAR';
+            if (viewState === 'CAL_DECADE') viewState = 'CHART_YEAR';
+            else if (viewState === 'CHART_YEAR') viewState = 'CAL_YEAR';
             else if (viewState === 'CAL_YEAR' || viewState === 'CHART_MONTH') viewState = 'CAL_MONTH';
             else if (viewState === 'CAL_MONTH' || viewState === 'CHART_DAY') viewState = 'CLOCK';
             updateDashboardView(); 
@@ -1030,7 +1048,7 @@
         function renderCalDecade() {
             const grid = document.getElementById('decade-grid');
             grid.innerHTML = '';
-            // Bloque dinámico de 12 años basado en la fecha actual de la vista, partiendo de 2021
+            // Bloque dinámico de 12 años partiendo de 2021
             let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
             document.getElementById('chart-subtitle').innerText = `AÑOS: ${startYear} - ${startYear + 11}`;
             
@@ -1042,7 +1060,7 @@
                 cell.innerText = y;
                 cell.onclick = () => {
                     currentViewDate.setFullYear(y);
-                    viewState = 'CAL_YEAR';
+                    viewState = 'CHART_YEAR'; // <- Aquí está el salto directo al gráfico anual
                     updateDashboardView();
                 };
                 grid.appendChild(cell);
@@ -1134,7 +1152,7 @@
                 if (viewState === 'CHART_HOUR' || viewState === 'CLOCK') d.setHours(d.getHours() + direction);
                 if (viewState === 'CHART_DAY') d.setDate(d.getDate() + direction);
                 if (viewState === 'CAL_MONTH' || viewState === 'CHART_MONTH') d.setMonth(d.getMonth() + direction);
-                if (viewState === 'CAL_YEAR') d.setFullYear(d.getFullYear() + direction);
+                if (viewState === 'CAL_YEAR' || viewState === 'CHART_YEAR') d.setFullYear(d.getFullYear() + direction);
                 if (viewState === 'CAL_DECADE') d.setFullYear(d.getFullYear() + (direction * 12));
                 currentViewDate = d;
                 
