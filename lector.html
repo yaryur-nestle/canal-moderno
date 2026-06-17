@@ -174,9 +174,9 @@
         let lastKeyTime = Date.now();
 
         const baseDeDatos = {
-            "7591016855096": "01", // Asumimos que "01" es Leche Condensada
+            "7591016855096": "01", // Chocolate
             "7591016155097": "01",
-            "7506475104425": "02",
+            "7506475104425": "02", // Leche Condensada (Se activa el video)
             "17506475104422": "02",
             "7891000107263": "02",
             "7591016206409": "03",
@@ -235,9 +235,9 @@
                     const recetaID = baseDeDatos[scannedValue];
                     set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
                     
-                    // Tiempo de espera dinámico: Si es el video ("01"), damos más tiempo (ej. 15 segundos)
+                    // Tiempo de espera dinámico: Si es el video ("02"), damos 27 segundos exactos
                     // Si son imágenes de recetas normales, mantenemos los 3 segundos.
-                    const tiempoDeEspera = (recetaID === "01") ? 15000 : 3000;
+                    const tiempoDeEspera = (recetaID === "02") ? 27000 : 3000;
                     
                     resetTimeout = setTimeout(() => {
                         set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
@@ -296,7 +296,7 @@
                 // 2. Manejo de la Receta en Pantalla
                 if (estado.recetaActiva && estado.recetaActiva !== "") {
                     
-                    if (estado.recetaActiva === "01") { // <-- ID DE LECHE CONDENSADA
+                    if (estado.recetaActiva === "02") { // <-- AHORA ACTIVA CON EL ID DE LECHE CONDENSADA ("02")
                         // Ocultamos el overlay de imágenes clásico por si estaba abierto
                         overlayReceta.style.display = 'none';
                         
@@ -320,7 +320,7 @@
                         }
                     } else {
                         // === COMPORTAMIENTO NORMAL PARA OTRAS RECETAS ===
-                        // Por si veníamos del video "01", lo detenemos
+                        // Por si veníamos del video "02", lo detenemos
                         if (!videoReceta1.paused) {
                             videoReceta1.pause();
                             videoReceta1.style.display = 'none';
