@@ -33,9 +33,12 @@
     }
     #imgReceta { max-width: 75%; max-height: 75%; object-fit: contain; }
     
-    .flip-btn { position: absolute; bottom: 12%; right: 5%; z-index: 50; background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.3s ease; opacity: 0; pointer-events: none; }
-    .card.is-flipped ~ .flip-btn { opacity: 1; pointer-events: auto; }
-    .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
+    /* Nuevos estilos para el video de la receta (Sobrescriben el estilo general de video) */
+    #videoReceta { 
+        position: relative; width: auto; height: auto; 
+        max-width: 75%; max-height: 75%; object-fit: contain; 
+        transform: none; display: none; z-index: 55; 
+    }
     
     video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
     canvas { z-index: 10; }
@@ -48,6 +51,10 @@
     #time-counter { background: rgba(255, 255, 0, 0.15); color: #FFFF00; border-color: #FFFF00; }
     #avg-counter { background: rgba(255, 0, 255, 0.15); color: #FF00FF; border-color: #FF00FF; }
     #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 40; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid #00FFFF; color: #00FFFF; font-weight: bold; font-size: 1.2rem; }
+    
+    .flip-btn { position: absolute; bottom: 12%; right: 5%; z-index: 50; background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.3s ease; opacity: 0; pointer-events: none; }
+    .card.is-flipped ~ .flip-btn { opacity: 1; pointer-events: auto; }
+    .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -74,6 +81,7 @@
       <div class="face face-front">
         <div id="overlayReceta">
             <img id="imgReceta" src="" alt="Receta">
+            <video id="videoReceta" src="" loop autoplay muted playsinline></video>
         </div>
       </div>
       
@@ -206,6 +214,7 @@
     const canvasCtx = canvasElement.getContext('2d');
     const overlayReceta = document.getElementById('overlayReceta');
     const imgReceta = document.getElementById('imgReceta');
+    const videoReceta = document.getElementById('videoReceta'); // Nuevo elemento de video
 
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
     let currentFacesCount = 0;
@@ -215,18 +224,46 @@
     let camaraIniciada = false;
     let hayPersonasActual = false;
 
-    // Escucha el estado para la receta interactiva (el confeti ha sido eliminado)
+    // Escucha el estado para la receta interactiva
     onValue(estadoActualRef, (snapshot) => {
       const estado = snapshot.val();
       if(!estado) return;
 
-      // Mostrar u ocultar receta si es enviada desde el servidor
+      // Mostrar u ocultar receta o video si es enviado desde el servidor
       if (estado.recetaActiva && estado.recetaActiva !== "") {
-        imgReceta.src = `${estado.recetaActiva}RECETA.png`;
         overlayReceta.style.display = 'flex';
+        
+        // Comprobar si el código de receta corresponde a Leche Condensada
+        // NOTA: Modifica 'VIDEO_1' o 'LECHE' según lo que envíe tu escáner a Firebase
+        if (estado.recetaActiva.includes('VIDEO_1') || estado.recetaActiva.toUpperCase().includes('LECHE')) {
+          
+          imgReceta.style.display = 'none'; // Ocultamos la imagen
+          
+          // Solo actualizamos el SRC y damos play si no se está reproduciendo ya (Evita parpadeos)
+          if (videoReceta.style.display !== 'block') {
+              videoReceta.src = 'VIDEO_1RECETA.mp4';
+              videoReceta.style.display = 'block';
+              videoReceta.play();
+          }
+
+        } else {
+          // Lógica normal para el resto de las recetas (Imágenes)
+          videoReceta.style.display = 'none';
+          videoReceta.pause();
+          
+          const newImageSrc = `${estado.recetaActiva}RECETA.png`;
+          if (imgReceta.getAttribute('src') !== newImageSrc) {
+              imgReceta.src = newImageSrc;
+          }
+          imgReceta.style.display = 'block';
+        }
       } else {
+        // Ocultar todo si se limpia la receta en Firebase
         overlayReceta.style.display = 'none';
         imgReceta.src = '';
+        imgReceta.style.display = 'none';
+        videoReceta.style.display = 'none';
+        videoReceta.pause();
       }
     });
 
@@ -246,7 +283,6 @@
       /* NORMALIZACIÓN: Publicación en tiempo real al nodo estado_actual */
       const personasDetectadas = rostrosActuales > 0;
       
-      // Aquí está la magia silenciosa: La tablet actualiza Firebase sin mostrar nada en su pantalla del frente
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
         hayPersonasActual = personasDetectadas;
         set(estadoActualRef, {
