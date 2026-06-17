@@ -55,7 +55,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: cover; /* El fondo sí rellena toda la pantalla */
             z-index: 1; /* Fondo base */
         }
 
@@ -66,7 +66,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain; /* <-- ESTA ES LA MAGIA: Mantiene el aspect ratio sin cortar, mostrando el fondo transparente donde no hay video */
+            background-color: transparent;
             z-index: 2; /* Por encima de la imagen de fondo, por debajo de la receta */
             display: none;
         }
@@ -250,8 +251,6 @@
                 video2.currentTime = 0;
                 video2.play().catch(e => console.error("Error reproduciendo Video 02:", e));
                 isVideo2Playing = true;
-            } else {
-                // Si la persona se fue, simplemente nos quedamos con el fondo (ningún video activo)
             }
         });
 
@@ -285,8 +284,7 @@
                         video2.style.display = 'none';
                         isVideo2Playing = false;
                     }
-                    // NOTA: Si está en el VIDEO_01, la instrucción fue dejar que termine, 
-                    // por lo que no hacemos nada y dejamos que el evento 'ended' se encargue de ocultarlo.
+                    // NOTA: Si está en el VIDEO_01, dejamos que termine naturalmente.
                 }
 
                 // 2. Manejo de la Receta en Pantalla
