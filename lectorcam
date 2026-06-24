@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector de Código de Barras - Sincronizado y Cámara</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+            background-color: #000;
+            overflow: hidden;
+            position: relative;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* === ESTILOS DEL LOGIN === */
+        #login-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .login-box {
+            border: 1px solid #00FFFF; padding: 40px; background: rgba(0, 255, 255, 0.05);
+            text-align: center; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            border-radius: 8px; backdrop-filter: blur(10px); width: 300px;
+        }
+        .login-box h2 { color: #00FFFF; margin-top: 0; margin-bottom: 25px; text-shadow: 0 0 5px #00FFFF; letter-spacing: 2px; }
+        .login-box input {
+            display: block; width: 100%; box-sizing: border-box; margin-bottom: 15px;
+            padding: 12px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00FFFF;
+            color: #00FFFF; font-family: inherit; font-size: 1rem; text-align: center;
+        }
+        .login-box input:focus { outline: none; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); background: rgba(0, 255, 255, 0.1); }
+        .login-box button {
+            background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF;
+            padding: 12px 20px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1rem;
+            width: 100%; transition: all 0.3s; letter-spacing: 1px;
+        }
+        .login-box button:hover { background: #00FFFF; color: #000; box-shadow: 0 0 15px #00FFFF; }
+        .error-msg { color: #FF0055; margin-top: 15px; font-size: 0.85rem; display: none; text-shadow: 0 0 5px #FF0055; }
+
+        /* === ESTILOS DE LA APP === */
+        #app-screen {
+            display: none; 
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            cursor: pointer; /* Para indicar que es interactuable para los toques */
+        }
+
+        #visorImagen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1; /* Fondo base */
+        }
+
+        /* Contenedores de video superpuestos */
+        .video-player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; 
+            background-color: transparent;
+            z-index: 2;
+            display: none;
+        }
+
+        /* Aseguramos que el video de la receta quede por encima de los otros videos si se cruzan */
+        #videoReceta1 {
+            z-index: 5;
+        }
+
+        #overlayReceta {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10; /* La receta siempre irá por encima de todo */
+        }
+
+        #imgReceta {
+            max-width: 75%;
+            max-height: 75%;
+            object-fit: contain;
+        }
+
+        /* === ESTILOS DEL ESCÁNER DE CÁMARA === */
+        #camera-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000; /* Por encima de todo */
+        }
+        .camera-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            text-align: center;
+        }
+        .camera-container h3 {
+            margin-top: 0; color: #000; font-family: sans-serif;
+        }
+        #reader {
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        #close-camera-btn {
+            background-color: #ef4444; color: white; border: none;
+            padding: 12px 20px; font-size: 1rem; border-radius: 8px;
+            cursor: pointer; width: 100%; font-weight: bold;
+        }
+
+        .bg-error { background-color: #ef4444 !important; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .shake { animation: shake 0.4s; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>LECTOR RECETAS</h2>
+            <form id="login-form">
+                <input type="email" id="email" placeholder="Correo Electrónico" required autocomplete="email">
+                <input type="password" id="password" placeholder="Contraseña" required autocomplete="current-password">
+                <button type="submit" id="login-btn">CONECTAR</button>
+                <div id="error-msg" class="error-msg">Error de credenciales.</div>
+            </form>
+        </div>
+    </div>
+
+    <div id="app-screen">
+        <img id="visorImagen" src="TABLET 03.jpg" alt="Pantalla de inicio">
+        
+        <video id="video1" class="video-player" src="VIDEO_01_reparado.mp4" playsinline></video>
+        <video id="video2" class="video-player" src="VIDEO_02.mp4" playsinline></video>
+        
+        <video id="videoReceta1" class="video-player" src="VIDEO_RECETA1.mp4" playsinline></video>
+        
+        <div id="overlayReceta">
+            <img id="imgReceta" src="" alt="Receta">
+        </div>
+    </div>
+
+    <div id="camera-overlay">
+        <div class="camera-container">
+            <h3>Escanear Código de Barras</h3>
+            <div id="reader"></div>
+            <button id="close-camera-btn">Cancelar Escaneo</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
+            authDomain: "canal-moderno-2655e.firebaseapp.com",
+            databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
+            projectId: "canal-moderno-2655e",
+            storageBucket: "canal-moderno-2655e.firebasestorage.app",
+            messagingSenderId: "947512040134",
+            appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        
+        const estadoRef = ref(db, 'muebles/tablet_03/estado_actual');
+
+        const loginScreen = document.getElementById('login-screen');
+        const appScreen = document.getElementById('app-screen');
+        const loginForm = document.getElementById('login-form');
+        const errorMsg = document.getElementById('error-msg');
+        const overlayReceta = document.getElementById('overlayReceta');
+        const imgReceta = document.getElementById('imgReceta');
+        const cameraOverlay = document.getElementById('camera-overlay');
+        const closeCameraBtn = document.getElementById('close-camera-btn');
+        
+        // Elementos de Video y Variables de Estado
+        const video1 = document.getElementById('video1');
+        const video2 = document.getElementById('video2');
+        const videoReceta1 = document.getElementById('videoReceta1');
+        
+        let personaDetectadaLocalmente = false;
+        let isVideo1Playing = false;
+        let isVideo2Playing = false;
+        let estadoGlobalReceta = ""; 
+
+        let resetTimeout;
+        let scannerBuffer = "";
+        let lastKeyTime = Date.now();
+        let html5QrCode; // Para la cámara
+
+        const baseDeDatos = {
+            "7591016855096": "01", // Chocolate
+            "7591016155097": "01",
+            "7506475104425": "02", // Leche Condensada (Activa video prioritario)
+            "17506475104422": "02",
+            "7891000107263": "02",
+            "7591016206409": "03",
+            "7591016406403": "03",
+            "17591016206406": "03",
+            "7591016204894": "04"
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginScreen.style.display = 'none';
+                appScreen.style.display = 'block';
+                iniciarSincronizacion();
+            } else {
+                loginScreen.style.display = 'flex';
+                appScreen.style.display = 'none';
+            }
+        });
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+            
+            errorMsg.style.display = 'none';
+            loginBtn.innerText = 'CARGANDO...';
+            
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => { loginBtn.innerText = 'CONECTAR'; loginForm.reset(); })
+                .catch((error) => {
+                    loginBtn.innerText = 'CONECTAR';
+                    errorMsg.innerText = "Error: Verifica tus credenciales.";
+                    errorMsg.style.display = 'block';
+                });
+        });
+
+        // ====== FUNCIÓN CENTRAL PARA PROCESAR CÓDIGOS ======
+        // Esta función ahora es llamada tanto por el teclado como por la cámara
+        function procesarCodigoDeBarras(scannedValue) {
+            clearTimeout(resetTimeout);
+
+            if (baseDeDatos[scannedValue]) {
+                const recetaID = baseDeDatos[scannedValue];
+                
+                // Activamos la receta en la base de datos
+                set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
+                
+                // Si NO es el video (02), usamos el temporizador normal de 3 segundos para las imágenes
+                if (recetaID !== "02") {
+                    resetTimeout = setTimeout(() => {
+                        set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
+                    }, 3000);
+                }
+            } else if (scannedValue !== "") {
+                lanzarError();
+            }
+        }
+
+        // ESCUCHADOR GLOBAL DE TECLADO (LECTOR FÍSICO)
+        document.addEventListener('keydown', function(event) {
+            if (appScreen.style.display !== 'block' || cameraOverlay.style.display === 'flex') return;
+
+            const currentTime = Date.now();
+            
+            if (currentTime - lastKeyTime > 200) {
+                scannerBuffer = "";
+            }
+            lastKeyTime = currentTime;
+
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const scannedValue = scannerBuffer.trim();
+                scannerBuffer = ''; 
+                procesarCodigoDeBarras(scannedValue);
+            } else if (event.key.length === 1) { 
+                scannerBuffer += event.key;
+            }
+        });
+
+        // ====== LÓGICA DE LA CÁMARA Y TRIPLE TOQUE ======
+        let tapCount = 0;
+        let tapTimer;
+
+        // Detectar los 3 toques en la pantalla
+        appScreen.addEventListener('click', () => {
+            tapCount++;
+            if (tapCount === 1) {
+                // Reiniciar el contador si no se dan los 3 toques en 1 segundo
+                tapTimer = setTimeout(() => {
+                    tapCount = 0;
+                }, 1000);
+            } else if (tapCount === 3) {
+                clearTimeout(tapTimer);
+                tapCount = 0;
+                iniciarCamara();
+            }
+        });
+
+        function iniciarCamara() {
+            cameraOverlay.style.display = 'flex';
+            
+            // Instanciar el lector sobre el div "reader"
+            html5QrCode = new Html5Qrcode("reader");
+            
+            // Configuramos formatos: EAN_13 es común para productos, pero puedes abrir a más
+            const config = { 
+                fps: 10, 
+                qrbox: { width: 300, height: 150 },
+                aspectRatio: 1.0,
+                formatsToSupport: [ 
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.UPC_A
+                ]
+            };
+
+            html5QrCode.start(
+                { facingMode: "environment" }, // Intenta usar cámara trasera
+                config,
+                (decodedText, decodedResult) => {
+                    // CÓDIGO LEÍDO CON ÉXITO
+                    apagarCamara();
+                    procesarCodigoDeBarras(decodedText);
+                },
+                (errorMessage) => {
+                    // Errores de frame (normales mientras escanea sin detectar nada)
+                }
+            ).catch((err) => {
+                console.error("No se pudo iniciar la cámara", err);
+                alert("No se pudo acceder a la cámara o no tienes permisos.");
+                apagarCamara();
+            });
+        }
+
+        function apagarCamara() {
+            cameraOverlay.style.display = 'none';
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                }).catch(err => {
+                    console.error("Error al detener la cámara", err);
+                });
+            }
+        }
+
+        closeCameraBtn.addEventListener('click', apagarCamara);
+
+
+        // ====== LÓGICA DE EVENTOS 'ENDED' DE LOS VIDEOS ====== //
+
+        // Cuando finaliza el VIDEO 01 (Saludo inicial)
+        video1.addEventListener('ended', () => {
+            isVideo1Playing = false;
+            video1.style.display = 'none';
+
+            if (personaDetectadaLocalmente && estadoGlobalReceta !== "02") {
+                video2.style.display = 'block';
+                video2.currentTime = 0;
+                video2.play().catch(e => console.error("Error reproduciendo Video 02:", e));
+                isVideo2Playing = true;
+            }
+        });
+
+        // Cuando finaliza el VIDEO 02 (Bucle de presencia manual)
+        video2.addEventListener('ended', () => {
+            if (personaDetectadaLocalmente && estadoGlobalReceta !== "02") {
+                video2.currentTime = 0;
+                video2.play().catch(e => console.error("Error reproduciendo Video 02 en bucle:", e));
+                isVideo2Playing = true;
+            } else {
+                isVideo2Playing = false;
+                video2.style.display = 'none';
+            }
+        });
+
+        // Cuando finaliza el VIDEO DE LA RECETA 1
+        videoReceta1.addEventListener('ended', () => {
+            set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
+        });
+
+        function iniciarSincronizacion() {
+            onValue(estadoRef, (snapshot) => {
+                const estado = snapshot.val();
+                if (!estado) return;
+
+                estadoGlobalReceta = estado.recetaActiva || "";
+                const deteccionRemota = estado.hayPersonas;
+
+                // 1. Manejo de la Detección
+                if (deteccionRemota && !personaDetectadaLocalmente) {
+                    personaDetectadaLocalmente = true;
+                    if (!isVideo1Playing && !isVideo2Playing && videoReceta1.paused && estadoGlobalReceta !== "02") {
+                        video1.style.display = 'block';
+                        video1.currentTime = 0;
+                        video1.play().catch(e => console.error("Error reproduciendo Video 01:", e));
+                        isVideo1Playing = true;
+                    }
+                } 
+                else if (!deteccionRemota && personaDetectadaLocalmente) {
+                    personaDetectadaLocalmente = false;
+                }
+
+                // 2. Manejo de la Receta en Pantalla
+                if (estadoGlobalReceta && estadoGlobalReceta !== "") {
+                    
+                    if (estadoGlobalReceta === "02") { 
+                        overlayReceta.style.display = 'none';
+                        
+                        if (isVideo1Playing) {
+                            video1.pause();
+                            video1.style.display = 'none';
+                            isVideo1Playing = false;
+                        }
+                        if (isVideo2Playing) {
+                            video2.pause();
+                            video2.style.display = 'none';
+                            isVideo2Playing = false;
+                        }
+
+                        videoReceta1.style.display = 'block';
+                        if (videoReceta1.paused) {
+                            videoReceta1.currentTime = 0;
+                            videoReceta1.play().catch(e => console.error("Error reproduciendo Video Receta:", e));
+                        }
+                    } else {
+                        if (!videoReceta1.paused) {
+                            videoReceta1.pause();
+                            videoReceta1.style.display = 'none';
+                        }
+                        
+                        imgReceta.src = `RECETA${estadoGlobalReceta}.png`;
+                        overlayReceta.style.display = 'flex';
+                        document.body.className = ''; 
+                    }
+
+                } else {
+                    overlayReceta.style.display = 'none';
+                    imgReceta.src = '';
+                    
+                    if (!videoReceta1.paused || videoReceta1.style.display === 'block') {
+                        videoReceta1.pause();
+                        videoReceta1.style.display = 'none';
+                        
+                        if (personaDetectadaLocalmente) {
+                            video2.style.display = 'block';
+                            video2.currentTime = 0;
+                            video2.play().catch(e => console.error("Error reanudando Video 02:", e));
+                            isVideo2Playing = true;
+                        }
+                    }
+                }
+            });
+        }
+
+        function lanzarError() {
+            document.getElementById('app-screen').classList.remove('shake');
+            void document.getElementById('app-screen').offsetWidth;
+            document.body.className = 'bg-error';
+            document.getElementById('app-screen').classList.add('shake');
+            setTimeout(() => {
+                document.body.className = '';
+                document.getElementById('app-screen').classList.remove('shake');
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
