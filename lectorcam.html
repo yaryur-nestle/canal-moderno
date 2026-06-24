@@ -274,7 +274,6 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 loginScreen.style.display = 'none';
-                // Mostrar pantalla de bienvenida en lugar de la app directamente
                 welcomeScreen.style.display = 'flex';
                 iniciarSincronizacion();
             } else {
@@ -304,18 +303,15 @@
 
         // ====== INICIO DE EXPERIENCIA (FULLSCREEN & AUDIO) ======
         document.getElementById('start-btn').addEventListener('click', () => {
-            // Solicitar pantalla completa
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch((err) => {
                     console.warn(`Error intentando activar fullscreen: ${err.message}`);
                 });
             }
-            // Desbloquear políticas de audio del navegador
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
 
-            // Ocultar bienvenida, mostrar la app y lanzar la cámara inmediatamente
             welcomeScreen.style.display = 'none';
             appScreen.style.display = 'block';
             iniciarCamara();
@@ -341,7 +337,7 @@
                 const recetaID = baseDeDatos[scannedValue];
                 
                 set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
-                hacerPitido(); // <-- SE EJECUTA EL PITIDO DE ÉXITO
+                hacerPitido(); 
                 
                 if (recetaID !== "02") {
                     resetTimeout = setTimeout(() => {
@@ -389,7 +385,7 @@
             } else if (tapCount === 3) {
                 clearTimeout(tapTimer);
                 tapCount = 0;
-                iniciarCamara(); // Abre la cámara tras el triple toque
+                iniciarCamara();
             }
         });
 
@@ -434,23 +430,14 @@
             };
 
             html5QrCode.start(
-                { facingMode: "environment", advanced: [{ torch: true }] },
+                { facingMode: "environment" }, // <-- LINTERNA ELIMINADA AQUÍ
                 config,
                 onScanSuccess,
                 onScanFailure
             ).catch((err) => {
-                console.warn("No se pudo iniciar con linterna (torch). Intentando sin ella...", err);
-                
-                html5QrCode.start(
-                    { facingMode: "environment" },
-                    config,
-                    onScanSuccess,
-                    onScanFailure
-                ).catch((err2) => {
-                    console.error("Fallo total al iniciar la cámara:", err2);
-                    alert("No se pudo acceder a la cámara.");
-                    apagarCamara();
-                });
+                console.error("Fallo total al iniciar la cámara:", err);
+                alert("No se pudo acceder a la cámara.");
+                apagarCamara();
             });
         }
 
@@ -466,7 +453,6 @@
             }
         }
 
-        // Cancelar escaneo y volver a la app normal
         closeCameraBtn.addEventListener('click', apagarCamara);
 
 
@@ -571,7 +557,6 @@
         }
 
         function lanzarError() {
-            // Beep de error (tono grave y corto)
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
