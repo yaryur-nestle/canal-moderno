@@ -118,7 +118,7 @@
             text-align: center;
         }
         .camera-container h3 {
-            margin-top: 0; color: #000; font-family: sans-serif;
+            margin-top: 0; color: #000; font-family: sans-serif; transition: color 0.3s;
         }
         #reader {
             width: 100%;
@@ -170,7 +170,7 @@
 
     <div id="camera-overlay">
         <div class="camera-container">
-            <h3>Escanear Código de Barras</h3>
+            <h3 id="camera-title">Escanear Código de Barras</h3>
             <div id="reader"></div>
             <button id="close-camera-btn">Cancelar Escaneo</button>
         </div>
@@ -205,6 +205,7 @@
         const imgReceta = document.getElementById('imgReceta');
         const cameraOverlay = document.getElementById('camera-overlay');
         const closeCameraBtn = document.getElementById('close-camera-btn');
+        const cameraTitle = document.getElementById('camera-title');
         
         // Elementos de Video y Variables de Estado
         const video1 = document.getElementById('video1');
@@ -220,6 +221,10 @@
         let scannerBuffer = "";
         let lastKeyTime = Date.now();
         let html5QrCode; // Para la cámara
+        
+        // Variables para evitar spam de lecturas de la cámara
+        let ultimoCodigoEscaneado = "";
+        let tiempoUltimoEscaneo = 0;
 
         const baseDeDatos = {
             "7591016855096": "01", // Chocolate
@@ -263,7 +268,6 @@
         });
 
         // ====== FUNCIÓN CENTRAL PARA PROCESAR CÓDIGOS ======
-        // Esta función ahora es llamada tanto por el teclado como por la cámara
         function procesarCodigoDeBarras(scannedValue) {
             clearTimeout(resetTimeout);
 
@@ -313,7 +317,6 @@
         appScreen.addEventListener('click', () => {
             tapCount++;
             if (tapCount === 1) {
-                // Reiniciar el contador si no se dan los 3 toques en 1 segundo
                 tapTimer = setTimeout(() => {
                     tapCount = 0;
                 }, 1000);
@@ -327,10 +330,8 @@
         function iniciarCamara() {
             cameraOverlay.style.display = 'flex';
             
-            // Instanciar el lector sobre el div "reader"
             html5QrCode = new Html5Qrcode("reader");
             
-            // Configuramos formatos: EAN_13 es común para productos, pero puedes abrir a más
             const config = { 
                 fps: 10, 
                 qrbox: { width: 300, height: 150 },
@@ -344,12 +345,27 @@
             };
 
             html5QrCode.start(
-                { facingMode: "environment" }, // Intenta usar cámara trasera
+                { facingMode: "environment" },
                 config,
                 (decodedText, decodedResult) => {
-                    // CÓDIGO LEÍDO CON ÉXITO
-                    apagarCamara();
-                    procesarCodigoDeBarras(decodedText);
+                    const now = Date.now();
+                    
+                    // Solo procesar si es un código nuevo o pasaron más de 2 segundos desde la última lectura
+                    if (decodedText !== ultimoCodigoEscaneado || (now - tiempoUltimoEscaneo) > 2000) {
+                        ultimoCodigoEscaneado = decodedText;
+                        tiempoUltimoEscaneo = now;
+                        
+                        procesarCodigoDeBarras(decodedText);
+                        
+                        // Feedback visual para que sepas que leyó sin cerrar la cámara
+                        cameraTitle.innerText = "¡Código leído!";
+                        cameraTitle.style.color = "#10b981"; // Verde éxito
+                        
+                        setTimeout(() => {
+                            cameraTitle.innerText = "Escanear Código de Barras";
+                            cameraTitle.style.color = "#000";
+                        }, 1500);
+                    }
                 },
                 (errorMessage) => {
                     // Errores de frame (normales mientras escanea sin detectar nada)
@@ -363,6 +379,7 @@
 
         function apagarCamara() {
             cameraOverlay.style.display = 'none';
+            ultimoCodigoEscaneado = ""; // Reiniciamos el buffer al salir
             if (html5QrCode) {
                 html5QrCode.stop().then(() => {
                     html5QrCode.clear();
@@ -372,12 +389,12 @@
             }
         }
 
+        // LA ÚNICA FORMA DE SALIR ES ESTE BOTÓN
         closeCameraBtn.addEventListener('click', apagarCamara);
 
 
         // ====== LÓGICA DE EVENTOS 'ENDED' DE LOS VIDEOS ====== //
 
-        // Cuando finaliza el VIDEO 01 (Saludo inicial)
         video1.addEventListener('ended', () => {
             isVideo1Playing = false;
             video1.style.display = 'none';
@@ -390,7 +407,6 @@
             }
         });
 
-        // Cuando finaliza el VIDEO 02 (Bucle de presencia manual)
         video2.addEventListener('ended', () => {
             if (personaDetectadaLocalmente && estadoGlobalReceta !== "02") {
                 video2.currentTime = 0;
@@ -402,7 +418,6 @@
             }
         });
 
-        // Cuando finaliza el VIDEO DE LA RECETA 1
         videoReceta1.addEventListener('ended', () => {
             set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
         });
@@ -415,7 +430,6 @@
                 estadoGlobalReceta = estado.recetaActiva || "";
                 const deteccionRemota = estado.hayPersonas;
 
-                // 1. Manejo de la Detección
                 if (deteccionRemota && !personaDetectadaLocalmente) {
                     personaDetectadaLocalmente = true;
                     if (!isVideo1Playing && !isVideo2Playing && videoReceta1.paused && estadoGlobalReceta !== "02") {
@@ -429,9 +443,7 @@
                     personaDetectadaLocalmente = false;
                 }
 
-                // 2. Manejo de la Receta en Pantalla
                 if (estadoGlobalReceta && estadoGlobalReceta !== "") {
-                    
                     if (estadoGlobalReceta === "02") { 
                         overlayReceta.style.display = 'none';
                         
@@ -482,14 +494,25 @@
         }
 
         function lanzarError() {
-            document.getElementById('app-screen').classList.remove('shake');
-            void document.getElementById('app-screen').offsetWidth;
-            document.body.className = 'bg-error';
-            document.getElementById('app-screen').classList.add('shake');
-            setTimeout(() => {
-                document.body.className = '';
+            // Solo lanzamos el error visual si la cámara NO está abierta
+            if(cameraOverlay.style.display !== 'flex') {
                 document.getElementById('app-screen').classList.remove('shake');
-            }, 1000);
+                void document.getElementById('app-screen').offsetWidth;
+                document.body.className = 'bg-error';
+                document.getElementById('app-screen').classList.add('shake');
+                setTimeout(() => {
+                    document.body.className = '';
+                    document.getElementById('app-screen').classList.remove('shake');
+                }, 1000);
+            } else {
+                // Si la cámara está abierta, mostramos el error en su título
+                cameraTitle.innerText = "¡Código no válido!";
+                cameraTitle.style.color = "#ef4444"; // Rojo error
+                setTimeout(() => {
+                    cameraTitle.innerText = "Escanear Código de Barras";
+                    cameraTitle.style.color = "#000";
+                }, 1500);
+            }
         }
     </script>
 </body>
