@@ -42,6 +42,24 @@
         .login-box button:hover { background: #00FFFF; color: #000; box-shadow: 0 0 15px #00FFFF; }
         .error-msg { color: #FF0055; margin-top: 15px; font-size: 0.85rem; display: none; text-shadow: 0 0 5px #FF0055; }
 
+        /* === ESTILOS PANTALLA DE BIENVENIDA === */
+        #welcome-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; z-index: 3000;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .welcome-btn {
+            background: #00FFFF; color: #000; padding: 25px 50px; font-size: 1.5rem;
+            border: none; border-radius: 12px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.4); transition: all 0.3s;
+            text-transform: uppercase; letter-spacing: 2px; font-family: inherit;
+        }
+        .welcome-btn:hover {
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+            transform: scale(1.05);
+        }
+        .welcome-btn:active { transform: scale(0.95); }
+
         /* === ESTILOS DE LA APP === */
         #app-screen {
             display: none; 
@@ -154,6 +172,10 @@
         </div>
     </div>
 
+    <div id="welcome-screen">
+        <button id="start-btn" class="welcome-btn">Comenzar a escanear</button>
+    </div>
+
     <div id="app-screen">
         <img id="visorImagen" src="TABLET 03.jpg" alt="Pantalla de inicio">
         
@@ -197,6 +219,7 @@
         const estadoRef = ref(db, 'muebles/tablet_03/estado_actual');
 
         const loginScreen = document.getElementById('login-screen');
+        const welcomeScreen = document.getElementById('welcome-screen');
         const appScreen = document.getElementById('app-screen');
         const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
@@ -227,7 +250,6 @@
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         function hacerPitido() {
-            // Reanudar el contexto si el navegador lo suspendió
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
@@ -238,7 +260,7 @@
             oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // 800Hz
             
             gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-            // Caída de volumen rápida para que suene a "beep"
+            // Caída de volumen rápida para el "beep"
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); 
             
             oscillator.connect(gainNode);
@@ -248,25 +270,16 @@
             oscillator.stop(audioCtx.currentTime + 0.15);
         }
 
-        const baseDeDatos = {
-            "7591016855096": "01",
-            "7591016155097": "01",
-            "7506475104425": "02",
-            "17506475104422": "02",
-            "7891000107263": "02",
-            "7591016206409": "03",
-            "7591016406403": "03",
-            "17591016206406": "03",
-            "7591016204894": "04"
-        };
-
+        // ====== AUTENTICACIÓN Y FLUJO DE PANTALLAS ======
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 loginScreen.style.display = 'none';
-                appScreen.style.display = 'block';
+                // Mostrar pantalla de bienvenida en lugar de la app directamente
+                welcomeScreen.style.display = 'flex';
                 iniciarSincronizacion();
             } else {
                 loginScreen.style.display = 'flex';
+                welcomeScreen.style.display = 'none';
                 appScreen.style.display = 'none';
             }
         });
@@ -289,6 +302,37 @@
                 });
         });
 
+        // ====== INICIO DE EXPERIENCIA (FULLSCREEN & AUDIO) ======
+        document.getElementById('start-btn').addEventListener('click', () => {
+            // Solicitar pantalla completa
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch((err) => {
+                    console.warn(`Error intentando activar fullscreen: ${err.message}`);
+                });
+            }
+            // Desbloquear políticas de audio del navegador
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            // Ocultar bienvenida, mostrar la app y lanzar la cámara inmediatamente
+            welcomeScreen.style.display = 'none';
+            appScreen.style.display = 'block';
+            iniciarCamara();
+        });
+
+        const baseDeDatos = {
+            "7591016855096": "01",
+            "7591016155097": "01",
+            "7506475104425": "02",
+            "17506475104422": "02",
+            "7891000107263": "02",
+            "7591016206409": "03",
+            "7591016406403": "03",
+            "17591016206406": "03",
+            "7591016204894": "04"
+        };
+
         // ====== FUNCIÓN CENTRAL PARA PROCESAR CÓDIGOS ======
         function procesarCodigoDeBarras(scannedValue) {
             clearTimeout(resetTimeout);
@@ -297,7 +341,7 @@
                 const recetaID = baseDeDatos[scannedValue];
                 
                 set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
-                hacerPitido(); // <-- BEEP DE ÉXITO
+                hacerPitido(); // <-- SE EJECUTA EL PITIDO DE ÉXITO
                 
                 if (recetaID !== "02") {
                     resetTimeout = setTimeout(() => {
@@ -309,7 +353,7 @@
             }
         }
 
-        // ESCUCHADOR GLOBAL DE TECLADO (LECTOR FÍSICO)
+        // LECTOR FÍSICO
         document.addEventListener('keydown', function(event) {
             if (appScreen.style.display !== 'block' || cameraOverlay.style.display === 'flex') return;
 
@@ -330,12 +374,11 @@
             }
         });
 
-        // ====== LÓGICA DE LA CÁMARA Y TRIPLE TOQUE ======
+        // ====== LÓGICA TRIPLE TOQUE PARA VOLVER A LA CÁMARA ======
         let tapCount = 0;
         let tapTimer;
 
         appScreen.addEventListener('click', () => {
-            // Desbloquear audio tras el primer toque (políticas del navegador)
             if (audioCtx.state === 'suspended') audioCtx.resume();
             
             tapCount++;
@@ -346,7 +389,7 @@
             } else if (tapCount === 3) {
                 clearTimeout(tapTimer);
                 tapCount = 0;
-                iniciarCamara();
+                iniciarCamara(); // Abre la cámara tras el triple toque
             }
         });
 
@@ -387,10 +430,9 @@
             };
 
             const onScanFailure = (errorMessage) => {
-                // Silencioso, escaneando frame a frame
+                // Silencioso
             };
 
-            // INTENTO 1: Encender cámara CON LINTERNA
             html5QrCode.start(
                 { facingMode: "environment", advanced: [{ torch: true }] },
                 config,
@@ -399,7 +441,6 @@
             ).catch((err) => {
                 console.warn("No se pudo iniciar con linterna (torch). Intentando sin ella...", err);
                 
-                // INTENTO 2: FALLBACK SIN LINTERNA (si el dispositivo la bloquea o no la soporta)
                 html5QrCode.start(
                     { facingMode: "environment" },
                     config,
@@ -425,10 +466,11 @@
             }
         }
 
+        // Cancelar escaneo y volver a la app normal
         closeCameraBtn.addEventListener('click', apagarCamara);
 
 
-        // ====== LÓGICA DE EVENTOS 'ENDED' DE LOS VIDEOS ====== //
+        // ====== LÓGICA DE EVENTOS 'ENDED' DE LOS VIDEOS ======
 
         video1.addEventListener('ended', () => {
             isVideo1Playing = false;
@@ -534,7 +576,7 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'square';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime); // 150Hz
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime); 
             gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
             osc.connect(gain);
