@@ -144,11 +144,6 @@
             overflow: hidden;
             margin-bottom: 15px;
         }
-        #close-camera-btn {
-            background-color: #ef4444; color: white; border: none;
-            padding: 12px 20px; font-size: 1rem; border-radius: 8px;
-            cursor: pointer; width: 100%; font-weight: bold;
-        }
 
         /* Clases de feedback visual */
         .bg-error { background-color: #ef4444 !important; }
@@ -200,7 +195,6 @@
         <div class="camera-container" id="camera-box">
             <h3 id="camera-title">Escanear Código de Barras</h3>
             <div id="reader"></div>
-            <button id="close-camera-btn">Cancelar Escaneo</button>
         </div>
     </div>
 
@@ -234,7 +228,6 @@
         const imgReceta = document.getElementById('imgReceta');
         const cameraOverlay = document.getElementById('camera-overlay');
         const cameraBox = document.getElementById('camera-box');
-        const closeCameraBtn = document.getElementById('close-camera-btn');
         const cameraTitle = document.getElementById('camera-title');
         
         const video1 = document.getElementById('video1');
@@ -463,8 +456,6 @@
                 });
             }
         }
-
-        closeCameraBtn.addEventListener('click', apagarCamara);
 
 
         // ====== LÓGICA DE EVENTOS 'ENDED' DE LOS VIDEOS ======
