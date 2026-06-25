@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de TV</title>
+    <style>
+        /* Estilos generales de la página */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #ffffff; /* Fondo blanco */
+            color: #DACCAA; /* Color de texto base */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* Estilo del título */
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 50px;
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 2px;
+            color: #DACCAA; 
+        }
+
+        /* Contenedor principal */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Estilo del botón único */
+        .btn-tv {
+            background-color: #DACCAA; 
+            color: #ffffff; /* Texto blanco en el botón */
+            text-decoration: none;
+            padding: 25px 50px;
+            border-radius: 12px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+            max-width: 450px;
+            display: inline-block;
+        }
+
+        /* Efecto al pasar el mouse por encima */
+        .btn-tv:hover {
+            transform: translateY(-4px);
+            opacity: 0.9;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+
+        /* Adaptación para pantallas pequeñas */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 30px;
+            }
+            .btn-tv {
+                font-size: 1.1rem;
+                padding: 20px 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Simulador de TV</h1>
+
+    <div class="container">
+        <a href="https://yaryur-nestle.github.io/canal-moderno/lector" target="_blank" class="btn-tv">
+            RECETAS Redvital la Yaguara
+        </a>
+    </div>
+
+</body>
+</html>
