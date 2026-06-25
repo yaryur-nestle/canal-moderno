@@ -140,9 +140,10 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
-    // Referencias BD adaptadas para TABLET 02
+    // Referencias BD adaptadas para TABLET 02 (AÑADIDO estado_actualRef)
     const eventosRef = ref(db, 'muebles/tablet_02/eventos');
     const statusRef = ref(db, 'muebles/tablet_02/status');
+    const estadoActualRef = ref(db, 'muebles/tablet_02/estado_actual');
     const connectedRef = ref(db, ".info/connected");
 
     // Elementos del DOM - Auth
@@ -188,11 +189,12 @@
         });
     });
 
-    // Conexión de Base de Datos
+    // Conexión de Base de Datos (ACTUALIZADO para limpiar estado_actual en desconexión)
     function conectarBD() {
       onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
           onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
+          onDisconnect(estadoActualRef).update({ hayPersonas: false, conteoActual: 0 });
         }
       });
     }
@@ -268,6 +270,7 @@
     let pendingFaceCount = 0;
     let stabilityTimer = null;
     let camaraIniciada = false;
+    let hayPersonasActual = false; // AÑADIDO: Control de estado para Firebase
 
     frontVideo.addEventListener('ended', () => {
       if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
@@ -292,6 +295,17 @@
       const ahora = Date.now();
       
       currentFacesCount = rostrosActuales;
+
+      /* AÑADIDO: NORMALIZACIÓN - Publicación en tiempo real al nodo estado_actual */
+      const personasDetectadas = rostrosActuales > 0;
+      if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
+          hayPersonasActual = personasDetectadas;
+          set(estadoActualRef, {
+              hayPersonas: hayPersonasActual,
+              conteoActual: rostrosActuales,
+              ultimaActividad: Date.now()
+          });
+      }
 
       if (rostrosActuales !== pendingFaceCount) {
         pendingFaceCount = rostrosActuales;
