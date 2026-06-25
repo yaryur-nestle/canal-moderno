@@ -795,37 +795,50 @@
                     const prev = ev.conteoAnterior || 0;
                     const act = ev.conteoActual || 0;
 
-                    if (act > prev) {
+                    let resueltos = [];
+
+                    if (act === 0) {
+                        // Vaciado forzoso de cola al resetear el sensor a 0
+                        while (colaInteracciones.length > 0) {
+                            resueltos.push(colaInteracciones.shift());
+                        }
+                    } else if (act > prev) {
                         for (let k = 0; k < (act - prev); k++) colaInteracciones.push(ev);
                     } else if (act < prev) {
                         for (let k = 0; k < (prev - act); k++) {
                             if (colaInteracciones.length > 0) {
-                                const entrada = colaInteracciones.shift();
-                                const duracionSegundos = Math.round((ev.timestamp - entrada.timestamp) / 1000);
-                                const fecha = new Date(entrada.timestamp);
-
-                                // Se agrupan los promedios en minutos para mayor detalle
-                                const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
-
-                                let sesionAbierta = sesiones.find(s => s.fechaHora === fechaStr);
-                                if (sesionAbierta) {
-                                    sesionAbierta.cantidad += 1;
-                                    sesionAbierta.tiempos.push(duracionSegundos);
-                                    sesionAbierta.tiempoPromedio = Math.round(sesionAbierta.tiempos.reduce((a,b)=>a+b,0) / sesionAbierta.tiempos.length);
-                                } else {
-                                    sesiones.push({
-                                        fechaHora: fechaStr,
-                                        cantidad: 1,
-                                        tiempos: [duracionSegundos],
-                                        tiempoPromedio: duracionSegundos,
-                                        estado: "Finalizado"
-                                    });
-                                }
+                                resueltos.push(colaInteracciones.shift());
                             }
                         }
                     }
+
+                    // Procesar las interacciones que finalizaron en este evento
+                    resueltos.forEach(entrada => {
+                        let duracion = (ev.timestamp - entrada.timestamp) / 1000;
+                        // Aplicamos el tope de 300s (5min) para evitar que anomalías corrompan la data y cuadre exacto con la gráfica
+                        let duracionSegundos = Math.round(Math.max(0, Math.min(duracion, 300)));
+
+                        const fecha = new Date(entrada.timestamp);
+                        const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+
+                        let sesionAbierta = sesiones.find(s => s.fechaHora === fechaStr);
+                        if (sesionAbierta) {
+                            sesionAbierta.cantidad += 1;
+                            sesionAbierta.tiempos.push(duracionSegundos);
+                            sesionAbierta.tiempoPromedio = Math.round(sesionAbierta.tiempos.reduce((a,b)=>a+b,0) / sesionAbierta.tiempos.length);
+                        } else {
+                            sesiones.push({
+                                fechaHora: fechaStr,
+                                cantidad: 1,
+                                tiempos: [duracionSegundos],
+                                tiempoPromedio: duracionSegundos,
+                                estado: "Finalizado"
+                            });
+                        }
+                    });
                 });
 
+                // Lo que permanece en curso también debe cumplir los topes (si los incluyeramos, pero acá se omiten)
                 colaInteracciones.forEach(entrada => {
                     const fecha = new Date(entrada.timestamp);
                     const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
@@ -856,7 +869,7 @@
                 XLSX.utils.book_append_sheet(wb, ws, nombreHojaValido);
             }
 
-            // Descarga del fichero consolidado con nuevo nombre
+            // Descarga del fichero consolidado
             XLSX.writeFile(wb, "Reporte Yar-Yur Nestlé Canal Moderno.xlsx");
 
             // Restablecer el botón de UI
@@ -975,7 +988,8 @@
                     while (colaSimulada.length > 0) {
                         const llegada = colaSimulada.shift();
                         if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
-                        duracionesRealesMap.get(llegada).push((ev.timestamp - llegada.timestamp) / 1000);
+                        let dur = (ev.timestamp - llegada.timestamp) / 1000;
+                        duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 300))); // Tope 300s idéntico al Excel
                     }
                 } 
                 else if (act > prev) { 
@@ -986,7 +1000,8 @@
                         if (colaSimulada.length > 0) {
                             const llegada = colaSimulada.shift();
                             if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
-                            duracionesRealesMap.get(llegada).push((ev.timestamp - llegada.timestamp) / 1000);
+                            let dur = (ev.timestamp - llegada.timestamp) / 1000;
+                            duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 300)));
                         }
                     }
                 }
@@ -1027,7 +1042,7 @@
                             } else {
                                 if (isCurrentView && conteosActuales[tabletActualEnGrafico] > 0) {
                                     let duracion = (Date.now() - ev.timestamp) / 1000;
-                                    duracion = Math.min(duracion, 300);
+                                    duracion = Math.max(0, Math.min(duracion, 300));
                                     dataBuckets[idx] += duracion; 
                                     countBuckets[idx] += 1;
                                 }
