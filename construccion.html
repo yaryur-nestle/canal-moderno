@@ -815,8 +815,8 @@
                     // Procesar las interacciones que finalizaron en este evento
                     resueltos.forEach(entrada => {
                         let duracion = (ev.timestamp - entrada.timestamp) / 1000;
-                        // Aplicamos el tope de 300s (5min) para evitar que anomalías corrompan la data y cuadre exacto con la gráfica
-                        let duracionSegundos = Math.round(Math.max(0, Math.min(duracion, 300)));
+                        // Aplicamos el tope de 100s (5min) para evitar que anomalías corrompan la data y cuadre exacto con la gráfica
+                        let duracionSegundos = Math.round(Math.max(0, Math.min(duracion, 100)));
 
                         const fecha = new Date(entrada.timestamp);
                         const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
@@ -989,7 +989,7 @@
                         const llegada = colaSimulada.shift();
                         if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
                         let dur = (ev.timestamp - llegada.timestamp) / 1000;
-                        duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 300))); // Tope 300s idéntico al Excel
+                        duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 100))); // Tope 100s idéntico al Excel
                     }
                 } 
                 else if (act > prev) { 
@@ -1001,7 +1001,7 @@
                             const llegada = colaSimulada.shift();
                             if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
                             let dur = (ev.timestamp - llegada.timestamp) / 1000;
-                            duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 300)));
+                            duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 100)));
                         }
                     }
                 }
@@ -1042,7 +1042,7 @@
                             } else {
                                 if (isCurrentView && conteosActuales[tabletActualEnGrafico] > 0) {
                                     let duracion = (Date.now() - ev.timestamp) / 1000;
-                                    duracion = Math.max(0, Math.min(duracion, 300));
+                                    duracion = Math.max(0, Math.min(duracion, 100));
                                     dataBuckets[idx] += duracion; 
                                     countBuckets[idx] += 1;
                                 }
