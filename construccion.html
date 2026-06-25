@@ -142,26 +142,26 @@
         .filter-results a { color: #b39c6e; font-weight: 700; text-decoration: none; font-size: 13px; display: block; padding: 4px 0; cursor: pointer;}
         .filter-results a:hover { color: #968157; text-decoration: underline; }
 
-        /* Botón de Excel */
+        /* Botón de Excel Integrado al Menú */
         .btn-excel {
-            width: 100%; 
-            padding: 12px; 
-            background: #2aa12a; 
-            color: #fff; 
-            border: none; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: background 0.3s; 
-            font-size: 1.1rem; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 10px;
-            margin-top: 30px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid #f0f0f0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #b39c6e;
+            width: 100%;
+            text-align: left;
+            padding: 12px 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 12px;
+            transition: color 0.2s;
         }
-        .btn-excel:hover { background: #238c23; }
-        .btn-excel:disabled { background: #88c988; cursor: not-allowed; }
+        .btn-excel:hover { color: #968157; }
+        .btn-excel:disabled { color: #ccc; cursor: not-allowed; }
 
         /* =========================================
            VISTA: MONITOR INTERACTIVO
@@ -172,7 +172,7 @@
 
         .flip-container { perspective: 1500px; width: 100%; height: 100%; }
         .flipper { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.68, -0.15, 0.265, 1.15); }
-        .flip-container.flipped .flipper { transform: rotateY(180deg); }
+        .flip-container.flipped .flipper { transform: rotate rotateY(180deg); }
         
         .front, .back { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backface-visibility: hidden; background-color: #ffffff; }
         .front { pointer-events: auto; }
@@ -322,10 +322,12 @@
                         </div>
                     </div>
 
-                    <button id="btn-export-excel" class="btn-excel">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                        Exportar Reporte Excel
-                    </button>
+                    <div class="accordion-item">
+                        <button id="btn-export-excel" class="btn-excel">
+                            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                            Exportar Reporte Excel
+                        </button>
+                    </div>
                 </div>
 
                 <div id="info-panel" class="side-panel">
@@ -762,19 +764,17 @@
         /* --- EXPORTACIÓN A EXCEL (REPORTES YAR-YUR) --- */
         document.getElementById('btn-export-excel').addEventListener('click', async () => {
             const btn = document.getElementById('btn-export-excel');
-            const iconSvg = btn.innerHTML;
+            const originalHTML = btn.innerHTML;
             btn.innerText = "Generando Reporte...";
             btn.disabled = true;
 
             const wb = XLSX.utils.book_new();
 
-            // Configuración estricta de las 6 hojas solicitadas (se asignan los IDs teóricos de las tablets en la BD).
-            // NOTA: Ajustar el parámetro 'tablet' en caso de que los nodos de Garzón, Luxor o Kromi varíen en la base de datos de Firebase.
             const configHojas = [
                 { nombre: "NIDO Kromi Market", tablet: "01" }, 
                 { nombre: "NIDO Redvital San Diego", tablet: "02" },
-                { nombre: "NIDO Redvital La Yaguara", tablet: "01" }, // Referencia según brandConfigs provisto
-                { nombre: "RECETAS Redvital La Yaguara", tablet: "03" }, // Referencia según brandConfigs provisto
+                { nombre: "NIDO Redvital La Yaguara", tablet: "01" }, 
+                { nombre: "RECETAS Redvital La Yaguara", tablet: "03" }, 
                 { nombre: "MULTIMARCA Garzon", tablet: "04" },
                 { nombre: "MULTIMARCA Luxor", tablet: "05" }
             ];
@@ -782,14 +782,12 @@
             const dbRef = ref(db);
 
             for (const hoja of configHojas) {
-                // Obtener historial completo de eventos de la sucursal de la BD en un solo request
                 const snapshot = await get(child(dbRef, `muebles/tablet_${hoja.tablet}/eventos`));
                 let eventosArray = [];
                 if (snapshot.exists()) {
                     eventosArray = Object.values(snapshot.val()).sort((a, b) => a.timestamp - b.timestamp);
                 }
 
-                // Generar filas agrupando la sesión de interacción
                 let sesiones = [];
                 let colaInteracciones = [];
 
@@ -806,8 +804,8 @@
                                 const duracionSegundos = Math.round((ev.timestamp - entrada.timestamp) / 1000);
                                 const fecha = new Date(entrada.timestamp);
 
-                                // Se agrupan los promedios en bloques de horas idéntico a los gráficos
-                                const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:00`;
+                                // Se agrupan los promedios en minutos para mayor detalle
+                                const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
 
                                 let sesionAbierta = sesiones.find(s => s.fechaHora === fechaStr);
                                 if (sesionAbierta) {
@@ -828,20 +826,18 @@
                     }
                 });
 
-                // Lo que permanece en la cola no ha finalizado (En curso)
                 colaInteracciones.forEach(entrada => {
                     const fecha = new Date(entrada.timestamp);
-                    const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:00`;
+                    const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
                     sesiones.push({
                         fechaHora: fechaStr,
                         cantidad: 1,
                         tiempos: [],
                         tiempoPromedio: 0,
-                        estado: "En curso" // Etiqueta estricta para omitirla en el filtrado posterior
+                        estado: "En curso" 
                     });
                 });
 
-                // Preparación de los datos a exportar para la hoja actual (omitiendo estrictamente 'En curso')
                 const wsData = [
                     ["Fecha y Hora", "Cantidad de personas", "Tiempo promedio en segundos"]
                 ];
@@ -852,21 +848,19 @@
                     }
                 });
 
-                // Limitar nombre de hoja a 31 caracteres máximos permitidos por Excel
                 const nombreHojaValido = hoja.nombre.substring(0, 31);
                 const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-                // Normalización estética de las celdas
                 ws['!cols'] = [{ wch: 20 }, { wch: 25 }, { wch: 30 }];
 
                 XLSX.utils.book_append_sheet(wb, ws, nombreHojaValido);
             }
 
-            // Descarga del fichero consolidado
-            XLSX.writeFile(wb, "Reporte_YarYur_Exhibiciones_Nestle_Canal_Moderno.xlsx");
+            // Descarga del fichero consolidado con nuevo nombre
+            XLSX.writeFile(wb, "Reporte Yar-Yur Nestlé Canal Moderno.xlsx");
 
             // Restablecer el botón de UI
-            btn.innerHTML = iconSvg;
+            btn.innerHTML = originalHTML;
             btn.disabled = false;
         });
 
