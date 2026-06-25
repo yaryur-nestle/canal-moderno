@@ -13,11 +13,26 @@
             background-color: #ffffff; /* Fondo blanco */
             color: #DACCAA; /* Color de texto base */
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             box-sizing: border-box;
+            overflow: hidden; /* Evita que aparezcan barras de desplazamiento al girar */
+        }
+
+        /* Contenedor maestro que gira todo el contenido */
+        .rotate-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* Gira el contenido 90 grados. 
+               NOTA: Cambia '90deg' a '-90deg' si tu pantalla está girada hacia el lado contrario */
+            transform: rotate(90deg); 
+            
+            /* Invertimos el ancho y alto para que calcen perfecto con la pantalla física */
+            width: 100vh;
+            height: 100vw;
         }
 
         /* Estilo del título */
@@ -30,7 +45,7 @@
             color: #DACCAA; 
         }
 
-        /* Contenedor principal */
+        /* Contenedor principal del botón */
         .container {
             display: flex;
             justify-content: center;
@@ -60,7 +75,7 @@
 
         /* Efecto al pasar el mouse por encima */
         .btn-tv:hover {
-            transform: translateY(-4px);
+            transform: translateY(-4px); /* Seguirá moviéndose "hacia arriba" visualmente en tu TV */
             opacity: 0.9;
             box-shadow: 0 8px 16px rgba(0,0,0,0.12);
         }
@@ -80,12 +95,14 @@
 </head>
 <body>
 
-    <h1>Simulador de TV</h1>
+    <div class="rotate-wrapper">
+        <h1>Simulador de TV</h1>
 
-    <div class="container">
-        <a href="https://yaryur-nestle.github.io/canal-moderno/lector" target="_blank" class="btn-tv">
-            RECETAS Redvital la Yaguara
-        </a>
+        <div class="container">
+            <a href="https://yaryur-nestle.github.io/canal-moderno/lector" target="_blank" class="btn-tv">
+                RECETAS Redvital la Yaguara
+            </a>
+        </div>
     </div>
 
 </body>
