@@ -26,6 +26,10 @@
             text-transform: uppercase;
             text-align: center;
             color: #DACCAA; 
+            /* Propiedades añadidas para que funcione como "botón invisible" */
+            cursor: pointer; /* Cambia el cursor a una mano en PC */
+            user-select: none; /* Evita que el texto se sombree al hacer doble clic */
+            -webkit-tap-highlight-color: transparent; /* Evita el destello azul al tocar en móviles/tablets */
         }
 
         /* Contenedor de la cuadrícula de botones */
@@ -80,7 +84,7 @@
 </head>
 <body>
 
-    <h1>Simulador de Tablets</h1>
+    <h1 onclick="toggleFullScreen()" title="Presiona para Pantalla Completa">Simulador de Tablets</h1>
 
     <div class="grid-container">
         <a href="https://yaryur-nestle.github.io/canal-moderno/tablet01" target="_blank" class="btn">NIDO Redvital La Yaguara</a>
@@ -91,5 +95,29 @@
         <a href="https://yaryur-nestle.github.io/canal-moderno/tablet06" target="_blank" class="btn">MULTIMARCA Luxor Círculo Militar</a>
     </div>
 
+    <script>
+        function toggleFullScreen() {
+            // Verifica si NO estamos en pantalla completa
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                // Entrar a pantalla completa (con compatibilidad para distintos navegadores)
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.webkitRequestFullscreen) { /* Safari / Chrome viejo */
+                    document.documentElement.webkitRequestFullscreen();
+                } else if (document.documentElement.msRequestFullscreen) { /* IE11 / Edge viejo */
+                    document.documentElement.msRequestFullscreen();
+                }
+            } else {
+                // Salir de pantalla completa
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari / Chrome viejo */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 / Edge viejo */
+                    document.msExitFullscreen();
+                }
+            }
+        }
+    </script>
 </body>
 </html>
