@@ -551,9 +551,23 @@
             signInWithEmailAndPassword(auth, email, pass).catch(() => document.getElementById('login-error').style.display = 'block');
         });
 
+        // ----------------------------------------------------------------------
+        // MODIFICACIÓN APLICADA: Limpiar eventos en curso al volver al mapa
+        // ----------------------------------------------------------------------
         document.getElementById('btn-volver-mapa').addEventListener('click', () => {
             toggleAppView(0); 
             if(document.getElementById('flip-container').classList.contains('flipped')) flipToFront();
+            
+            // Limpieza y forzado de estado inactivo del EN VIVO
+            clearInterval(overlayTimerInterval);
+            clearTimeout(stopTimeout1);
+            clearTimeout(stopTimeout2);
+            isOverlayActive = false;
+            
+            const overlayEl = document.getElementById('live-overlay');
+            overlayEl.style.display = 'none';
+            overlayEl.classList.remove('fade-out-up');
+            document.getElementById('live-timer').classList.remove('recorded');
         });
 
         /* --- VARIABLES GLOBALES DEL MONITOR Y ESTADO DE VISTAS --- */
