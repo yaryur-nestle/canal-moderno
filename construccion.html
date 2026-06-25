@@ -455,26 +455,14 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        /* --- CONFIGURACIONES ESTRICTAS POR MARCA Y TABLET --- */
-        const brandConfigs = {
-            'NIDO': {
-                bgImage: 'NIDO_MONITOR fondo.jpg',
-                tablets: [{ id: 1, zone: 2 }],
-                zoneImages: {
-                    1: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'],
-                    2: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'],
-                    3: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png']
-                }
-            },
-            'RECETAS': {
-                bgImage: 'RECETAS_MONITOR.jpg',
-                tablets: [{ id: 3, zone: 2 }],
-                zoneImages: {
-                    1: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'],
-                    2: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'],
-                    3: ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png']
-                }
-            }
+        /* --- REGISTRO MAESTRO DE EXHIBICIONES (SOLUCION A LA DUPLICIDAD) --- */
+        const monitorRegistry = {
+            'NIDO_Redvital La Yaguara': { tabletId: 1, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
+            'MULTIMARCA_Garzón Hiperahorro': { tabletId: 2, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
+            'RECETAS_Redvital La Yaguara': { tabletId: 3, bgImage: 'RECETAS_MONITOR.jpg', zone: 2 },
+            'NIDO_Kromi Market': { tabletId: 4, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
+            'NIDO_Redvital San Diego': { tabletId: 5, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
+            'MULTIMARCA_Luxor Círculo Militar': { tabletId: 6, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 }
         };
 
         const configZonas = {
@@ -584,20 +572,24 @@
 
         /* --- CARGADOR DINÁMICO DEL MONITOR --- */
         function cargarMonitor(brandName, sucursalName) {
-            if (sucursalName !== 'Redvital La Yaguara' || (brandName !== 'NIDO' && brandName !== 'RECETAS')) {
-                toggleAppView(2);
+            const registryKey = `${brandName}_${sucursalName}`;
+            const config = monitorRegistry[registryKey];
+
+            // Si la combinación no está en el registro, mandamos a próximamente
+            if (!config) {
+                toggleAppView(2); 
                 return;
             }
 
-            const config = brandConfigs[brandName];
-            
             document.getElementById('monitor-bg').src = config.bgImage;
             document.getElementById('chart-title').innerText = `${sucursalName} - ${brandName}`;
 
+            // Reset de imágenes base por zona (asumiendo que las siluetas son estándar)
+            const siluetasBase = ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'];
             for (let z = 1; z <= 3; z++) {
                 for (let p = 1; p <= 5; p++) {
                     const img = document.getElementById(`img-${z}-${p}`);
-                    img.src = config.zoneImages[z][p - 1];
+                    img.src = siluetasBase[p - 1];
                     img.classList.remove('active'); 
                 }
             }
@@ -611,33 +603,32 @@
             
             setTimeout(() => { isInitialLoad = false; updateLiveOverlay(); }, 1500);
 
-            config.tablets.forEach(t => {
-                const zoneId = t.zone;
-                const numFormat = t.id.toString().padStart(2, '0');
-                
-                const estadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
-                const unsubEstado = onValue(estadoQuery, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data && data.conteoActual !== undefined) {
-                        actualizarSiluetas(zoneId, data.conteoActual);
-                        conteosActuales[zoneId] = data.conteoActual;
-                        if (!isInitialLoad) updateLiveOverlay();
-                    }
-                });
-                activeFirebaseListeners.push(unsubEstado);
-
-                const eventosQuery = query(ref(db, `muebles/tablet_${numFormat}/eventos`), orderByChild('timestamp'));
-                const unsubEventos = onChildAdded(eventosQuery, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data && data.timestamp && data.conteoActual !== undefined) {
-                        todosLosEventos[zoneId].push(data);
-                        if (!isInitialLoad && tabletActualEnGrafico === zoneId && viewState.startsWith('CHART_')) {
-                            updateChartDisplay();
-                        }
-                    }
-                });
-                activeFirebaseListeners.push(unsubEventos);
+            // Iniciar conexión con la tablet asignada a esta sucursal específica
+            const zoneId = config.zone;
+            const numFormat = config.tabletId.toString().padStart(2, '0');
+            
+            const estadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
+            const unsubEstado = onValue(estadoQuery, (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.conteoActual !== undefined) {
+                    actualizarSiluetas(zoneId, data.conteoActual);
+                    conteosActuales[zoneId] = data.conteoActual;
+                    if (!isInitialLoad) updateLiveOverlay();
+                }
             });
+            activeFirebaseListeners.push(unsubEstado);
+
+            const eventosQuery = query(ref(db, `muebles/tablet_${numFormat}/eventos`), orderByChild('timestamp'));
+            const unsubEventos = onChildAdded(eventosQuery, (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.timestamp && data.conteoActual !== undefined) {
+                    todosLosEventos[zoneId].push(data);
+                    if (!isInitialLoad && tabletActualEnGrafico === zoneId && viewState.startsWith('CHART_')) {
+                        updateChartDisplay();
+                    }
+                }
+            });
+            activeFirebaseListeners.push(unsubEventos);
 
             toggleAppView(1);
         }
@@ -769,13 +760,14 @@
 
             const wb = XLSX.utils.book_new();
 
+            // Configuración exacta para generar el Excel sin duplicados
             const configHojas = [
-                { nombre: "NIDO Kromi Market", tablet: "01" }, 
-                { nombre: "NIDO Redvital San Diego", tablet: "02" },
-                { nombre: "NIDO Redvital La Yaguara", tablet: "01" }, 
-                { nombre: "RECETAS Redvital La Yaguara", tablet: "03" }, 
-                { nombre: "MULTIMARCA Garzon", tablet: "04" },
-                { nombre: "MULTIMARCA Luxor", tablet: "05" }
+                { nombre: "NIDO Redvital La Yaguara", tablet: "01" },
+                { nombre: "MULTIMARCA Garzon", tablet: "02" },
+                { nombre: "RECETAS Redvital La Yaguara", tablet: "03" },
+                { nombre: "NIDO Kromi Market", tablet: "04" },
+                { nombre: "NIDO Redvital San Diego", tablet: "05" },
+                { nombre: "MULTIMARCA Luxor", tablet: "06" }
             ];
 
             const dbRef = ref(db);
@@ -797,7 +789,6 @@
                     let resueltos = [];
 
                     if (act === 0) {
-                        // Vaciado forzoso de cola al resetear el sensor a 0
                         while (colaInteracciones.length > 0) {
                             resueltos.push(colaInteracciones.shift());
                         }
@@ -811,10 +802,8 @@
                         }
                     }
 
-                    // Procesar las interacciones que finalizaron en este evento
                     resueltos.forEach(entrada => {
                         let duracion = (ev.timestamp - entrada.timestamp) / 1000;
-                        // Aplicamos el tope de 100s (5min) para evitar que anomalías corrompan la data y cuadre exacto con la gráfica
                         let duracionSegundos = Math.round(Math.max(0, Math.min(duracion, 100)));
 
                         const fecha = new Date(entrada.timestamp);
@@ -837,7 +826,6 @@
                     });
                 });
 
-                // Lo que permanece en curso también debe cumplir los topes (si los incluyeramos, pero acá se omiten)
                 colaInteracciones.forEach(entrada => {
                     const fecha = new Date(entrada.timestamp);
                     const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
@@ -868,10 +856,8 @@
                 XLSX.utils.book_append_sheet(wb, ws, nombreHojaValido);
             }
 
-            // Descarga del fichero consolidado
             XLSX.writeFile(wb, "Reporte Yar-Yur Nestlé Canal Moderno.xlsx");
 
-            // Restablecer el botón de UI
             btn.innerHTML = originalHTML;
             btn.disabled = false;
         });
@@ -988,7 +974,7 @@
                         const llegada = colaSimulada.shift();
                         if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
                         let dur = (ev.timestamp - llegada.timestamp) / 1000;
-                        duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 100))); // Tope 100s idéntico al Excel
+                        duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 100))); 
                     }
                 } 
                 else if (act > prev) { 
