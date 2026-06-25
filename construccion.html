@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.1/proj4.js"></script>
     <script src="https://code.highcharts.com/mapdata/countries/ve/ve-all.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         /* =========================================
@@ -101,6 +102,31 @@
         :fullscreen #app-container { width: 100%; height: 100%; border-radius: 0; border: none; }
         #map { width: 100%; height: 100%; position: relative; z-index: 1; background-color: transparent;}
         #capa-superior { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; user-select: none; object-fit: cover; opacity: 1; transition: opacity 0.4s ease-in-out; }
+
+        /* BOTÓN DE DESCARGA EXCEL EN ESQUINA SUPERIOR IZQUIERDA */
+        #btn-descargar-excel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #2aa12a; 
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 10002;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        #btn-descargar-excel:hover {
+            background-color: #238c23;
+            transform: translateY(-2px);
+        }
 
         #hamburger-btn { position: absolute; top: 20px; cursor: pointer; z-index: 10002; right: 20px; width: 32px; height: 22px; display: flex; flex-direction: column; justify-content: space-between; background: none; border: none; }
         #hamburger-btn span { display: block; height: 3px; width: 100%; background-color: #b39c6e; border-radius: 3px; transition: all 0.3s; transform-origin: right center; }
@@ -274,6 +300,11 @@
 
         <div id="map-view" class="spa-view">
             <div id="app-container">
+                <button id="btn-descargar-excel" title="Descargar Datos Excel">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="white"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                    Exportar Excel
+                </button>
+
                 <div id="map"></div>
                 <img src="CAPA.png" id="capa-superior" alt="Capa Decorativa">
                 
@@ -367,7 +398,7 @@
                             </div>
                             
                             <div class="chart-layout">
-                                <button id="btn-prev" class="nav-arrow"><svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg></button>
+                                <button id="btn-prev" class="nav-arrow"><svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6z"/></svg></button>
                                 
                                 <div class="view-panel-wrapper" id="master-view-wrapper">
                                     <div id="view-chart-container" class="view-panel active">
@@ -411,9 +442,10 @@
     </div> 
     
     <script type="module">
+        // Agregada la función 'get' de firebase-database para las consultas del reporte
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getDatabase, ref, query, orderByChild, onChildAdded, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, query, orderByChild, onChildAdded, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
@@ -539,6 +571,110 @@
         document.getElementById('btn-volver-mapa').addEventListener('click', () => {
             toggleAppView(0); 
             if(document.getElementById('flip-container').classList.contains('flipped')) flipToFront();
+        });
+
+        /* --- EXPORTAR EXCEL DE EXHIBICIONES (5 HOJAS) --- */
+        document.getElementById('btn-descargar-excel').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-descargar-excel');
+            const btnSVG = btn.innerHTML;
+            btn.innerHTML = 'Generando...';
+            btn.disabled = true;
+
+            try {
+                // Instanciamos un libro nuevo de Excel
+                const wb = XLSX.utils.book_new();
+
+                // Aquí defines las 5 exhibiciones solicitadas y a qué "tablet" de firebase corresponden
+                // Puedes ajustar los "tabletId" de ser necesario para que cuadren con tu base de datos final
+                const exhibicionesExcel = [
+                    { hoja: "NIDO Kromi Market", tabletId: "01" },
+                    { hoja: "NIDO Redvital San Diego", tabletId: "02" },
+                    { hoja: "NIDO Redvital La Yaguara", tabletId: "01" }, // Referencia según brandConfigs del código
+                    { hoja: "RECETAS Redvital La Yaguara", tabletId: "03" },
+                    { hoja: "MULTIMARCA Garzon e Luxor", tabletId: "04" }
+                ];
+
+                for (let exhibicion of exhibicionesExcel) {
+                    const snapshot = await get(ref(db, `muebles/tablet_${exhibicion.tabletId}/eventos`));
+                    let wsData = [["Fecha y Hora", "Cantidad de Personas", "Tiempo en Segundos"]];
+
+                    if (snapshot.exists()) {
+                        const events = [];
+                        snapshot.forEach(childSnap => { events.push(childSnap.val()); });
+                        events.sort((a, b) => a.timestamp - b.timestamp);
+
+                        // Aplicamos tu misma lógica de cola para simular las entradas/salidas de tiempos
+                        let colaSimulada = [];
+                        let duracionesRealesMap = new Map();
+
+                        events.forEach(ev => {
+                            const prev = ev.conteoAnterior || 0;
+                            const act = ev.conteoActual || 0;
+
+                            if (act === 0) {
+                                while (colaSimulada.length > 0) {
+                                    const llegada = colaSimulada.shift();
+                                    if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
+                                    duracionesRealesMap.get(llegada).push((ev.timestamp - llegada.timestamp) / 1000);
+                                }
+                            } else if (act > prev) {
+                                for(let k = 0; k < (act - prev); k++) colaSimulada.push(ev);
+                            } else if (act < prev) {
+                                for(let k = 0; k < (prev - act); k++) {
+                                    if (colaSimulada.length > 0) {
+                                        const llegada = colaSimulada.shift();
+                                        if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
+                                        duracionesRealesMap.get(llegada).push((ev.timestamp - llegada.timestamp) / 1000);
+                                    }
+                                }
+                            }
+                        });
+
+                        // Formatear filas en base al cálculo de duraciones
+                        events.forEach(ev => {
+                            const prev = ev.conteoAnterior || 0;
+                            const act = ev.conteoActual || 0;
+
+                            if (act > prev) {
+                                const nuevas = act - prev;
+                                const dateObj = new Date(ev.timestamp);
+                                const dateStr = `${dateObj.toLocaleDateString('es-ES')} ${dateObj.toLocaleTimeString('es-ES')}`;
+                                const durations = duracionesRealesMap.get(ev) || [];
+
+                                for (let i = 0; i < nuevas; i++) {
+                                    // Si un tiempo sigue "En cola" y no cerró, lo marcamos como En curso
+                                    const duration = (i < durations.length) ? Math.round(durations[i]) : "En curso";
+                                    // act representa el total de personas en cámara en ese instante
+                                    wsData.push([dateStr, act, duration]);
+                                }
+                            }
+                        });
+                    }
+
+                    if (wsData.length === 1) {
+                        wsData.push(["Sin datos disponibles", "-", "-"]);
+                    }
+
+                    // Convertimos la data a una hoja de cálculo real
+                    const ws = XLSX.utils.aoa_to_sheet(wsData);
+                    // Ancho automático base para que se vea más ordenado
+                    ws['!cols'] = [{ wch: 22 }, { wch: 22 }, { wch: 20 }];
+                    
+                    // Aseguramos de cortar el nombre si es mayor a 31 caracteres (límite de excel)
+                    let nombreCorto = exhibicion.hoja.substring(0, 31);
+                    XLSX.utils.book_append_sheet(wb, ws, nombreCorto);
+                }
+
+                // Escribir y forzar descarga
+                XLSX.writeFile(wb, "Reporte_YarYur_Exhibiciones.xlsx");
+
+            } catch (error) {
+                console.error("Error generando Excel:", error);
+                alert("Hubo un error al generar el archivo Excel o al conectar a la base de datos.");
+            } finally {
+                btn.innerHTML = btnSVG;
+                btn.disabled = false;
+            }
         });
 
         /* --- VARIABLES GLOBALES DEL MONITOR Y ESTADO DE VISTAS --- */
