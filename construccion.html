@@ -122,6 +122,19 @@
         .panel-images-container a { display: block; width: 100%; text-align: center; outline: none; }
         .panel-images-container img { width: 180px; height: 180px; object-fit: cover; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); transition: transform 0.2s; cursor: pointer; }
         .panel-images-container img:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        
+        /* === NUEVA CLASE PARA LATIDO VERDE EN VIVO === */
+        .en-vivo-pulse {
+            border: 3px solid #2aa12a !important;
+            box-shadow: 0 0 10px rgba(42, 161, 42, 0.6), inset 0 0 5px rgba(42, 161, 42, 0.4) !important;
+            animation: pulseGreenEnVivo 1.5s infinite !important;
+        }
+        @keyframes pulseGreenEnVivo {
+            0% { box-shadow: 0 0 0 0 rgba(42, 161, 42, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(42, 161, 42, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(42, 161, 42, 0); }
+        }
+
         .panel-footer-logo { margin-top: auto; padding-top: 25px; text-align: center; }
         #panel-logo-img { max-width: 150px; max-height: 70px; object-fit: contain; }
 
@@ -455,7 +468,7 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        /* --- REGISTRO MAESTRO DE EXHIBICIONES (SOLUCION A LA DUPLICIDAD) --- */
+        /* --- REGISTRO MAESTRO DE EXHIBICIONES --- */
         const monitorRegistry = {
             'NIDO_Redvital La Yaguara': { tabletId: 1, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
             'MULTIMARCA_Garzón Hiperahorro': { tabletId: 2, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
@@ -542,7 +555,6 @@
                 series.points.forEach((point) => {
                     let node = retailNodes.find(n => n.id === point.options.id);
                     if (node && node.tabletIds) {
-                        // Verificamos si alguna tablet asignada a este punto tiene al menos una persona
                         let isActive = node.tabletIds.some(tid => liveTabletCounts[tid] > 0);
                         let newColor = isActive ? '#2aa12a' : '#ff2a2a'; 
                         let currentColor = point.options.marker?.fillColor || '#ff2a2a';
@@ -562,6 +574,31 @@
             }
         }
 
+        // --- NUEVA LÓGICA: Actualiza visualmente el pulso en el panel de info si está abierto
+        function actualizarPulsoPanelInfo() {
+            if (!infoPanel.classList.contains('active')) return;
+            
+            const sucursalActual = document.getElementById('panel-title').textContent;
+            const imagenes = document.querySelectorAll('#panel-images img');
+
+            imagenes.forEach(img => {
+                let filename = img.getAttribute('data-src');
+                if(!filename) return;
+                
+                let brandName = filename.split('/').pop().replace('.png','').replace('.jpg','');
+                let registryKey = `${brandName}_${sucursalActual}`;
+                let config = monitorRegistry[registryKey];
+
+                if (config && config.tabletId) {
+                    if (liveTabletCounts[config.tabletId] > 0) {
+                        img.classList.add('en-vivo-pulse');
+                    } else {
+                        img.classList.remove('en-vivo-pulse');
+                    }
+                }
+            });
+        }
+
         function initGlobalMapListeners() {
             for (let i = 1; i <= 6; i++) {
                 let numFormat = i.toString().padStart(2, '0');
@@ -570,6 +607,7 @@
                     const data = snapshot.val();
                     liveTabletCounts[i] = (data && data.conteoActual !== undefined) ? data.conteoActual : 0;
                     updateMapMarkers();
+                    actualizarPulsoPanelInfo(); // Ejecutamos la validación del panel en vivo
                 });
             }
         }
@@ -581,7 +619,6 @@
                 welcomeView.style.display = 'flex';
                 checkDeviceOrientation();
                 
-                // Inicializamos los escuchadores globales una sola vez al hacer login
                 if (!isGlobalListenerInit) {
                     initGlobalMapListeners();
                     isGlobalListenerInit = true;
@@ -605,7 +642,6 @@
             toggleAppView(0); 
             if(document.getElementById('flip-container').classList.contains('flipped')) flipToFront();
             
-            // Limpieza y forzado de estado inactivo del EN VIVO
             clearInterval(overlayTimerInterval);
             clearTimeout(stopTimeout1);
             clearTimeout(stopTimeout2);
@@ -617,7 +653,7 @@
             document.getElementById('live-timer').classList.remove('recorded');
         });
 
-        /* --- VARIABLES GLOBALES DEL MONITOR Y ESTADO DE VISTAS --- */
+        /* --- VARIABLES GLOBALES DEL MONITOR --- */
         let activeFirebaseListeners = [];
         let todosLosEventos = { 1: [], 2: [], 3: [] }; 
         let estadoVisual = { 1: [], 2: [], 3: [] }; 
@@ -636,7 +672,6 @@
             const registryKey = `${brandName}_${sucursalName}`;
             const config = monitorRegistry[registryKey];
 
-            // Si la combinación no está en el registro, mandamos a próximamente
             if (!config) {
                 toggleAppView(2); 
                 return;
@@ -645,7 +680,6 @@
             document.getElementById('monitor-bg').src = config.bgImage;
             document.getElementById('chart-title').innerText = `${sucursalName} - ${brandName}`;
 
-            // Reset de imágenes base por zona (asumiendo que las siluetas son estándar)
             const siluetasBase = ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'];
             for (let z = 1; z <= 3; z++) {
                 for (let p = 1; p <= 5; p++) {
@@ -664,7 +698,6 @@
             
             setTimeout(() => { isInitialLoad = false; updateLiveOverlay(); }, 1500);
 
-            // Iniciar conexión con la tablet asignada a esta sucursal específica
             const zoneId = config.zone;
             const numFormat = config.tabletId.toString().padStart(2, '0');
             
@@ -699,7 +732,6 @@
         const navPanel = document.getElementById('nav-panel'), infoPanel = document.getElementById('info-panel');
         const hamburgerBtn = document.getElementById('hamburger-btn'), closeInfoBtn = document.getElementById('close-info-btn');
 
-        /* === AÑADIMOS LA VARIABLE tabletIds PARA ENLAZAR CON EL ESCUCHADOR GLOBAL === */
         const retailNodes = [
             { id: 1, sucursal: "Kromi Market", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2225, lon: -68.0160, logo: "logo-KROMI.jpg", images: [ { src: "NIDO.png" } ], tabletIds: [4] },
             { id: 2, sucursal: "Redvital San Diego", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2540, lon: -67.9510, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" } ], tabletIds: [5] },
@@ -742,10 +774,16 @@
                     let brandName = img.src.replace('.png','').replace('.jpg','');
                     cargarMonitor(brandName, sucursal);
                 });
-                const imagen = document.createElement('img'); imagen.src = img.src;
-                enlace.appendChild(imagen); panelImages.appendChild(enlace);
+                const imagen = document.createElement('img'); 
+                imagen.src = img.src;
+                imagen.setAttribute('data-src', img.src); // Guardamos la fuente para que la función en vivo la procese
+                
+                enlace.appendChild(imagen); 
+                panelImages.appendChild(enlace);
             });
+            
             infoPanel.classList.add('active');
+            actualizarPulsoPanelInfo(); // Validar estado justo al abrir
         }
 
         hamburgerBtn.addEventListener('click', () => hamburgerBtn.classList.contains('open') ? cerrarPanelesYResetear() : abrirMenuFiltros());
@@ -813,7 +851,7 @@
             ]
         });
 
-        /* --- EXPORTACIÓN A EXCEL (REPORTES YAR-YUR) --- */
+        /* --- EXPORTACIÓN A EXCEL --- */
         document.getElementById('btn-export-excel').addEventListener('click', async () => {
             const btn = document.getElementById('btn-export-excel');
             const originalHTML = btn.innerHTML;
@@ -957,8 +995,8 @@
 
         function getHeatmapStyle(count, maxCount) {
             if (count === 0 || maxCount === 0) return { bg: '#f9f9f9', color: '#888' };
-            const minL = 30; // Color más oscuro
-            const maxL = 90; // Color más claro
+            const minL = 30; 
+            const maxL = 90; 
             const ratio = count / maxCount;
             const l = maxL - (ratio * (maxL - minL));
             const textColor = l < 55 ? '#ffffff' : '#333333';
@@ -1025,7 +1063,6 @@
             const duracionesRealesMap = new Map(); 
             let colaSimulada = [];
             
-            // ASIGNACIÓN EXHAUSTIVA DE TIEMPOS
             events.forEach(ev => {
                 const prev = ev.conteoAnterior || 0;
                 const act = ev.conteoActual || 0;
@@ -1116,7 +1153,7 @@
             mainChart.options.animation = { duration: 400, easing: 'easeOutQuart' }; 
         }
 
-        /* --- CONTROL MAESTRO DE VISTAS (SPA Interna) --- */
+        /* --- CONTROL MAESTRO DE VISTAS --- */
         function isSameDay(d1, d2) { return d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear(); }
         
         window.goToCurrentTime = function() {
@@ -1234,7 +1271,7 @@
             updateDashboardView(); 
         });
 
-        /* --- RENDERIZADORES DE CALENDARIO Y HEATMAP --- */
+        /* --- RENDERIZADORES DE CALENDARIO --- */
         function renderCalMonth() {
             const grid = document.getElementById('cal-grid');
             grid.innerHTML = '';
@@ -1331,7 +1368,7 @@
             }
         }
 
-        /* --- LÓGICA DEL RELOJ INTERACTIVO Y HEATMAP --- */
+        /* --- LÓGICA DEL RELOJ INTERACTIVO --- */
         let clockDragging = false, clockPreviousAngle = 0, clockIsAm = true, clockCurrentSelected = 12;
         const clockFace = document.getElementById('clock-face');
         const clockHand = document.getElementById('clock-hand');
