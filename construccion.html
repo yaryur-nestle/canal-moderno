@@ -197,7 +197,7 @@
         .view-panel.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
-        /* Estilos modificados para soporte de mapas de calor */
+        /* Estilos de Mapas de Calor */
         .cal-container { display: flex; flex-direction: column; width: 100%; height: 100%; padding: 10px 0; }
         .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; color: #999; font-size: 0.85rem; padding-bottom: 10px; }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; flex-grow: 1; gap: 6px; }
@@ -1139,28 +1139,15 @@
             }
         }
 
-        /* --- LÓGICA DEL RELOJ INTERACTIVO --- */
-        function renderClockNumbers() {
-            const face = document.getElementById('clock-face');
-            face.querySelectorAll('.clock-number').forEach(e => e.remove()); 
-            for(let i=1; i<=12; i++) {
-                let angle = i * 30 * (Math.PI / 180);
-                let num = document.createElement('div');
-                num.className = 'clock-number';
-                num.style.left = `calc(50% + ${38 * Math.sin(angle)}%)`;
-                num.style.top = `calc(50% - ${38 * Math.cos(angle)}%)`;
-                num.innerText = i;
-                num.dataset.hour = i; 
-                face.appendChild(num);
-            }
-            updateClockHeatmap();
-        }
-        renderClockNumbers();
+        /* --- LÓGICA DEL RELOJ INTERACTIVO Y HEATMAP --- */
+        let clockDragging = false, clockPreviousAngle = 0, clockIsAm = true, clockCurrentSelected = 12;
+        const clockFace = document.getElementById('clock-face');
+        const clockHand = document.getElementById('clock-hand');
+        const clockAmPm = document.getElementById('clock-ampm');
 
         function updateClockHeatmap() {
             const data = getAggregatedCounts('day_hours', currentViewDate);
-            const face = document.getElementById('clock-face');
-            const numbers = face.querySelectorAll('.clock-number');
+            const numbers = clockFace.querySelectorAll('.clock-number');
             const now = new Date();
             const isToday = currentViewDate.getDate() === now.getDate() && currentViewDate.getMonth() === now.getMonth() && currentViewDate.getFullYear() === now.getFullYear();
 
@@ -1178,8 +1165,21 @@
             });
         }
 
-        let clockDragging = false, clockPreviousAngle = 0, clockIsAm = true, clockCurrentSelected = 12;
-        const clockFace = document.getElementById('clock-face'), clockHand = document.getElementById('clock-hand'), clockAmPm = document.getElementById('clock-ampm');
+        function renderClockNumbers() {
+            clockFace.querySelectorAll('.clock-number').forEach(e => e.remove()); 
+            for(let i=1; i<=12; i++) {
+                let angle = i * 30 * (Math.PI / 180);
+                let num = document.createElement('div');
+                num.className = 'clock-number';
+                num.style.left = `calc(50% + ${38 * Math.sin(angle)}%)`;
+                num.style.top = `calc(50% - ${38 * Math.cos(angle)}%)`;
+                num.innerText = i;
+                num.dataset.hour = i; 
+                clockFace.appendChild(num);
+            }
+            updateClockHeatmap();
+        }
+        renderClockNumbers();
 
         function updateClockUIFromDate() {
             let h = currentViewDate.getHours();
