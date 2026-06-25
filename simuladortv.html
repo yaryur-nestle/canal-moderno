@@ -10,31 +10,41 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #ffffff; /* Fondo blanco */
-            color: #DACCAA; /* Color de texto base */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-            overflow: hidden; /* Evita que aparezcan barras de desplazamiento al girar */
+            background-color: #ffffff;
+            color: #DACCAA;
+            
+            /* Ajustamos el body al tamaño exacto de la pantalla física */
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; /* Evita que aparezcan barras de desplazamiento */
+            position: relative; /* Vital para que el centrado absoluto funcione */
         }
 
         /* Contenedor maestro que gira todo el contenido */
         .rotate-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            /* Gira el contenido 270 grados (equivalente a -90 grados) para enderezar el texto */
-            transform: rotate(270deg); 
+            /* CENTRADO ABSOLUTO: Esta es la clave para que no se corte el texto */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            
+            /* 1. translate(-50%, -50%) centra el bloque perfectamente en la pantalla */
+            /* 2. rotate(270deg) aplica el giro que necesitas */
+            transform: translate(-50%, -50%) rotate(270deg); 
             
             /* Invertimos el ancho y alto para que calcen perfecto con la pantalla física */
             width: 100vh;
             height: 100vw;
+
+            /* Mantenemos el flexbox interno para centrar el título y el botón */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            padding: 20px; /* Margen de seguridad interno */
         }
 
-        /* Estilo del título (ahora interactivo) */
+        /* Estilo del título (interactivo para pantalla completa) */
         h1 {
             font-size: 3rem;
             margin-bottom: 50px;
@@ -42,15 +52,17 @@
             text-align: center;
             letter-spacing: 2px;
             color: #DACCAA; 
-            cursor: pointer; /* Cambia el cursor a la "manito" */
+            cursor: pointer;
             transition: opacity 0.2s ease, transform 0.2s ease;
-            user-select: none; /* Evita que el texto se seleccione accidentalmente al hacer doble clic */
+            user-select: none;
+            /* white-space: nowrap evita que el título se divida en dos líneas si la pantalla es muy estrecha */
+            white-space: nowrap; 
         }
 
         /* Efecto al pasar el mouse por encima del título */
         h1:hover {
             opacity: 0.8;
-            transform: scale(1.05); /* Lo hace crecer un poquito para indicar que es un botón */
+            transform: scale(1.05);
         }
 
         /* Contenedor principal del botón */
@@ -60,14 +72,13 @@
             align-items: center;
             width: 100%;
             max-width: 600px;
-            padding: 20px;
             box-sizing: border-box;
         }
 
         /* Estilo del botón único */
         .btn-tv {
             background-color: #DACCAA; 
-            color: #ffffff; /* Texto blanco en el botón */
+            color: #ffffff;
             text-decoration: none;
             padding: 25px 50px;
             border-radius: 12px;
@@ -115,11 +126,9 @@
 
     <script>
         function toggleFullScreen() {
-            // Comprueba si ya estamos en pantalla completa
-            if (!document.fullscreenElement &&    // alternativa estándar
+            if (!document.fullscreenElement && 
                 !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement ) {  
                 
-                // Si no lo estamos, entramos a pantalla completa
                 if (document.documentElement.requestFullscreen) {
                     document.documentElement.requestFullscreen();
                 } else if (document.documentElement.msRequestFullscreen) {
@@ -130,7 +139,6 @@
                     document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
                 }
             } else {
-                // Si ya lo estamos, salimos de pantalla completa
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
                 } else if (document.msExitFullscreen) {
