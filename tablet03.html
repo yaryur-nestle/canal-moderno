@@ -89,7 +89,7 @@
       <div class="face face-front">
         <div id="overlayReceta">
             <img id="imgReceta" src="" alt="Receta">
-            <video id="videoReceta" src="VIDEO_1RECETA.mp4" preload="auto" muted playsinline style="background-color: #000;"></video>
+            <video id="videoReceta" preload="auto" muted playsinline style="background-color: #000;"></video>
         </div>
       </div>
       
@@ -116,7 +116,6 @@
   </div>
 
   <script type="module">
-    // IMPORTANTE: Se agregó 'update' a las importaciones de Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, set, update, push, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
@@ -140,7 +139,6 @@
     const estadoActualRef = ref(db, 'muebles/tablet_03/estado_actual'); 
     const connectedRef = ref(db, ".info/connected");
 
-    // LÓGICA DE PANTALLA COMPLETA INICIAL AÑADIDA AQUÍ
     const initFullscreenBtn = document.getElementById('init-fullscreen-btn');
     initFullscreenBtn.addEventListener('click', () => {
       const elem = document.documentElement;
@@ -246,14 +244,11 @@
     let isVideoPlaying = false;
     let estadoRecetaPendiente = "";
     
-    // Variables para detectar un nuevo escaneo real (evita reinicios por la cámara)
     let ultimaRecetaProcesada = null;
     let ultimoTimestampScan = null; 
 
     videoReceta.addEventListener('ended', () => {
         isVideoPlaying = false;
-        // Si no quieres que el video se repita en bucle automáticamente, puedes omitir esta línea
-        // procesarEstadoReceta(estadoRecetaPendiente); 
     });
 
     onValue(estadoActualRef, (snapshot) => {
@@ -261,11 +256,8 @@
       if(!estado) return;
 
       const nuevaReceta = estado.recetaActiva || "";
-      // Usamos timestampReceta si tu app de escaneo lo envía, para saber cuándo es un escaneo nuevo 
-      // idéntico al anterior. Si no lo envía, se guiará solo por si cambió el valor de la receta.
       const nuevoTimestamp = estado.timestampReceta || null; 
 
-      // Solo procesamos la receta si el valor cambió OR si el escáner envió un timestamp nuevo
       if (nuevaReceta !== ultimaRecetaProcesada || (nuevoTimestamp && nuevoTimestamp !== ultimoTimestampScan)) {
           ultimaRecetaProcesada = nuevaReceta;
           ultimoTimestampScan = nuevoTimestamp;
@@ -279,13 +271,21 @@
       if (recetaActiva && recetaActiva !== "") {
         overlayReceta.style.display = 'flex';
         
-        if (recetaActiva === "02") {
+        // Comprueba si la receta solicitada corresponde a un video
+        if (recetaActiva === "02" || recetaActiva === "03") {
           imgReceta.style.display = 'none'; 
-          
-          // FORZAMOS EL REINICIO DEL VIDEO
           videoReceta.style.display = 'block';
-          videoReceta.pause(); // Pausamos por precaución
-          videoReceta.currentTime = 0; // REINICIAR AL SEGUNDO 0
+
+          // Asignación dinámica: la receta "02" abre el video 1 y la receta "03" el video 2
+          const targetVideo = recetaActiva === "02" ? "VIDEO_1RECETA.mp4" : "VIDEO_2RECETA.mp4";
+
+          // Solo actualizamos el src si es diferente para no interrumpir la carga
+          if (videoReceta.getAttribute('src') !== targetVideo) {
+              videoReceta.src = targetVideo;
+          }
+          
+          videoReceta.pause(); 
+          videoReceta.currentTime = 0; 
           
           videoReceta.play().catch(e => console.log("Reproducción automática pendiente:", e));
           
@@ -328,7 +328,6 @@
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
         hayPersonasActual = personasDetectadas;
         
-        // CRÍTICO: Usar 'update' en lugar de 'set' para no borrar la receta que el usuario haya escaneado.
         update(estadoActualRef, {
             hayPersonas: hayPersonasActual,
             conteoActual: rostrosActuales,
