@@ -187,6 +187,7 @@
       onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
           onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
+          // Mantenemos update para no borrar la receta activa si la TV la está mostrando
           onDisconnect(estadoActualRef).update({ hayPersonas: false, conteoActual: 0 });
         }
       });
@@ -247,6 +248,8 @@
     let ultimaRecetaProcesada = null;
     let ultimoTimestampScan = null; 
 
+    // Al terminar el video localmente, simplemente marcamos el flag en falso.
+    // La TV RECETAS será quien actualice Firebase enviando "" a recetaActiva.
     videoReceta.addEventListener('ended', () => {
         isVideoPlaying = false;
     });
@@ -277,6 +280,7 @@
           videoReceta.style.display = 'block';
 
           // Asignación dinámica: la receta "02" abre el video 1 y la receta "03" el video 2
+          // Actualizado a VIDEO_1RECETA.mp4 y VIDEO_2RECETA.mp4 para coincidir con la TV
           const targetVideo = recetaActiva === "02" ? "VIDEO_1RECETA.mp4" : "VIDEO_2RECETA.mp4";
 
           // Solo actualizamos el src si es diferente para no interrumpir la carga
@@ -292,8 +296,10 @@
           isVideoPlaying = true; 
 
         } else {
+          // Si es receta en imagen (ej: "01" o "04")
           videoReceta.style.display = 'none';
           videoReceta.pause();
+          isVideoPlaying = false;
           
           const newImageSrc = `RECETA${recetaActiva}.png`;
           if (imgReceta.getAttribute('src') !== newImageSrc) {
@@ -302,11 +308,13 @@
           imgReceta.style.display = 'block';
         }
       } else {
+        // Cuando la TV manda limpiar la receta ("")
         overlayReceta.style.display = 'none';
         imgReceta.src = '';
         imgReceta.style.display = 'none';
         videoReceta.style.display = 'none';
         videoReceta.pause();
+        isVideoPlaying = false;
       }
     }
 
@@ -328,6 +336,7 @@
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
         hayPersonasActual = personasDetectadas;
         
+        // Usamos update() para NO borrar accidentalmente la recetaActiva de la TV
         update(estadoActualRef, {
             hayPersonas: hayPersonasActual,
             conteoActual: rostrosActuales,
