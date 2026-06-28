@@ -182,7 +182,7 @@
         const video1 = document.getElementById('video1');
         const video2 = document.getElementById('video2');
         const videoReceta1 = document.getElementById('videoReceta1');
-        const videoReceta2 = document.getElementById('videoReceta2'); // NUEVO VIDEO
+        const videoReceta2 = document.getElementById('videoReceta2'); 
         
         // Variables de Estado
         let personaDetectadaLocalmente = false;
@@ -194,15 +194,16 @@
         let scannerBuffer = "";
         let lastKeyTime = Date.now();
 
+        // ======= DICCIONARIO ACTUALIZADO ======= //
         const baseDeDatos = {
-            "7591016855096": "01", // Chocolate (Imagen)
-            "7591016155097": "01",
+            "7591016855096": "03", // (Activa VIDEO_RECETA2)
+            "7591016155097": "03", // (Activa VIDEO_RECETA2)
             "7506475104425": "02", // Leche Condensada (Activa VIDEO_RECETA1)
-            "17506475104422": "02",
-            "7891000107263": "02",
-            "7591016206409": "03", // (Activa VIDEO_RECETA2)
-            "7591016406403": "03",
-            "17591016206406": "03",
+            "17506475104422": "02", // (Activa VIDEO_RECETA1)
+            "7891000107263": "02", // (Activa VIDEO_RECETA1)
+            "7591016206409": "01", // (Imagen)
+            "7591016406403": "01", // (Imagen)
+            "17591016206406": "04", // (Imagen)
             "7591016204894": "04"  // (Imagen)
         };
 
@@ -258,7 +259,8 @@
                     // Activamos la receta en la base de datos
                     set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
                     
-                    // Si NO es un video de receta (02 ni 03), usamos el temporizador normal de 3 segundos para imágenes
+                    // Si NO es un video de receta ("02" ni "03"), usamos el temporizador normal de 3 segundos para imágenes.
+                    // Esto garantiza que VIDEO_RECETA1 y VIDEO_RECETA2 NO se detengan a los 3 segundos.
                     if (recetaID !== "02" && recetaID !== "03") {
                         resetTimeout = setTimeout(() => {
                             set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
@@ -302,12 +304,12 @@
             }
         });
 
-        // Cuando finaliza el VIDEO DE LA RECETA 1
+        // Cuando finaliza el VIDEO DE LA RECETA 1 (Reemplaza el temporizador de 3s de las imágenes)
         videoReceta1.addEventListener('ended', () => {
             set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
         });
 
-        // Cuando finaliza el VIDEO DE LA RECETA 2
+        // Cuando finaliza el VIDEO DE LA RECETA 2 (Reemplaza el temporizador de 3s de las imágenes)
         videoReceta2.addEventListener('ended', () => {
             set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
         });
