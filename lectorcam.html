@@ -92,27 +92,8 @@
             display: none;
         }
 
-        #videoReceta1 {
+        #videoReceta1, #videoReceta2, #videoReceta3, #videoReceta4 {
             z-index: 5;
-        }
-
-        #overlayReceta {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-
-        #imgReceta {
-            max-width: 75%;
-            max-height: 75%;
-            object-fit: contain;
         }
 
         /* === ESTILOS DEL ESCÁNER DE CÁMARA === */
@@ -185,10 +166,9 @@
         <video id="video2" class="video-player" src="VIDEO_02.mp4" playsinline></video>
         
         <video id="videoReceta1" class="video-player" src="VIDEO_RECETA1.mp4" playsinline></video>
-        
-        <div id="overlayReceta">
-            <img id="imgReceta" src="" alt="Receta">
-        </div>
+        <video id="videoReceta2" class="video-player" src="VIDEO_RECETA2.mp4" playsinline></video>
+        <video id="videoReceta3" class="video-player" src="VIDEO_RECETA3.mp4" playsinline></video>
+        <video id="videoReceta4" class="video-player" src="VIDEO_RECETA4.mp4" playsinline></video>
     </div>
 
     <div id="camera-overlay">
@@ -224,15 +204,21 @@
         const appScreen = document.getElementById('app-screen');
         const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
-        const overlayReceta = document.getElementById('overlayReceta');
-        const imgReceta = document.getElementById('imgReceta');
         const cameraOverlay = document.getElementById('camera-overlay');
         const cameraBox = document.getElementById('camera-box');
         const cameraTitle = document.getElementById('camera-title');
         
         const video1 = document.getElementById('video1');
         const video2 = document.getElementById('video2');
-        const videoReceta1 = document.getElementById('videoReceta1');
+        
+        // Diccionario de videos de Recetas igual que el TV
+        const videosReceta = {
+            "01": document.getElementById('videoReceta1'),
+            "02": document.getElementById('videoReceta2'),
+            "03": document.getElementById('videoReceta3'),
+            "04": document.getElementById('videoReceta4')
+        };
+
         const beepAudio = document.getElementById('beepSound'); 
         
         let personaDetectadaLocalmente = false;
@@ -240,7 +226,6 @@
         let isVideo2Playing = false;
         let estadoGlobalReceta = ""; 
 
-        let resetTimeout;
         let scannerBuffer = "";
         let lastKeyTime = Date.now();
         let html5QrCode; 
@@ -258,7 +243,6 @@
 
         // ====== FUNCIÓN PARA DETECTAR URL ======
         function esURL(texto) {
-            // Expresión regular para identificar si el texto ingresado tiene formato de enlace
             const patronURL = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
             return patronURL.test(texto);
         }
@@ -310,25 +294,32 @@
             iniciarCamara();
         });
 
+        // ======= DICCIONARIO ORDENADO Y NORMALIZADO (Actualizado igual al TV) =======
         const baseDeDatos = {
-            "7591016855096": "01",
-            "7591016155097": "01",
-            "7506475104425": "02",
-            "17506475104422": "02",
-            "7891000107263": "02",
-            "7591016206409": "03",
-            "7591016406403": "03",
-            "17591016206406": "03",
+            // LOTE 01 LECHE CONDENSADA - Video 1
+            "7506475104425": "01", 
+            "17506475104422": "01", 
+            "7891000107263": "01", 
+
+            // LOTE 02 CHOCOLATE SAVOY - Video 2
+            "7591016155097": "02", 
+            "7591016855096": "02", 
+
+            // LOTE 03 - Video 3
+            "7591016206409": "03", 
+            "7591016406403": "03", 
+            "17591016206406": "03", 
+
+            // LOTE 04 SOPA DE POLLO - Video 4
             "7591016204894": "04"
         };
 
         // ====== FUNCIÓN CENTRAL PARA PROCESAR CÓDIGOS ======
         function procesarCodigoDeBarras(scannedValue) {
-            clearTimeout(resetTimeout);
-
             if (baseDeDatos[scannedValue]) {
                 const recetaID = baseDeDatos[scannedValue];
                 
+                // Activamos la receta en la base de datos de manera indefinida
                 set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
                 hacerPitido(); 
                 
@@ -342,12 +333,6 @@
                         cameraTitle.style.color = "#000";
                         cameraBox.classList.remove('bg-success-camera');
                     }, 1500);
-                }
-                
-                if (recetaID !== "02") {
-                    resetTimeout = setTimeout(() => {
-                        set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
-                    }, 3000);
                 }
             } 
             // NUEVO: Verificamos si es una URL (Código QR)
@@ -424,7 +409,7 @@
             
             video1.muted = true;
             video2.muted = true;
-            videoReceta1.muted = true;
+            Object.values(videosReceta).forEach(v => v.muted = true);
             
             html5QrCode = new Html5Qrcode("reader");
             
@@ -475,7 +460,7 @@
             
             video1.muted = false;
             video2.muted = false;
-            videoReceta1.muted = false;
+            Object.values(videosReceta).forEach(v => v.muted = false);
 
             if (html5QrCode) {
                 html5QrCode.stop().then(() => {
@@ -487,13 +472,12 @@
         }
 
 
-        // ====== LÓGICA DE EVENTOS 'ENDED' DE LOS VIDEOS ======
-
+        // ====== LÓGICA DE EVENTOS 'ENDED' DE LOS VIDEOS (Igual al TV) ======
         video1.addEventListener('ended', () => {
             isVideo1Playing = false;
             video1.style.display = 'none';
 
-            if (personaDetectadaLocalmente && estadoGlobalReceta !== "02") {
+            if (personaDetectadaLocalmente && estadoGlobalReceta === "") {
                 video2.style.display = 'block';
                 video2.currentTime = 0;
                 video2.play().catch(e => console.error("Error reproduciendo Video 02:", e));
@@ -502,7 +486,7 @@
         });
 
         video2.addEventListener('ended', () => {
-            if (personaDetectadaLocalmente && estadoGlobalReceta !== "02") {
+            if (personaDetectadaLocalmente && estadoGlobalReceta === "") {
                 video2.currentTime = 0;
                 video2.play().catch(e => console.error("Error reproduciendo Video 02 en bucle:", e));
                 isVideo2Playing = true;
@@ -512,8 +496,11 @@
             }
         });
 
-        videoReceta1.addEventListener('ended', () => {
-            set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
+        // Asignamos el evento 'ended' a todos los videos de receta para limpiar el estado
+        Object.values(videosReceta).forEach(video => {
+            video.addEventListener('ended', () => {
+                set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
+            });
         });
 
         function iniciarSincronizacion() {
@@ -524,9 +511,11 @@
                 estadoGlobalReceta = estado.recetaActiva || "";
                 const deteccionRemota = estado.hayPersonas;
 
+                // 1. Manejo de la Detección
                 if (deteccionRemota && !personaDetectadaLocalmente) {
                     personaDetectadaLocalmente = true;
-                    if (!isVideo1Playing && !isVideo2Playing && videoReceta1.paused && estadoGlobalReceta !== "02") {
+                    // Iniciamos Video 1 solo si todo lo demás está apagado y no hay receta
+                    if (!isVideo1Playing && !isVideo2Playing && estadoGlobalReceta === "") {
                         video1.style.display = 'block';
                         video1.currentTime = 0;
                         video1.play().catch(e => console.error("Error reproduciendo Video 01:", e));
@@ -537,51 +526,59 @@
                     personaDetectadaLocalmente = false;
                 }
 
-                if (estadoGlobalReceta && estadoGlobalReceta !== "") {
-                    if (estadoGlobalReceta === "02") { 
-                        overlayReceta.style.display = 'none';
-                        
-                        if (isVideo1Playing) {
-                            video1.pause();
-                            video1.style.display = 'none';
-                            isVideo1Playing = false;
-                        }
-                        if (isVideo2Playing) {
-                            video2.pause();
-                            video2.style.display = 'none';
-                            isVideo2Playing = false;
-                        }
-
-                        videoReceta1.style.display = 'block';
-                        if (videoReceta1.paused) {
-                            videoReceta1.currentTime = 0;
-                            videoReceta1.play().catch(e => console.error("Error reproduciendo Video Receta:", e));
-                        }
-                    } else {
-                        if (!videoReceta1.paused) {
-                            videoReceta1.pause();
-                            videoReceta1.style.display = 'none';
-                        }
-                        
-                        imgReceta.src = `RECETA${estadoGlobalReceta}.png`;
-                        overlayReceta.style.display = 'flex';
-                        document.body.className = ''; 
+                // 2. Manejo de la Receta en Pantalla
+                if (estadoGlobalReceta && videosReceta[estadoGlobalReceta]) {
+                    
+                    // PRIORIDAD ABSOLUTA: Detiene videos de presencia
+                    if (isVideo1Playing) {
+                        video1.pause();
+                        video1.style.display = 'none';
+                        isVideo1Playing = false;
+                    }
+                    if (isVideo2Playing) {
+                        video2.pause();
+                        video2.style.display = 'none';
+                        isVideo2Playing = false;
                     }
 
-                } else {
-                    overlayReceta.style.display = 'none';
-                    imgReceta.src = '';
-                    
-                    if (!videoReceta1.paused || videoReceta1.style.display === 'block') {
-                        videoReceta1.pause();
-                        videoReceta1.style.display = 'none';
-                        
-                        if (personaDetectadaLocalmente) {
-                            video2.style.display = 'block';
-                            video2.currentTime = 0;
-                            video2.play().catch(e => console.error("Error reanudando Video 02:", e));
-                            isVideo2Playing = true;
+                    // Iteramos sobre todos los videos de recetas
+                    Object.keys(videosReceta).forEach(key => {
+                        const v = videosReceta[key];
+                        if (key === estadoGlobalReceta) {
+                            // Reproducimos el activo
+                            v.style.display = 'block';
+                            if (v.paused) {
+                                v.currentTime = 0;
+                                v.play().catch(e => console.error(`Error reproduciendo Receta ${key}:`, e));
+                            }
+                        } else {
+                            // Pausamos los demás
+                            if (!v.paused || v.style.display === 'block') {
+                                v.pause();
+                                v.style.display = 'none';
+                            }
                         }
+                    });
+
+                } else {
+                    // LIMPIEZA CUANDO LA RECETA DESAPARECE (Fin de cualquier video de receta)
+                    let recetaVideoEstabaCorriendo = false;
+
+                    // Cortamos cualquier video de receta si sigue en pantalla
+                    Object.values(videosReceta).forEach(v => {
+                        if (!v.paused || v.style.display === 'block') {
+                            v.pause();
+                            v.style.display = 'none';
+                            recetaVideoEstabaCorriendo = true;
+                        }
+                    });
+                    
+                    // Si la persona sigue ahí parada tras terminar un video de receta, reanudamos el video 2
+                    if (recetaVideoEstabaCorriendo && personaDetectadaLocalmente) {
+                        video2.style.display = 'block';
+                        video2.currentTime = 0;
+                        video2.play().catch(e => console.error("Error reanudando Video 02:", e));
+                        isVideo2Playing = true;
                     }
                 }
             });
