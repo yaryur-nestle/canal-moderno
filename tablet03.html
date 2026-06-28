@@ -37,7 +37,6 @@
         background-color: rgba(0, 0, 0, 0.6); display: none; 
         justify-content: center; align-items: center; z-index: 50; 
     }
-    #imgReceta { max-width: 75%; max-height: 75%; object-fit: contain; }
     
     #videoReceta { 
         position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
@@ -88,7 +87,6 @@
     <div id="card" class="card">
       <div class="face face-front">
         <div id="overlayReceta">
-            <img id="imgReceta" src="" alt="Receta">
             <video id="videoReceta" preload="auto" muted playsinline style="background-color: #000;"></video>
         </div>
       </div>
@@ -187,7 +185,6 @@
       onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
           onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
-          // Mantenemos update para no borrar la receta activa si la TV la está mostrando
           onDisconnect(estadoActualRef).update({ hayPersonas: false, conteoActual: 0 });
         }
       });
@@ -231,7 +228,6 @@
     const canvasElement = document.getElementById('canvas');
     const canvasCtx = canvasElement.getContext('2d');
     const overlayReceta = document.getElementById('overlayReceta');
-    const imgReceta = document.getElementById('imgReceta');
     const videoReceta = document.getElementById('videoReceta');
 
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
@@ -270,48 +266,32 @@
       }
     });
 
+    const videoMap = {
+        "01": "VIDEO_1RECETA.mp4",
+        "02": "VIDEO_2RECETA.mp4",
+        "03": "VIDEO_3RECETA.mp4",
+        "04": "VIDEO_4RECETA.mp4"
+    };
+
     function procesarEstadoReceta(recetaActiva) {
-      if (recetaActiva && recetaActiva !== "") {
+      if (recetaActiva && videoMap[recetaActiva]) {
         overlayReceta.style.display = 'flex';
-        
-        // Comprueba si la receta solicitada corresponde a un video
-        if (recetaActiva === "02" || recetaActiva === "03") {
-          imgReceta.style.display = 'none'; 
-          videoReceta.style.display = 'block';
+        videoReceta.style.display = 'block';
 
-          // Asignación dinámica: la receta "02" abre el video 1 y la receta "03" el video 2
-          // Actualizado a VIDEO_1RECETA.mp4 y VIDEO_2RECETA.mp4 para coincidir con la TV
-          const targetVideo = recetaActiva === "02" ? "VIDEO_1RECETA.mp4" : "VIDEO_2RECETA.mp4";
+        const targetVideo = videoMap[recetaActiva];
 
-          // Solo actualizamos el src si es diferente para no interrumpir la carga
-          if (videoReceta.getAttribute('src') !== targetVideo) {
-              videoReceta.src = targetVideo;
-          }
-          
-          videoReceta.pause(); 
-          videoReceta.currentTime = 0; 
-          
-          videoReceta.play().catch(e => console.log("Reproducción automática pendiente:", e));
-          
-          isVideoPlaying = true; 
-
-        } else {
-          // Si es receta en imagen (ej: "01" o "04")
-          videoReceta.style.display = 'none';
-          videoReceta.pause();
-          isVideoPlaying = false;
-          
-          const newImageSrc = `RECETA${recetaActiva}.png`;
-          if (imgReceta.getAttribute('src') !== newImageSrc) {
-              imgReceta.src = newImageSrc;
-          }
-          imgReceta.style.display = 'block';
+        if (videoReceta.getAttribute('src') !== targetVideo) {
+            videoReceta.src = targetVideo;
         }
+        
+        videoReceta.pause(); 
+        videoReceta.currentTime = 0; 
+        videoReceta.play().catch(e => console.log("Reproducción automática pendiente:", e));
+        
+        isVideoPlaying = true; 
       } else {
         // Cuando la TV manda limpiar la receta ("")
         overlayReceta.style.display = 'none';
-        imgReceta.src = '';
-        imgReceta.style.display = 'none';
         videoReceta.style.display = 'none';
         videoReceta.pause();
         isVideoPlaying = false;
@@ -336,7 +316,6 @@
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
         hayPersonasActual = personasDetectadas;
         
-        // Usamos update() para NO borrar accidentalmente la recetaActiva de la TV
         update(estadoActualRef, {
             hayPersonas: hayPersonasActual,
             conteoActual: rostrosActuales,
