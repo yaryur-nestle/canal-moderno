@@ -196,15 +196,23 @@
 
         // ======= DICCIONARIO ACTUALIZADO ======= //
         const baseDeDatos = {
-            "7591016855096": "03", // (Activa VIDEO_RECETA2)
-            "7591016155097": "03", // (Activa VIDEO_RECETA2)
-            "7506475104425": "02", // Leche Condensada (Activa VIDEO_RECETA1)
-            "17506475104422": "02", // (Activa VIDEO_RECETA1)
-            "7891000107263": "02", // (Activa VIDEO_RECETA1)
-            "7591016206409": "01", // (Imagen)
-            "7591016406403": "01", // (Imagen)
-            "17591016206406": "04", // (Imagen)
-            "7591016204894": "04"  // (Imagen)
+            
+    // LOTE 01 - Video 1 (Sin temporizador)
+    "7506475104425": "02", 
+    "17506475104422": "02", 
+    "7891000107263": "02", 
+
+    // LOTE 02 - Video 2 (Asignado a "03" para evitar que se pare a los 3 seg)
+    "7591016206409": "03", 
+    "7591016406403": "03", 
+
+    // LOTE 03 - Imagen 1 (Asignado a "01" para activar el temporizador de 3 seg)
+    "7591016855096": "01", 
+    "7591016155097": "01", 
+
+    // LOTE 04 - Imagen 2 (Asignado a "04" para activar el temporizador de 3 seg)
+    "17591016206406": "04", 
+    "7591016204894": "04"
         };
 
         onAuthStateChanged(auth, (user) => {
