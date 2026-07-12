@@ -3,60 +3,1573 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página en Construcción</title>
+    <title>Yar-Yur System - Dashboard</title>
+    
+    <script src="https://code.highcharts.com/maps/highmaps.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.1/proj4.js"></script>
+    <script src="https://code.highcharts.com/mapdata/countries/ve/ve-all.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <style>
-        /* Estilos generales de la página */
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
+        /* =========================================
+           NORMALIZACIÓN Y CONTENEDOR 16:9 
+           ========================================= */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        
+        body, html { 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background-color: #ffffff; 
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+        }
+
+        #aspect-ratio-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: calc(100vh * (16 / 9));
+            max-height: calc(100vw * (9 / 16));
+            overflow: hidden;
+            background-color: #ffffff;
+            box-shadow: 0 0 30px rgba(0,0,0,0.15); 
+        }
+
+        .spa-view { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+
+        /* =========================================
+           VISTAS: LOGIN & WELCOME
+           ========================================= */
+        #login-view { background-color: #ffffff; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .login-box { background: #ffffff; padding: 40px; border-radius: 12px; text-align: center; width: 350px; border: 1px solid #eaeaea; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .login-box h2 { color: #333; margin-bottom: 20px; font-weight: 800; text-transform: uppercase;}
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        .login-box button { width: 100%; padding: 12px; background: #b39c6e; color: #fff; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; }
+        .login-box button:hover { background: #968157; }
+        #login-error { color: red; margin-top: 10px; font-size: 14px; display: none; }
+
+        #welcome-view { background-color: #ffffff; justify-content: center; align-items: center; z-index: 9998; color: #333; }
+        
+        #rotate-device-msg { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px; }
+        #rotate-device-msg svg { width: 80px; height: 80px; animation: rotatePhone 2s infinite ease-in-out; }
+        @keyframes rotatePhone { 
+            0% { transform: rotate(0deg); } 
+            50% { transform: rotate(-90deg); } 
+            100% { transform: rotate(-90deg); } 
+        }
+        #rotate-device-msg p { font-size: 1.4rem; font-weight: 600; color: #666; max-width: 80%; }
+
+        #start-container { display: none; justify-content: center; align-items: center; text-align: center; flex-direction: column; }
+        .pulse-btn { 
+            background-color: #b39c6e; color: #fff; border: none; border-radius: 12px; 
+            padding: 25px 50px; font-size: 1.5rem; font-weight: 900; text-transform: uppercase; 
+            cursor: pointer; box-shadow: 0 0 15px rgba(179, 156, 110, 0.5); 
+            animation: slowPulse 2.5s infinite; transition: transform 0.3s, background-color 0.3s; 
+            line-height: 1.4; letter-spacing: 1px;
+        }
+        .pulse-btn:hover { background-color: #968157; transform: scale(1.02); animation-play-state: paused; }
+        @keyframes slowPulse {
+            0% { box-shadow: 0 0 0 0 rgba(179, 156, 110, 0.7); transform: scale(1); }
+            50% { box-shadow: 0 0 0 20px rgba(179, 156, 110, 0); transform: scale(1.03); }
+            100% { box-shadow: 0 0 0 0 rgba(179, 156, 110, 0); transform: scale(1); }
+        }
+
+        /* =========================================
+           VISTA: PRÓXIMAMENTE
+           ========================================= */
+        #coming-soon-view {
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9997;
             text-align: center;
         }
+        #coming-soon-view h2 { color: #b39c6e; font-size: 3rem; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 2px; }
+        #coming-soon-view p { color: #666; font-size: 1.5rem; font-weight: 500; margin-bottom: 30px; }
+        #btn-volver-soon { padding: 12px 25px; background: #b39c6e; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.3s; font-size: 1.1rem; }
+        #btn-volver-soon:hover { background: #968157; }
 
-        /* Contenedor principal */
-        .container {
-            background-color: #ffffff;
-            padding: 50px 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            width: 90%;
+        /* =========================================
+           VISTA: MAPA
+           ========================================= */
+        #map-view { background-color: #ffffff; justify-content: center; align-items: center; }
+        #app-container { width: 90%; height: 90%; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; overflow: hidden; transition: width 0.3s, height 0.3s, border-radius 0.3s; }
+        :fullscreen #app-container { width: 100%; height: 100%; border-radius: 0; border: none; }
+        #map { width: 100%; height: 100%; position: relative; z-index: 1; background-color: transparent;}
+        #capa-superior { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; user-select: none; object-fit: cover; opacity: 1; transition: opacity 0.4s ease-in-out; }
+
+        #hamburger-btn { position: absolute; top: 20px; cursor: pointer; z-index: 10002; right: 20px; width: 32px; height: 22px; display: flex; flex-direction: column; justify-content: space-between; background: none; border: none; }
+        #hamburger-btn span { display: block; height: 3px; width: 100%; background-color: #b39c6e; border-radius: 3px; transition: all 0.3s; transform-origin: right center; }
+        #hamburger-btn.open span:nth-child(1) { transform: rotate(-45deg) translateY(-2px); width: 16px; }
+        #hamburger-btn.open span:nth-child(2) { transform: scaleX(1); }
+        #hamburger-btn.open span:nth-child(3) { transform: rotate(45deg) translateY(2px); width: 16px; }
+
+        .side-panel { position: absolute; top: 0; right: -350px; width: 320px; height: 100%; background-color: #ffffff; box-shadow: -4px 0 15px rgba(0,0,0,0.1); z-index: 10000; transition: right 0.3s ease-in-out; display: flex; flex-direction: column; padding: 60px 20px 20px 20px; overflow-y: auto; }
+        .side-panel.active { right: 0; }
+        
+        #close-info-btn { position: absolute; top: 15px; left: 20px; background: none; border: none; font-size: 28px; color: #999; cursor: pointer; transition: color 0.2s; }
+        #close-info-btn:hover { color: #ff2a2a; }
+
+        .panel-header { text-align: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; }
+        #panel-subtitle { font-size: 16px; font-weight: 900; color: #b39c6e; margin-bottom: 10px; text-transform: uppercase; }
+        #panel-title { font-size: 20px; font-weight: 600; color: #333; }
+        .panel-images-container { display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .panel-images-container a { display: block; width: 100%; text-align: center; outline: none; }
+        .panel-images-container img { width: 180px; height: 180px; object-fit: cover; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); transition: transform 0.2s; cursor: pointer; }
+        .panel-images-container img:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        
+        /* === NUEVA CLASE PARA LATIDO VERDE EN VIVO === */
+        .en-vivo-pulse {
+            border: 3px solid #2aa12a !important;
+            box-shadow: 0 0 10px rgba(42, 161, 42, 0.6), inset 0 0 5px rgba(42, 161, 42, 0.4) !important;
+            animation: pulseGreenEnVivo 1.5s infinite !important;
+        }
+        @keyframes pulseGreenEnVivo {
+            0% { box-shadow: 0 0 0 0 rgba(42, 161, 42, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(42, 161, 42, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(42, 161, 42, 0); }
         }
 
-        /* Icono de construcción */
-        .icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-        }
+        .panel-footer-logo { margin-top: auto; padding-top: 25px; text-align: center; }
+        #panel-logo-img { max-width: 150px; max-height: 70px; object-fit: contain; }
 
-        /* Título */
-        h1 {
-            color: #2c3e50;
-            margin: 0 0 15px 0;
-            font-size: 28px;
-        }
+        .accordion-btn { background: none; border: none; border-bottom: 2px solid #f0f0f0; font-size: 18px; font-weight: 600; color: #b39c6e; width: 100%; text-align: left; padding: 12px 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: color 0.2s; }
+        .accordion-btn:hover { color: #968157; }
+        .accordion-content { display: none; flex-direction: column; gap: 15px; padding: 15px 0; }
+        .accordion-content.open { display: flex; }
+        .filter-wrapper { display: flex; flex-direction: column; width: 100%; margin-bottom: 5px; }
+        .filter-img-btn { border: 2px solid transparent; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s ease; background-color: #fcfcfc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .filter-img-btn:hover { transform: translateY(-2px); }
+        .filter-img-btn.active-filter { border-color: #b39c6e; background-color: #fdfbf7; }
+        .marca-btn { aspect-ratio: 1 / 1; width: 160px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
+        .marca-btn img { max-width: 90%; max-height: 90%; object-fit: contain; }
+        .sucursal-btn { text-align: center; }
+        .sucursal-btn img { max-width: 100%; height: 50px; object-fit: contain; }
+        .filter-results { display: none; flex-direction: column; gap: 8px; padding: 12px 10px; background-color: #fafafa; border-radius: 8px; border-left: 4px solid #b39c6e; margin-top: 10px; }
+        .filter-results.active { display: flex; }
+        .filter-results a { color: #b39c6e; font-weight: 700; text-decoration: none; font-size: 13px; display: block; padding: 4px 0; cursor: pointer;}
+        .filter-results a:hover { color: #968157; text-decoration: underline; }
 
-        /* Texto descriptivo */
-        p {
-            color: #7f8c8d;
-            font-size: 16px;
-            line-height: 1.5;
-            margin: 0;
+        /* Botón de Excel Integrado al Menú */
+        .btn-excel {
+            background: none;
+            border: none;
+            border-bottom: 2px solid #f0f0f0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #b39c6e;
+            width: 100%;
+            text-align: left;
+            padding: 12px 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 12px;
+            transition: color 0.2s;
         }
+        .btn-excel:hover { color: #968157; }
+        .btn-excel:disabled { color: #ccc; cursor: not-allowed; }
+
+        /* =========================================
+           VISTA: MONITOR INTERACTIVO
+           ========================================= */
+        #monitor-view { background-color: #ffffff; }
+        #btn-volver-mapa { position: absolute; top: 15px; left: 15px; padding: 8px 15px; background: rgba(179, 156, 110, 0.9); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; z-index: 1000; transition: background 0.3s; font-size: 0.9rem;}
+        #btn-volver-mapa:hover { background: rgba(150, 129, 87, 1); }
+
+        .flip-container { perspective: 1500px; width: 100%; height: 100%; }
+        .flipper { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.68, -0.15, 0.265, 1.15); }
+        .flip-container.flipped .flipper { transform: rotateY(180deg); }
+        
+        .front, .back { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backface-visibility: hidden; background-color: #ffffff; }
+        .front { pointer-events: auto; }
+        .back { transform: rotateY(180deg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; pointer-events: none;}
+        .flip-container.flipped .front { pointer-events: none; }
+        .flip-container.flipped .back { pointer-events: auto; }
+
+        .base-img, .person-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        .person-img { opacity: 0; transition: opacity 0.8s ease-in-out; }
+        .person-img.active { opacity: 1; }
+
+        /* Zona de Clic Centralizada */
+        .click-zone { position: absolute; top: 0; height: 100%; width: 100%; left: 0; cursor: pointer; z-index: 50; }
+
+        .live-overlay { position: absolute; top: 50%; left: 40%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; z-index: 100; pointer-events: none; }
+        .en-vivo-badge { color: #ff3333; border: 2px solid #ff3333; border-radius: 50px; padding: 4px 20px; font-weight: 900; font-size: 1.4rem; letter-spacing: 2px; box-shadow: 0 0 8px #ff3333, inset 0 0 8px #ff3333; animation: heartbeat 2s infinite; margin-bottom: 5px; background: rgba(255,255,255,0.8); }
+        @keyframes heartbeat { 0%, 20%, 40%, 100% { transform: scale(1); opacity: 1; } 10%, 30% { transform: scale(1.1); opacity: 0.8; } }
+        .live-count { font-size: 3.5rem; font-weight: 900; color: #000; text-transform: uppercase; text-shadow: 2px 2px 0px #fff; }
+        .live-timer { font-size: 2.5rem; font-weight: 900; color: #d4af37; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .live-timer.recorded { color: #2aa12a; animation: timerPulseTwice 0.8s forwards; }
+        @keyframes timerPulseTwice { 0% { transform: scale(1); } 30%, 75% { transform: scale(1.3); } 50% { transform: scale(1.05); } 100% { transform: scale(1.2); } }
+        .live-datetime { font-size: 1rem; color: #555; margin-top: 5px; font-weight: 600; background: rgba(255,255,255,0.7); padding: 2px 10px; border-radius: 10px; }
+        .fade-out-up { animation: fadeOutUp 0.5s forwards ease-in; }
+        @keyframes fadeOutUp { 0% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-70%); } }
+
+        /* Contenido Trasero */
+        .back-content { background: #ffffff; padding: 20px 30px; border-radius: 15px; width: 95%; max-width: 1200px; box-shadow: 0 5px 25px rgba(0,0,0,0.08); border: 1px solid #eaeaea; text-align: center; position: relative; height: 85vh; display: flex; flex-direction: column; }
+        .static-title { color: #888; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; text-align: center; }
+        .top-controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .top-controls h1 { color: #111; letter-spacing: 1px; margin: 0; text-transform: uppercase; font-weight: 900; font-size: 1.8rem; }
+        .icon-btn { background: #fff; border: 1px solid #ccc; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .icon-btn:hover { background: #f4f4f4; transform: scale(1.1); border-color: #b39c6e; }
+        .icon-btn svg { width: 18px; height: 18px; fill: #333; }
+        .metric-toggle { position: absolute; top: 15px; right: 20px; width: 40px; height: 40px; border-color: #ccc; }
+
+        .chart-layout { display: flex; align-items: center; justify-content: space-between; width: 100%; flex-grow: 1; overflow: hidden; position: relative; }
+        .nav-arrow { background: rgba(0,0,0,0.03); border: none; border-radius: 8px; width: 35px; height: 70px; cursor: pointer; transition: background 0.3s; z-index: 10; display: flex; align-items: center; justify-content: center;}
+        .nav-arrow:hover { background: rgba(179,156,110,0.2); transform: scale(1.05); }
+        .nav-arrow svg { width: 24px; height: 24px; fill: #666; }
+        .nav-arrow:disabled { opacity: 0; pointer-events: none; }
+        
+        .view-panel-wrapper { position: relative; height: 100%; flex-grow: 1; padding: 0 15px; display: flex; flex-direction: column; justify-content: center; }
+        .view-panel { display: none; width: 100%; height: 100%; animation: fadeIn 0.4s ease; }
+        .view-panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        /* Estilos de Mapas de Calor */
+        .cal-container { display: flex; flex-direction: column; width: 100%; height: 100%; padding: 10px 0; }
+        .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; color: #999; font-size: 0.85rem; padding-bottom: 10px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; flex-grow: 1; gap: 6px; }
+        .cal-cell { display: flex; align-items: center; justify-content: center; border: 1px solid #eaeaea; border-radius: 8px; cursor: pointer; transition: transform 0.2s, filter 0.2s; font-weight: bold; font-size: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+        .cal-cell:hover { filter: brightness(0.95); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05);}
+        .cal-cell.empty { background: transparent !important; border: none !important; pointer-events: none; box-shadow: none; }
+
+        .year-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 12px; height: 100%; padding: 10px 0;}
+        .year-cell { display: flex; align-items: center; justify-content: center; border: 1px solid #eaeaea; border-radius: 12px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: transform 0.2s, filter 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+        .year-cell:hover { filter: brightness(0.95); transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.05);}
+
+        .is-current { border: 3px solid #111 !important; z-index: 2; transform: scale(1.05); }
+
+        /* Ajustes de Agujas del Reloj */
+        .clock-wrapper { display: flex; justify-content: center; align-items: center; height: 100%; flex-direction: column; padding: 10px;}
+        .clock-face { position: relative; aspect-ratio: 1 / 1; width: 100%; max-width: 280px; max-height: 280px; flex-shrink: 0; border-radius: 50%; border: 6px solid #f4f4f4; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05), inset 0 0 20px rgba(0,0,0,0.03); cursor: pointer; touch-action: none; margin: auto;}
+        .clock-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; background: #b39c6e; border-radius: 50%; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .clock-minute-hand { position: absolute; top: 10%; left: 50%; width: 3px; height: 40%; background: #ccc; transform-origin: bottom center; border-radius: 3px; z-index: 4; pointer-events: none; margin-left: -1.5px; }
+        .clock-hand { position: absolute; top: 25%; left: 50%; width: 6px; height: 25%; background: #b39c6e; transform-origin: bottom center; border-radius: 4px; z-index: 5; pointer-events: none; margin-left: -3px; }
+        .clock-ampm { position: absolute; top: 65%; left: 50%; transform: translate(-50%, -50%); font-size: 1.4rem; font-weight: 900; color: #ccc; z-index: 1;}
+        .clock-number { position: absolute; font-weight: 800; transform: translate(-50%, -50%); pointer-events: none; width: 34px; height: 34px; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: background 0.3s, color 0.3s; font-size: 1.1rem; }
+
+        .slide-out-left { animation: slideOutLeft 0.4s forwards; }
+        .slide-in-right { animation: slideInRight 0.4s forwards; }
+        .slide-out-right { animation: slideOutRight 0.4s forwards; }
+        .slide-in-left { animation: slideInLeft 0.4s forwards; }
+        @keyframes slideOutLeft { to { transform: translateX(-100%); opacity: 0; } }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOutRight { to { transform: translateX(100%); opacity: 0; } }
+        @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .hint { margin-top: 15px; color: #888; font-size: 0.85rem; animation: pulse 2s infinite; cursor: pointer; padding: 6px 15px; display: inline-block; border-radius: 20px; transition: background-color 0.3s; background: #f9f9f9; font-weight: 600;}
+        .hint:hover { background-color: #f0f0f0; color: #333; animation-play-state: paused; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(179,156,110,0.4); } 70% { box-shadow: 0 0 0 10px rgba(179,156,110,0); } 100% { box-shadow: 0 0 0 0 rgba(179,156,110,0); } }
+
+        #btn-refresh-live { position: absolute; bottom: 20px; right: 20px; background: #b39c6e; color: white; border: none; padding: 10px 18px; border-radius: 25px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(179,156,110,0.4); transition: transform 0.2s, background 0.2s; z-index: 100; display: none; font-size: 0.9rem; letter-spacing: 0.5px;}
+        #btn-refresh-live:hover { background: #968157; transform: translateY(-2px); }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="icon">🚧</div>
-        <h1>Página en Construcción</h1>
-        <p>Estamos trabajando arduamente para tener nuestro sitio web listo muy pronto. ¡Por favor, vuelve a visitarnos!</p>
-    </div>
+    <div id="aspect-ratio-wrapper">
 
+        <div id="login-view" class="spa-view">
+            <div class="login-box">
+                <h2>Yar-Yur System</h2>
+                <input type="email" id="email-input" placeholder="Correo electrónico">
+                <input type="password" id="password-input" placeholder="Contraseña">
+                <button id="btn-login">Ingresar al Sistema</button>
+                <div id="login-error">Credenciales incorrectas.</div>
+            </div>
+        </div>
+
+        <div id="welcome-view" class="spa-view">
+            <div id="rotate-device-msg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#b39c6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                    <path d="M12 18h.01"></path>
+                </svg>
+                <p>Por favor, gira tu dispositivo a modo horizontal para comenzar la experiencia.</p>
+            </div>
+            <div id="start-container">
+                <button id="btn-start-system" class="pulse-btn">INICIAR YAR-YUR SYSTEM NESTLÉ<br>Canal Moderno</button>
+            </div>
+        </div>
+
+        <div id="coming-soon-view" class="spa-view">
+            <h2>Próximamente</h2>
+            <p>Vuelve pronto para consultar esta sucursal...</p>
+            <button id="btn-volver-soon">Volver al Mapa</button>
+        </div>
+
+        <div id="map-view" class="spa-view">
+            <div id="app-container">
+                <div id="map"></div>
+                <img src="CAPA.png" id="capa-superior" alt="Capa Decorativa">
+                
+                <button id="hamburger-btn">
+                    <span></span><span></span><span></span>
+                </button>
+
+                <div id="nav-panel" class="side-panel">
+                    <h2 style="color: #333; margin-bottom: 20px; font-size: 20px;">Filtros de Búsqueda</h2>
+                    <div class="accordion-item">
+                        <button class="accordion-btn">Marcas <span>+</span></button>
+                        <div class="accordion-content">
+                            <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="NIDO.png"><img src="NIDO.png" alt="NIDO"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="RECETAS.png"><img src="RECETAS.png" alt="RECETAS"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="MULTIMARCA.png"><img src="MULTIMARCA.png" alt="Multimarca"></div><div class="filter-results"></div></div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <button class="accordion-btn">Sucursales <span>+</span></button>
+                        <div class="accordion-content">
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-REDVITAL.jpg"><img src="logo-REDVITAL.jpg" alt="REDVITAL"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-LUXOR.jpg"><img src="logo-LUXOR.jpg" alt="LUXOR"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-KROMI.jpg"><img src="logo-KROMI.jpg" alt="KROMI"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-GARZON.jpg"><img src="logo-GARZON.jpg" alt="Garzón"></div><div class="filter-results"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button id="btn-export-excel" class="btn-excel">
+                            Exportar Reporte Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div id="info-panel" class="side-panel">
+                    <button id="close-info-btn">&times;</button>
+                    <div class="panel-header">
+                        <div id="panel-subtitle">ESTADO</div>
+                        <h2 id="panel-title">Nombre Sucursal</h2>
+                    </div>
+                    <div id="panel-images" class="panel-images-container"></div>
+                    <div class="panel-footer-logo"><img id="panel-logo-img" src="" alt="Logo Aliado"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="monitor-view" class="spa-view">
+            <button id="btn-volver-mapa">Volver al Mapa</button>
+
+            <div class="flip-container" id="flip-container">
+                <div class="flipper">
+                    
+                    <div class="front">
+                        <img id="monitor-bg" src="" class="base-img" alt="Exhibidor">
+                        
+                        <img src="" class="person-img" id="img-1-1">
+                        <img src="" class="person-img" id="img-1-2">
+                        <img src="" class="person-img" id="img-1-3">
+                        <img src="" class="person-img" id="img-1-4">
+                        <img src="" class="person-img" id="img-1-5">
+
+                        <img src="" class="person-img" id="img-2-1">
+                        <img src="" class="person-img" id="img-2-2">
+                        <img src="" class="person-img" id="img-2-3">
+                        <img src="" class="person-img" id="img-2-4">
+                        <img src="" class="person-img" id="img-2-5">
+
+                        <img src="" class="person-img" id="img-3-1">
+                        <img src="" class="person-img" id="img-3-2">
+                        <img src="" class="person-img" id="img-3-3">
+                        <img src="" class="person-img" id="img-3-4">
+                        <img src="" class="person-img" id="img-3-5">
+
+                        <div class="live-overlay" id="live-overlay" style="display: none;">
+                            <div class="en-vivo-badge">EN VIVO</div>
+                            <div class="live-count" id="live-count">1 persona</div>
+                            <div class="live-timer" id="live-timer">0.0</div>
+                            <div class="live-datetime" id="live-datetime">--</div>
+                        </div>
+
+                        <div class="click-zone full" onclick="flipToChart(2)"></div>
+                    </div>
+
+                    <div class="back">
+                        <div class="back-content">
+                            <button id="btn-metric" class="icon-btn metric-toggle" title="Cambiar Métrica">
+                                <svg id="icon-chrono" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A8.962 8.962 0 0012 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+                                <svg id="icon-user" viewBox="0 0 24 24" style="display:none;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            </button>
+
+                            <div id="chart-title" class="static-title">YAR-YUR SYSTEM</div>
+
+                            <div class="top-controls">
+                                <button id="btn-zoom-out" class="icon-btn" title="Alejar Vista"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg></button>
+                                <h1 id="chart-subtitle">HORA: --</h1>
+                                <button id="btn-zoom-in" class="icon-btn" style="display:none;" title="Acercar Vista"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7H9v2H7v1h2v2h1v-2h2V9h-2z"/></svg></button>
+                            </div>
+                            
+                            <div class="chart-layout">
+                                <button id="btn-prev" class="nav-arrow"><svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg></button>
+                                
+                                <div class="view-panel-wrapper" id="master-view-wrapper">
+                                    <div id="view-chart-container" class="view-panel active">
+                                        <canvas id="main-chart"></canvas>
+                                    </div>
+                                    <div id="view-calendar-day" class="view-panel">
+                                        <div class="cal-container">
+                                            <div class="cal-header"><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div></div>
+                                            <div class="cal-grid" id="cal-grid"></div>
+                                        </div>
+                                    </div>
+                                    <div id="view-calendar-year" class="view-panel">
+                                        <div class="year-grid" id="year-grid"></div>
+                                    </div>
+                                    <div id="view-calendar-decade" class="view-panel">
+                                        <div class="year-grid" id="decade-grid"></div>
+                                    </div>
+                                    <div id="view-clock" class="view-panel">
+                                        <div class="clock-wrapper">
+                                            <div class="clock-face" id="clock-face">
+                                                <div class="clock-minute-hand"></div>
+                                                <div class="clock-hand" id="clock-hand"></div>
+                                                <div class="clock-center"></div>
+                                                <div class="clock-ampm" id="clock-ampm">AM</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button id="btn-next" class="nav-arrow" disabled><svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></button>
+                            </div>
+                            <div class="hint" onclick="flipToFront()">Toca aquí para volver al exhibidor en tiempo real</div>
+                            
+                            <button id="btn-refresh-live" onclick="goToCurrentTime()">⟳ EN VIVO</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> 
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getDatabase, ref, query, orderByChild, onChildAdded, onValue, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
+            authDomain: "canal-moderno-2655e.firebaseapp.com",
+            databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
+            projectId: "canal-moderno-2655e",
+            storageBucket: "canal-moderno-2655e.firebasestorage.app",
+            messagingSenderId: "947512040134",
+            appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        /* --- REGISTRO MAESTRO DE EXHIBICIONES --- */
+        const monitorRegistry = {
+            'NIDO_Redvital La Yaguara': { tabletId: 1, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
+            'MULTIMARCA_Garzón Hiperahorro': { tabletId: 2, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
+            'RECETAS_Redvital La Yaguara': { tabletId: 3, bgImage: 'RECETAS_MONITOR.jpg', zone: 2 },
+            'NIDO_Redvital San Diego': { tabletId: 4, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
+            'NIDO_Kromi Market': { tabletId: 5, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
+            'MULTIMARCA_Luxor Círculo Militar': { tabletId: 6, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 }
+        };
+
+        const configZonas = {
+            1: { colorBg: 'rgba(255, 206, 86, 0.8)' },
+            2: { colorBg: 'rgba(54, 162, 235, 0.8)' },
+            3: { colorBg: 'rgba(255, 99, 132, 0.8)' }
+        };
+
+        /* --- SISTEMA DE NAVEGACIÓN SPA BINARIO --- */
+        let activeAppView = 0; 
+        const loginView = document.getElementById('login-view');
+        const welcomeView = document.getElementById('welcome-view');
+        const mapView = document.getElementById('map-view');
+        const monitorView = document.getElementById('monitor-view');
+        const comingSoonView = document.getElementById('coming-soon-view');
+
+        function toggleAppView(viewPathInput) {
+            loginView.style.display = 'none';
+            welcomeView.style.display = 'none';
+            mapView.style.display = 'none';
+            monitorView.style.display = 'none';
+            comingSoonView.style.display = 'none';
+
+            if (viewPathInput === 1) { 
+                monitorView.style.display = 'block';
+                activeAppView = 1;
+            } else if (viewPathInput === 0) { 
+                mapView.style.display = 'flex'; 
+                activeAppView = 0;
+                setTimeout(() => { if (chartInstance) chartInstance.reflow(); }, 200);
+            } else if (viewPathInput === 2) { 
+                comingSoonView.style.display = 'flex';
+                activeAppView = 2;
+            }
+        }
+
+        /* --- LÓGICA DE PANTALLA DE BIENVENIDA Y ORIENTACIÓN --- */
+        const rotateMsg = document.getElementById('rotate-device-msg');
+        const startContainer = document.getElementById('start-container');
+
+        function checkDeviceOrientation() {
+            if (welcomeView.style.display === 'flex') {
+                if (window.innerHeight > window.innerWidth) {
+                    rotateMsg.style.display = 'flex';
+                    startContainer.style.display = 'none';
+                } else {
+                    rotateMsg.style.display = 'none';
+                    startContainer.style.display = 'flex';
+                }
+            }
+        }
+
+        window.addEventListener('resize', checkDeviceOrientation);
+        window.addEventListener('orientationchange', checkDeviceOrientation);
+
+        document.getElementById('btn-start-system').addEventListener('click', () => {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) { elem.requestFullscreen(); }
+            else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
+            else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+            toggleAppView(0);
+        });
+
+        document.getElementById('btn-volver-soon').addEventListener('click', () => {
+            toggleAppView(0);
+        });
+
+        /* --- ESTADO GLOBAL DE MAPA EN VIVO --- */
+        let liveTabletCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+        let isGlobalListenerInit = false;
+
+        function updateMapMarkers() {
+            if (!chartInstance) return;
+            const series = chartInstance.get('sucursales-series');
+            if (series) {
+                let needsRedraw = false;
+                series.points.forEach((point) => {
+                    let node = retailNodes.find(n => n.id === point.options.id);
+                    if (node && node.tabletIds) {
+                        let isActive = node.tabletIds.some(tid => liveTabletCounts[tid] > 0);
+                        let newColor = isActive ? '#2aa12a' : '#ff2a2a'; 
+                        let currentColor = point.options.marker?.fillColor || '#ff2a2a';
+
+                        if (currentColor !== newColor) {
+                            point.update({
+                                marker: {
+                                    fillColor: newColor,
+                                    states: { hover: { fillColor: newColor } }
+                                }
+                            }, false);
+                            needsRedraw = true;
+                        }
+                    }
+                });
+                if (needsRedraw) chartInstance.redraw();
+            }
+        }
+
+        // --- NUEVA LÓGICA: Actualiza visualmente el pulso en el panel de info si está abierto
+        function actualizarPulsoPanelInfo() {
+            if (!infoPanel.classList.contains('active')) return;
+            
+            const sucursalActual = document.getElementById('panel-title').textContent;
+            const imagenes = document.querySelectorAll('#panel-images img');
+
+            imagenes.forEach(img => {
+                let filename = img.getAttribute('data-src');
+                if(!filename) return;
+                
+                let brandName = filename.split('/').pop().replace('.png','').replace('.jpg','');
+                let registryKey = `${brandName}_${sucursalActual}`;
+                let config = monitorRegistry[registryKey];
+
+                if (config && config.tabletId) {
+                    if (liveTabletCounts[config.tabletId] > 0) {
+                        img.classList.add('en-vivo-pulse');
+                    } else {
+                        img.classList.remove('en-vivo-pulse');
+                    }
+                }
+            });
+        }
+
+        function initGlobalMapListeners() {
+            for (let i = 1; i <= 6; i++) {
+                let numFormat = i.toString().padStart(2, '0');
+                const globalEstadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
+                onValue(globalEstadoQuery, (snapshot) => {
+                    const data = snapshot.val();
+                    liveTabletCounts[i] = (data && data.conteoActual !== undefined) ? data.conteoActual : 0;
+                    updateMapMarkers();
+                    actualizarPulsoPanelInfo(); // Ejecutamos la validación del panel en vivo
+                });
+            }
+        }
+
+        /* --- AUTH ESTADO --- */
+        onAuthStateChanged(auth, (user) => {
+            if (user) { 
+                loginView.style.display = 'none'; 
+                welcomeView.style.display = 'flex';
+                checkDeviceOrientation();
+                
+                if (!isGlobalListenerInit) {
+                    initGlobalMapListeners();
+                    isGlobalListenerInit = true;
+                }
+            } 
+            else { 
+                mapView.style.display = 'none'; 
+                monitorView.style.display = 'none'; 
+                welcomeView.style.display = 'none';
+                loginView.style.display = 'flex'; 
+            }
+        });
+
+        document.getElementById('btn-login').addEventListener('click', () => {
+            const email = document.getElementById('email-input').value;
+            const pass = document.getElementById('password-input').value;
+            signInWithEmailAndPassword(auth, email, pass).catch(() => document.getElementById('login-error').style.display = 'block');
+        });
+
+        document.getElementById('btn-volver-mapa').addEventListener('click', () => {
+            toggleAppView(0); 
+            if(document.getElementById('flip-container').classList.contains('flipped')) flipToFront();
+            
+            clearInterval(overlayTimerInterval);
+            clearTimeout(stopTimeout1);
+            clearTimeout(stopTimeout2);
+            isOverlayActive = false;
+            
+            const overlayEl = document.getElementById('live-overlay');
+            overlayEl.style.display = 'none';
+            overlayEl.classList.remove('fade-out-up');
+            document.getElementById('live-timer').classList.remove('recorded');
+        });
+
+        /* --- VARIABLES GLOBALES DEL MONITOR --- */
+        let activeFirebaseListeners = [];
+        let todosLosEventos = { 1: [], 2: [], 3: [] }; 
+        let estadoVisual = { 1: [], 2: [], 3: [] }; 
+        let conteosActuales = { 1: 0, 2: 0, 3: 0 };
+        let tabletActualEnGrafico = null; 
+        
+        let viewState = 'CHART_HOUR'; 
+        let currentViewLevel = 'hour';
+        let currentViewDate = new Date(); 
+        let currentMetric = 'count'; 
+
+        let isOverlayActive = false, overlayStartTime = 0, overlayTimerInterval = null, stopTimeout1 = null, stopTimeout2 = null, isInitialLoad = true;
+
+        /* --- CARGADOR DINÁMICO DEL MONITOR --- */
+        function cargarMonitor(brandName, sucursalName) {
+            const registryKey = `${brandName}_${sucursalName}`;
+            const config = monitorRegistry[registryKey];
+
+            if (!config) {
+                toggleAppView(2); 
+                return;
+            }
+
+            document.getElementById('monitor-bg').src = config.bgImage;
+            document.getElementById('chart-title').innerText = `${sucursalName} - ${brandName}`;
+
+            const siluetasBase = ['persona 1.png', 'persona 2.png', 'persona 3.png', 'persona 4.png', 'persona 5.png'];
+            for (let z = 1; z <= 3; z++) {
+                for (let p = 1; p <= 5; p++) {
+                    const img = document.getElementById(`img-${z}-${p}`);
+                    img.src = siluetasBase[p - 1];
+                    img.classList.remove('active'); 
+                }
+            }
+
+            activeFirebaseListeners.forEach(unsub => unsub());
+            activeFirebaseListeners = [];
+            todosLosEventos = { 1: [], 2: [], 3: [] };
+            estadoVisual = { 1: [], 2: [], 3: [] };
+            conteosActuales = { 1: 0, 2: 0, 3: 0 };
+            isInitialLoad = true;
+            
+            setTimeout(() => { isInitialLoad = false; updateLiveOverlay(); }, 1500);
+
+            const zoneId = config.zone;
+            const numFormat = config.tabletId.toString().padStart(2, '0');
+            
+            const estadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
+            const unsubEstado = onValue(estadoQuery, (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.conteoActual !== undefined) {
+                    actualizarSiluetas(zoneId, data.conteoActual);
+                    conteosActuales[zoneId] = data.conteoActual;
+                    if (!isInitialLoad) updateLiveOverlay();
+                }
+            });
+            activeFirebaseListeners.push(unsubEstado);
+
+            const eventosQuery = query(ref(db, `muebles/tablet_${numFormat}/eventos`), orderByChild('timestamp'));
+            const unsubEventos = onChildAdded(eventosQuery, (snapshot) => {
+                const data = snapshot.val();
+                if (data && data.timestamp && data.conteoActual !== undefined) {
+                    todosLosEventos[zoneId].push(data);
+                    if (!isInitialLoad && tabletActualEnGrafico === zoneId && viewState.startsWith('CHART_')) {
+                        updateChartDisplay();
+                    }
+                }
+            });
+            activeFirebaseListeners.push(unsubEventos);
+
+            toggleAppView(1);
+        }
+
+        /* --- LÓGICA DEL MAPA --- */
+        let chartInstance = null;
+        const navPanel = document.getElementById('nav-panel'), infoPanel = document.getElementById('info-panel');
+        const hamburgerBtn = document.getElementById('hamburger-btn'), closeInfoBtn = document.getElementById('close-info-btn');
+
+        const retailNodes = [
+            { id: 1, sucursal: "Kromi Market", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2225, lon: -68.0160, logo: "logo-KROMI.jpg", images: [ { src: "NIDO.png" } ], tabletIds: [4] },
+            { id: 2, sucursal: "Redvital San Diego", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2540, lon: -67.9510, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" } ], tabletIds: [5] },
+            { id: 3, sucursal: "Redvital La Yaguara", estadoNombre: "Distrito Capital", estadoId: "ve-df", lat: 10.4772, lon: -66.9597, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" }, { src: "RECETAS.png" } ], tabletIds: [1, 3] },
+            { id: 4, sucursal: "Garzón Hiperahorro", estadoNombre: "Táchira", estadoId: "ve-ta", lat: 7.7669, lon: -72.2250, logo: "logo-GARZON.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [2] },
+            { id: 5, sucursal: "Luxor Círculo Militar", estadoNombre: "Aragua", estadoId: "ve-ar", lat: 10.2670, lon: -67.5950, logo: "logo-LUXOR.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [6] }
+        ];
+
+        function iluminarEstados(arr) {
+            if (!chartInstance) return;
+            const s = chartInstance.get('capa-estados');
+            if (s) {
+                s.points.forEach(p => {
+                    if (arr.length === 0) p.update({ color: '#daccaa', opacity: 1, borderWidth: 1, borderColor: '#ffffff' }, false);
+                    else {
+                        if (arr.includes(p['hc-key'])) p.update({ color: '#b39c6e', opacity: 1, borderWidth: 3, borderColor: '#000000' }, false);
+                        else p.update({ color: '#daccaa', opacity: 0.1, borderWidth: 1, borderColor: '#ffffff' }, false);
+                    }
+                });
+                chartInstance.redraw();
+            }
+        }
+
+        function abrirMenuFiltros() { infoPanel.classList.remove('active'); navPanel.classList.add('active'); hamburgerBtn.style.display = 'flex'; hamburgerBtn.classList.add('open'); }
+        function cerrarPanelesYResetear() { navPanel.classList.remove('active'); infoPanel.classList.remove('active'); hamburgerBtn.classList.remove('open'); hamburgerBtn.style.display = 'flex'; document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter')); document.querySelectorAll('.filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; }); iluminarEstados([]); }
+
+        function abrirPanelInfo(sucursal, images, estadoNombre, logo) {
+            navPanel.classList.remove('active'); hamburgerBtn.classList.remove('open'); hamburgerBtn.style.display = 'none'; 
+            document.getElementById('panel-subtitle').textContent = estadoNombre;
+            document.getElementById('panel-title').textContent = sucursal;
+            document.getElementById('panel-logo-img').src = logo; 
+            
+            const panelImages = document.getElementById('panel-images');
+            panelImages.innerHTML = ''; 
+            
+            images.forEach(img => {
+                const enlace = document.createElement('a');
+                enlace.href = "javascript:void(0);";
+                enlace.addEventListener('click', () => {
+                    let brandName = img.src.replace('.png','').replace('.jpg','');
+                    cargarMonitor(brandName, sucursal);
+                });
+                const imagen = document.createElement('img'); 
+                imagen.src = img.src;
+                imagen.setAttribute('data-src', img.src); // Guardamos la fuente para que la función en vivo la procese
+                
+                enlace.appendChild(imagen); 
+                panelImages.appendChild(enlace);
+            });
+            
+            infoPanel.classList.add('active');
+            actualizarPulsoPanelInfo(); // Validar estado justo al abrir
+        }
+
+        hamburgerBtn.addEventListener('click', () => hamburgerBtn.classList.contains('open') ? cerrarPanelesYResetear() : abrirMenuFiltros());
+        closeInfoBtn.addEventListener('click', cerrarPanelesYResetear);
+
+        document.querySelectorAll('.accordion-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const content = this.nextElementSibling, span = this.querySelector('span'), isOpen = content.classList.contains('open');
+                document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
+                document.querySelectorAll('.accordion-btn span').forEach(s => s.textContent = '+');
+                if (!isOpen) { content.classList.add('open'); span.textContent = '-'; }
+            });
+        });
+
+        document.querySelectorAll('.filter-img-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
+                document.querySelectorAll('.filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; });
+                this.classList.add('active-filter');
+                
+                const type = this.getAttribute('data-type'), val = this.getAttribute('data-val'), resultsContainer = this.nextElementSibling; 
+                let estadosAEncender = new Set(), matchingLinks = []; 
+
+                retailNodes.forEach(node => {
+                    if (type === 'marca') {
+                        const matchedImg = node.images.find(img => img.src === val);
+                        if (matchedImg) {
+                            estadosAEncender.add(node.estadoId);
+                            let brandName = matchedImg.src.replace('.png', '').replace('.jpg', '');
+                            matchingLinks.push({ title: node.sucursal, callback: () => cargarMonitor(brandName, node.sucursal) });
+                        }
+                    } else if (type === 'sucursal' && node.logo === val) {
+                        estadosAEncender.add(node.estadoId);
+                        node.images.forEach(img => {
+                            let brandName = img.src.replace('.png', '').replace('.jpg', '');
+                            matchingLinks.push({ title: `${node.sucursal} (${brandName})`, callback: () => cargarMonitor(brandName, node.sucursal) });
+                        });
+                    }
+                });
+
+                matchingLinks.forEach(item => {
+                    const a = document.createElement('a'); a.href = "javascript:void(0);";
+                    a.innerHTML = `&bull; ${item.title}`; a.addEventListener('click', item.callback);
+                    resultsContainer.appendChild(a);
+                });
+                if (matchingLinks.length > 0) resultsContainer.classList.add('active'); 
+                iluminarEstados(Array.from(estadosAEncender));
+            });
+        });
+
+        const mapData = Highcharts.maps['countries/ve/ve-all'];
+        const baseData = mapData.features.map((feature, index) => [feature.properties['hc-key'], index]);
+        chartInstance = Highcharts.mapChart('map', {
+            chart: { map: 'countries/ve/ve-all', backgroundColor: 'transparent', events: { click: () => cerrarPanelesYResetear() } },
+            title: { text: null }, credits: { enabled: false }, legend: { enabled: false }, mapNavigation: { enabled: true, buttonOptions: { verticalAlign: 'bottom' } },
+            xAxis: { events: { afterSetExtremes: function (e) { document.getElementById('capa-superior').style.opacity = (e.min !== undefined && e.max - e.min < (e.dataMax - e.dataMin) * 0.99) ? '0.1' : '1'; }}},
+            plotOptions: { series: { states: { inactive: { opacity: 1 } }, point: { events: { click: function () {
+                if (this.options && this.options.images) { abrirPanelInfo(this.options.sucursal, this.options.images, this.options.estadoNombre, this.options.logo); iluminarEstados([this.options.estadoId]); } 
+                else cerrarPanelesYResetear(); 
+            }}}}},
+            tooltip: { enabled: false },
+            series: [
+                { id: 'capa-estados', data: baseData, name: 'Estado', color: '#daccaa', borderColor: '#ffffff', borderWidth: 1, states: { hover: { enabled: false } }, dataLabels: { enabled: false } },
+                { id: 'sucursales-series', type: 'mappoint', name: 'Sucursales', data: retailNodes, cursor: 'pointer', marker: { symbol: 'circle', radius: 8, fillColor: '#ff2a2a', lineColor: '#ffffff', lineWidth: 2, states: { hover: { radius: 12, fillColor: '#ff2a2a' } } } }
+            ]
+        });
+
+        /* --- EXPORTACIÓN A EXCEL --- */
+        document.getElementById('btn-export-excel').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-export-excel');
+            const originalHTML = btn.innerHTML;
+            btn.innerText = "Generando Reporte...";
+            btn.disabled = true;
+
+            const wb = XLSX.utils.book_new();
+
+            const configHojas = [
+                { nombre: "NIDO Redvital La Yaguara", tablet: "01" },
+                { nombre: "MULTIMARCA Garzon", tablet: "02" },
+                { nombre: "RECETAS Redvital La Yaguara", tablet: "03" },
+                { nombre: "NIDO Kromi Market", tablet: "04" },
+                { nombre: "NIDO Redvital San Diego", tablet: "05" },
+                { nombre: "MULTIMARCA Luxor", tablet: "06" }
+            ];
+
+            const dbRef = ref(db);
+
+            for (const hoja of configHojas) {
+                const snapshot = await get(child(dbRef, `muebles/tablet_${hoja.tablet}/eventos`));
+                let eventosArray = [];
+                if (snapshot.exists()) {
+                    eventosArray = Object.values(snapshot.val()).sort((a, b) => a.timestamp - b.timestamp);
+                }
+
+                let sesiones = [];
+                let colaInteracciones = [];
+
+                eventosArray.forEach(ev => {
+                    const prev = ev.conteoAnterior || 0;
+                    const act = ev.conteoActual || 0;
+
+                    let resueltos = [];
+
+                    if (act === 0) {
+                        while (colaInteracciones.length > 0) {
+                            resueltos.push(colaInteracciones.shift());
+                        }
+                    } else if (act > prev) {
+                        for (let k = 0; k < (act - prev); k++) colaInteracciones.push(ev);
+                    } else if (act < prev) {
+                        for (let k = 0; k < (prev - act); k++) {
+                            if (colaInteracciones.length > 0) {
+                                resueltos.push(colaInteracciones.shift());
+                            }
+                        }
+                    }
+
+                    resueltos.forEach(entrada => {
+                        let duracion = (ev.timestamp - entrada.timestamp) / 1000;
+                        let duracionSegundos = Math.round(Math.max(0, Math.min(duracion, 100)));
+
+                        const fecha = new Date(entrada.timestamp);
+                        const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+
+                        let sesionAbierta = sesiones.find(s => s.fechaHora === fechaStr);
+                        if (sesionAbierta) {
+                            sesionAbierta.cantidad += 1;
+                            sesionAbierta.tiempos.push(duracionSegundos);
+                            sesionAbierta.tiempoPromedio = Math.round(sesionAbierta.tiempos.reduce((a,b)=>a+b,0) / sesionAbierta.tiempos.length);
+                        } else {
+                            sesiones.push({
+                                fechaHora: fechaStr,
+                                cantidad: 1,
+                                tiempos: [duracionSegundos],
+                                tiempoPromedio: duracionSegundos,
+                                estado: "Finalizado"
+                            });
+                        }
+                    });
+                });
+
+                colaInteracciones.forEach(entrada => {
+                    const fecha = new Date(entrada.timestamp);
+                    const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+                    sesiones.push({
+                        fechaHora: fechaStr,
+                        cantidad: 1,
+                        tiempos: [],
+                        tiempoPromedio: 0,
+                        estado: "En curso" 
+                    });
+                });
+
+                const wsData = [
+                    ["Fecha y Hora", "Cantidad de personas", "Tiempo promedio en segundos"]
+                ];
+
+                sesiones.forEach(fila => {
+                    if (fila.estado !== "En curso") {
+                        wsData.push([fila.fechaHora, fila.cantidad, fila.tiempoPromedio]);
+                    }
+                });
+
+                const nombreHojaValido = hoja.nombre.substring(0, 31);
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+                ws['!cols'] = [{ wch: 20 }, { wch: 25 }, { wch: 30 }];
+
+                XLSX.utils.book_append_sheet(wb, ws, nombreHojaValido);
+            }
+
+            XLSX.writeFile(wb, "Reporte Yar-Yur Nestlé Canal Moderno.xlsx");
+
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        });
+
+        /* --- AGREGADOR DE DATOS DE MAPAS DE CALOR --- */
+        function getAggregatedCounts(level, baseDate) {
+            if (!tabletActualEnGrafico || !todosLosEventos[tabletActualEnGrafico]) return { counts: {}, maxCount: 0 };
+            const events = todosLosEventos[tabletActualEnGrafico];
+            let counts = {};
+            let maxCount = 0;
+
+            events.forEach(ev => {
+                if (ev.conteoActual > (ev.conteoAnterior || 0)) {
+                    const increment = ev.conteoActual - (ev.conteoAnterior || 0);
+                    const evDate = new Date(ev.timestamp);
+                    let key = null;
+
+                    if (level === 'month' && evDate.getFullYear() === baseDate.getFullYear() && evDate.getMonth() === baseDate.getMonth()) {
+                        key = evDate.getDate();
+                    } else if (level === 'year' && evDate.getFullYear() === baseDate.getFullYear()) {
+                        key = evDate.getMonth();
+                    } else if (level === 'decade') {
+                        key = evDate.getFullYear();
+                    } else if (level === 'day_hours' && evDate.getFullYear() === baseDate.getFullYear() && evDate.getMonth() === baseDate.getMonth() && evDate.getDate() === baseDate.getDate()) {
+                        key = evDate.getHours();
+                    }
+
+                    if (key !== null) {
+                        counts[key] = (counts[key] || 0) + increment;
+                        if (counts[key] > maxCount) maxCount = counts[key];
+                    }
+                }
+            });
+            return { counts, maxCount };
+        }
+
+        function getHeatmapStyle(count, maxCount) {
+            if (count === 0 || maxCount === 0) return { bg: '#f9f9f9', color: '#888' };
+            const minL = 30; 
+            const maxL = 90; 
+            const ratio = count / maxCount;
+            const l = maxL - (ratio * (maxL - minL));
+            const textColor = l < 55 ? '#ffffff' : '#333333';
+            return { bg: `hsl(40, 40%, ${l}%)`, color: textColor }; 
+        }
+
+        /* --- FUNCIONES DEL GRÁFICO (Monitor) --- */
+        function formatHourAMPM(date, includeMinutes = false) {
+            let h = date.getHours(), m = date.getMinutes(), ampm = h >= 12 ? 'pm' : 'am';
+            h = h % 12 || 12; 
+            return includeMinutes ? `${h}:${m.toString().padStart(2, '0')}${ampm}` : `${h}${ampm}`;
+        }
+
+        const ctx = document.getElementById('main-chart').getContext('2d');
+        const mainChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: [], datasets: [{ label: 'Data', data: [], backgroundColor: '#000', borderRadius: 4 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false, animation: { duration: 400, easing: 'easeOutQuart' },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f0f0f0' } }, x: { grid: { display: false } } },
+                interaction: { mode: 'index', intersect: false },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)', titleFont: { size: 14 }, bodyFont: { size: 13 }, padding: 10, displayColors: false,
+                        callbacks: {
+                            title: function(c) { return c[0].label; },
+                            label: function(c) { return currentMetric === 'time' ? c.raw + ' segs (promedio)' : (c.raw === 1 ? '1 persona' : c.raw + ' personas'); }
+                        }
+                    }
+                }
+            }
+        });
+
+        function updateChartDisplay(skipAnimation = false) {
+            if (!tabletActualEnGrafico) return;
+            const events = todosLosEventos[tabletActualEnGrafico];
+            const date = new Date(currentViewDate);
+            let labels = [], dataBuckets = [], countBuckets = [], titlePrefix = "", titleSuffix = "";
+
+            if (currentViewLevel === 'hour') {
+                titlePrefix = "HORA:"; titleSuffix = `${formatHourAMPM(date, true).replace(/:\d+/, ':00')} - ${formatHourAMPM(date, true).replace(/:\d+/, ':59')} (${date.toLocaleDateString('es-ES')})`;
+                for(let i=0; i<60; i++) { let d = new Date(date); d.setMinutes(i); labels.push(formatHourAMPM(d, true)); }
+                dataBuckets = new Array(60).fill(0); countBuckets = new Array(60).fill(0);
+            } 
+            else if (currentViewLevel === 'day') {
+                titlePrefix = "DÍA:"; titleSuffix = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                for(let i=0; i<24; i++) { let d = new Date(date); d.setHours(i); labels.push(formatHourAMPM(d, false)); }
+                dataBuckets = new Array(24).fill(0); countBuckets = new Array(24).fill(0);
+            }
+            else if (currentViewLevel === 'month') {
+                titlePrefix = "MES:"; titleSuffix = date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+                const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+                for(let i=1; i<=daysInMonth; i++) labels.push(`${i}`);
+                dataBuckets = new Array(daysInMonth).fill(0); countBuckets = new Array(daysInMonth).fill(0);
+            }
+            else if (currentViewLevel === 'year') {
+                titlePrefix = "AÑO:"; titleSuffix = `${date.getFullYear()}`;
+                const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                labels = [...meses];
+                dataBuckets = new Array(12).fill(0); countBuckets = new Array(12).fill(0);
+            }
+
+            const duracionesRealesMap = new Map(); 
+            let colaSimulada = [];
+            
+            events.forEach(ev => {
+                const prev = ev.conteoAnterior || 0;
+                const act = ev.conteoActual || 0;
+
+                if (act === 0) {
+                    while (colaSimulada.length > 0) {
+                        const llegada = colaSimulada.shift();
+                        if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
+                        let dur = (ev.timestamp - llegada.timestamp) / 1000;
+                        duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 100))); 
+                    }
+                } 
+                else if (act > prev) { 
+                    for(let k = 0; k < (act - prev); k++) colaSimulada.push(ev); 
+                } 
+                else if (act < prev) {
+                    for(let k = 0; k < (prev - act); k++) {
+                        if (colaSimulada.length > 0) {
+                            const llegada = colaSimulada.shift();
+                            if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
+                            let dur = (ev.timestamp - llegada.timestamp) / 1000;
+                            duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 100)));
+                        }
+                    }
+                }
+            });
+
+            const now = new Date(); let isCurrentView = false;
+            if (currentViewLevel === 'hour') isCurrentView = (date.getHours() === now.getHours() && date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
+            if (currentViewLevel === 'day') isCurrentView = (date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
+            if (currentViewLevel === 'month') isCurrentView = (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
+            if (currentViewLevel === 'year') isCurrentView = (date.getFullYear() === now.getFullYear());
+
+            events.forEach(ev => {
+                const evDate = new Date(ev.timestamp);
+                if (currentViewLevel === 'hour' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate() || evDate.getHours() !== date.getHours())) return;
+                if (currentViewLevel === 'day' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate())) return;
+                if (currentViewLevel === 'month' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth())) return;
+                if (currentViewLevel === 'year' && (evDate.getFullYear() !== date.getFullYear())) return;
+
+                const conteoPrevio = ev.conteoAnterior || 0;
+                
+                if (ev.conteoActual > conteoPrevio) {
+                    const nuevas = ev.conteoActual - conteoPrevio;
+                    let idx = 0;
+                    if (currentViewLevel === 'hour') idx = evDate.getMinutes();
+                    else if (currentViewLevel === 'day') idx = evDate.getHours();
+                    else if (currentViewLevel === 'month') idx = evDate.getDate() - 1;
+                    else if (currentViewLevel === 'year') idx = evDate.getMonth();
+
+                    if (currentMetric === 'count') { 
+                        dataBuckets[idx] += nuevas; 
+                    } 
+                    else {
+                        const tiempos = duracionesRealesMap.get(ev) || [];
+                        for (let k = 0; k < nuevas; k++) {
+                            if (k < tiempos.length) {
+                                dataBuckets[idx] += tiempos[k];
+                                countBuckets[idx] += 1;
+                            } else {
+                                if (isCurrentView && conteosActuales[tabletActualEnGrafico] > 0) {
+                                    let duracion = (Date.now() - ev.timestamp) / 1000;
+                                    duracion = Math.max(0, Math.min(duracion, 100));
+                                    dataBuckets[idx] += duracion; 
+                                    countBuckets[idx] += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (currentMetric === 'time') { 
+                for(let i = 0; i < dataBuckets.length; i++) { 
+                    if (countBuckets[i] > 0) dataBuckets[i] = Math.round(dataBuckets[i] / countBuckets[i]); 
+                } 
+            }
+
+            document.getElementById('chart-subtitle').innerText = `${titlePrefix} ${titleSuffix}`;
+
+            mainChart.data.labels = labels;
+            mainChart.data.datasets[0].data = dataBuckets;
+            mainChart.data.datasets[0].backgroundColor = currentMetric === 'count' ? configZonas[tabletActualEnGrafico].colorBg : 'rgba(42, 161, 42, 0.8)';
+            
+            if (skipAnimation) mainChart.options.animation = false;
+            else mainChart.options.animation = { duration: 400, easing: 'easeOutQuart' };
+            mainChart.update();
+            mainChart.options.animation = { duration: 400, easing: 'easeOutQuart' }; 
+        }
+
+        /* --- CONTROL MAESTRO DE VISTAS --- */
+        function isSameDay(d1, d2) { return d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear(); }
+        
+        window.goToCurrentTime = function() {
+            currentViewDate = new Date();
+            viewState = 'CHART_HOUR';
+            updateDashboardView();
+        }
+
+        function checkRefreshLiveButton() {
+            const now = new Date();
+            let showBtn = false;
+            if(viewState === 'CHART_HOUR' && (!isSameDay(currentViewDate, now) || currentViewDate.getHours() !== now.getHours())) showBtn = true;
+            if(viewState === 'CHART_DAY' && !isSameDay(currentViewDate, now)) showBtn = true;
+            if(viewState === 'CHART_MONTH' && (currentViewDate.getMonth() !== now.getMonth() || currentViewDate.getFullYear() !== now.getFullYear())) showBtn = true;
+            if(viewState === 'CAL_MONTH' && (currentViewDate.getMonth() !== now.getMonth() || currentViewDate.getFullYear() !== now.getFullYear())) showBtn = true;
+            if(viewState === 'CAL_YEAR' && currentViewDate.getFullYear() !== now.getFullYear()) showBtn = true;
+            if(viewState === 'CHART_YEAR' && currentViewDate.getFullYear() !== now.getFullYear()) showBtn = true;
+            if(viewState === 'CAL_DECADE') {
+                let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
+                if(now.getFullYear() < startYear || now.getFullYear() > startYear + 11) showBtn = true;
+            }
+            
+            document.getElementById('btn-refresh-live').style.display = showBtn ? 'block' : 'none';
+        }
+
+        function updateDashboardView(skipAnim = false) {
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+            const btnIn = document.getElementById('btn-zoom-in');
+            const btnOut = document.getElementById('btn-zoom-out');
+            const titleEl = document.getElementById('chart-subtitle');
+
+            if(viewState === 'CHART_HOUR') {
+                document.getElementById('view-chart-container').classList.add('active');
+                currentViewLevel = 'hour';
+                btnIn.style.display = 'none'; 
+                btnOut.style.display = 'flex';
+                updateChartDisplay(skipAnim);
+            }
+            else if(viewState === 'CHART_DAY') {
+                document.getElementById('view-chart-container').classList.add('active');
+                currentViewLevel = 'day';
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'flex';
+                updateChartDisplay(skipAnim);
+            }
+            else if(viewState === 'CHART_MONTH') {
+                document.getElementById('view-chart-container').classList.add('active');
+                currentViewLevel = 'month';
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'flex';
+                updateChartDisplay(skipAnim);
+            }
+            else if(viewState === 'CHART_YEAR') {
+                document.getElementById('view-chart-container').classList.add('active');
+                currentViewLevel = 'year';
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'flex';
+                updateChartDisplay(skipAnim);
+            }
+            else if(viewState === 'CAL_MONTH') {
+                document.getElementById('view-calendar-day').classList.add('active');
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'flex';
+                titleEl.innerText = `MES: ${currentViewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase()}`;
+                renderCalMonth();
+            }
+            else if(viewState === 'CAL_YEAR') {
+                document.getElementById('view-calendar-year').classList.add('active');
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'flex'; 
+                titleEl.innerText = `AÑO: ${currentViewDate.getFullYear()}`;
+                renderCalYear();
+            }
+            else if(viewState === 'CAL_DECADE') {
+                document.getElementById('view-calendar-decade').classList.add('active');
+                btnIn.style.display = 'flex';
+                btnOut.style.display = 'none'; 
+                renderCalDecade();
+            }
+            else if(viewState === 'CLOCK') {
+                document.getElementById('view-clock').classList.add('active');
+                btnIn.style.display = 'none';
+                btnOut.style.display = 'flex';
+                updateClockUIFromDate();
+            }
+
+            let now = new Date();
+            let isCurrent = false;
+            if(['CHART_HOUR', 'CLOCK'].includes(viewState)) isCurrent = isSameDay(currentViewDate, now) && currentViewDate.getHours() === now.getHours();
+            else if(['CHART_DAY'].includes(viewState)) isCurrent = isSameDay(currentViewDate, now);
+            else if(['CAL_MONTH', 'CHART_MONTH'].includes(viewState)) isCurrent = currentViewDate.getMonth() === now.getMonth() && currentViewDate.getFullYear() === now.getFullYear();
+            else if(['CAL_YEAR', 'CHART_YEAR'].includes(viewState)) isCurrent = currentViewDate.getFullYear() === now.getFullYear();
+            else if(viewState === 'CAL_DECADE') {
+                let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
+                isCurrent = (now.getFullYear() >= startYear && now.getFullYear() <= startYear + 11);
+            }
+            
+            document.getElementById('btn-next').disabled = isCurrent;
+            checkRefreshLiveButton();
+        }
+
+        /* --- INTERACCIONES DE ZOOM --- */
+        document.getElementById('btn-zoom-out').addEventListener('click', () => { 
+            if (viewState === 'CHART_HOUR' || viewState === 'CLOCK' || viewState === 'CHART_DAY') viewState = 'CAL_MONTH';
+            else if (viewState === 'CAL_MONTH' || viewState === 'CHART_MONTH') viewState = 'CAL_YEAR';
+            else if (viewState === 'CAL_YEAR' || viewState === 'CHART_YEAR') viewState = 'CAL_DECADE';
+            updateDashboardView(); 
+        });
+
+        document.getElementById('btn-zoom-in').addEventListener('click', () => { 
+            if (viewState === 'CAL_DECADE') viewState = 'CHART_YEAR';
+            else if (viewState === 'CHART_YEAR') viewState = 'CAL_YEAR';
+            else if (viewState === 'CAL_YEAR' || viewState === 'CHART_MONTH') viewState = 'CAL_MONTH';
+            else if (viewState === 'CAL_MONTH' || viewState === 'CHART_DAY') viewState = 'CLOCK';
+            updateDashboardView(); 
+        });
+
+        /* --- RENDERIZADORES DE CALENDARIO --- */
+        function renderCalMonth() {
+            const grid = document.getElementById('cal-grid');
+            grid.innerHTML = '';
+            let d = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), 1);
+            let firstDay = d.getDay() === 0 ? 6 : d.getDay() - 1; 
+            let daysInMonth = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 0).getDate();
+            
+            const data = getAggregatedCounts('month', currentViewDate);
+            const now = new Date();
+            
+            for(let i = 0; i < firstDay; i++) { grid.innerHTML += `<div class="cal-cell empty"></div>`; }
+            
+            for(let i = 1; i <= daysInMonth; i++) {
+                let cell = document.createElement('div');
+                cell.className = 'cal-cell';
+                cell.innerText = i;
+                
+                const count = data.counts[i] || 0;
+                const style = getHeatmapStyle(count, data.maxCount);
+                cell.style.backgroundColor = style.bg;
+                cell.style.color = style.color;
+
+                if(now.getDate() === i && now.getMonth() === currentViewDate.getMonth() && now.getFullYear() === currentViewDate.getFullYear()) {
+                    cell.classList.add('is-current');
+                }
+                
+                cell.onclick = () => {
+                    currentViewDate.setDate(i);
+                    viewState = 'CHART_DAY';
+                    updateDashboardView();
+                };
+                grid.appendChild(cell);
+            }
+        }
+
+        function renderCalYear() {
+            const grid = document.getElementById('year-grid');
+            grid.innerHTML = '';
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const data = getAggregatedCounts('year', currentViewDate);
+            const now = new Date();
+
+            months.forEach((m, i) => {
+                let cell = document.createElement('div');
+                cell.className = 'year-cell';
+                cell.innerText = m;
+                
+                const count = data.counts[i] || 0;
+                const style = getHeatmapStyle(count, data.maxCount);
+                cell.style.backgroundColor = style.bg;
+                cell.style.color = style.color;
+
+                if(now.getMonth() === i && now.getFullYear() === currentViewDate.getFullYear()) {
+                    cell.classList.add('is-current');
+                }
+                
+                cell.onclick = () => {
+                    currentViewDate.setMonth(i);
+                    viewState = 'CHART_MONTH';
+                    updateDashboardView();
+                };
+                grid.appendChild(cell);
+            });
+        }
+
+        function renderCalDecade() {
+            const grid = document.getElementById('decade-grid');
+            grid.innerHTML = '';
+            let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
+            document.getElementById('chart-subtitle').innerText = `AÑOS: ${startYear} - ${startYear + 11}`;
+            
+            const data = getAggregatedCounts('decade', currentViewDate);
+            const now = new Date();
+            
+            for (let i = 0; i < 12; i++) {
+                let y = startYear + i;
+                let cell = document.createElement('div');
+                cell.className = 'year-cell';
+                cell.innerText = y;
+                
+                const count = data.counts[y] || 0;
+                const style = getHeatmapStyle(count, data.maxCount);
+                cell.style.backgroundColor = style.bg;
+                cell.style.color = style.color;
+
+                if(now.getFullYear() === y) cell.classList.add('is-current');
+                
+                cell.onclick = () => {
+                    currentViewDate.setFullYear(y);
+                    viewState = 'CHART_YEAR'; 
+                    updateDashboardView();
+                };
+                grid.appendChild(cell);
+            }
+        }
+
+        /* --- LÓGICA DEL RELOJ INTERACTIVO --- */
+        let clockDragging = false, clockPreviousAngle = 0, clockIsAm = true, clockCurrentSelected = 12;
+        const clockFace = document.getElementById('clock-face');
+        const clockHand = document.getElementById('clock-hand');
+        const clockAmPm = document.getElementById('clock-ampm');
+
+        function updateClockHeatmap() {
+            const data = getAggregatedCounts('day_hours', currentViewDate);
+            const numbers = clockFace.querySelectorAll('.clock-number');
+            const now = new Date();
+            const isToday = currentViewDate.getDate() === now.getDate() && currentViewDate.getMonth() === now.getMonth() && currentViewDate.getFullYear() === now.getFullYear();
+
+            numbers.forEach(num => {
+                let displayHour = parseInt(num.dataset.hour); 
+                let actualHour = clockIsAm ? (displayHour % 12) : (displayHour % 12) + 12;
+                let count = data.counts[actualHour] || 0;
+                let style = getHeatmapStyle(count, data.maxCount);
+                
+                num.style.backgroundColor = style.bg;
+                num.style.color = style.color;
+                
+                if (isToday && now.getHours() === actualHour) num.classList.add('is-current');
+                else num.classList.remove('is-current');
+            });
+        }
+
+        function renderClockNumbers() {
+            clockFace.querySelectorAll('.clock-number').forEach(e => e.remove()); 
+            for(let i=1; i<=12; i++) {
+                let angle = i * 30 * (Math.PI / 180);
+                let num = document.createElement('div');
+                num.className = 'clock-number';
+                num.style.left = `calc(50% + ${38 * Math.sin(angle)}%)`;
+                num.style.top = `calc(50% - ${38 * Math.cos(angle)}%)`;
+                num.innerText = i;
+                num.dataset.hour = i; 
+                clockFace.appendChild(num);
+            }
+            updateClockHeatmap();
+        }
+        renderClockNumbers();
+
+        function updateClockUIFromDate() {
+            let h = currentViewDate.getHours();
+            clockIsAm = h < 12;
+            clockCurrentSelected = h % 12 || 12;
+            let startAngle = clockCurrentSelected * 30;
+            clockPreviousAngle = startAngle;
+            clockHand.style.transform = `rotate(${startAngle}deg)`;
+            clockAmPm.innerText = clockIsAm ? 'AM' : 'PM';
+            document.getElementById('chart-subtitle').innerText = `SELECCIONANDO: ${clockCurrentSelected}:00 ${clockIsAm ? 'AM' : 'PM'}`;
+            updateClockHeatmap(); 
+        }
+
+        function handleClockInteraction(e) {
+            let rect = clockFace.getBoundingClientRect();
+            let cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            let angle = Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) + 90;
+            if (angle < 0) angle += 360;
+            
+            let diff = angle - clockPreviousAngle;
+            if (diff > 180) diff -= 360; 
+            else if (diff < -180) diff += 360; 
+            
+            if (Math.abs(diff) > 0) { 
+                let changedAmPm = false;
+                if (clockPreviousAngle > 270 && angle < 90) { clockIsAm = !clockIsAm; changedAmPm = true; }
+                if (clockPreviousAngle < 90 && angle > 270) { clockIsAm = !clockIsAm; changedAmPm = true; }
+                if (changedAmPm) updateClockHeatmap();
+            }
+            
+            clockPreviousAngle = angle;
+            clockCurrentSelected = Math.round(angle / 30);
+            if(clockCurrentSelected === 0) clockCurrentSelected = 12;
+            
+            clockHand.style.transform = `rotate(${clockCurrentSelected * 30}deg)`;
+            clockAmPm.innerText = clockIsAm ? 'AM' : 'PM';
+            document.getElementById('chart-subtitle').innerText = `SELECCIONANDO: ${clockCurrentSelected}:00 ${clockIsAm ? 'AM' : 'PM'}`;
+        }
+
+        clockFace.addEventListener('mousedown', (e) => { clockDragging = true; clockHand.style.transition='none'; handleClockInteraction(e); });
+        clockFace.addEventListener('touchstart', (e) => { clockDragging = true; clockHand.style.transition='none'; handleClockInteraction(e); }, {passive: false});
+        
+        window.addEventListener('mousemove', (e) => { if(clockDragging) handleClockInteraction(e); });
+        window.addEventListener('touchmove', (e) => { if(clockDragging) handleClockInteraction(e); }, {passive: false});
+        
+        function finishClockDrag() {
+            if(clockDragging) {
+                clockDragging = false;
+                clockHand.style.transition='transform 0.05s linear';
+                let finalHour = clockIsAm ? (clockCurrentSelected % 12) : (clockCurrentSelected % 12) + 12;
+                currentViewDate.setHours(finalHour);
+                viewState = 'CHART_HOUR';
+                updateDashboardView();
+            }
+        }
+        window.addEventListener('mouseup', finishClockDrag);
+        window.addEventListener('touchend', finishClockDrag);
+
+        document.getElementById('btn-metric').addEventListener('click', () => { currentMetric = currentMetric === 'count' ? 'time' : 'count'; document.getElementById('icon-chrono').style.display = currentMetric === 'count' ? 'block' : 'none'; document.getElementById('icon-user').style.display = currentMetric === 'time' ? 'block' : 'none'; if(viewState.startsWith('CHART_')) updateChartDisplay(); });
+
+        function changeTime(direction) { 
+            const wrapper = document.getElementById('master-view-wrapper');
+            wrapper.classList.add(direction < 0 ? 'slide-out-right' : 'slide-out-left');
+            setTimeout(() => {
+                let d = new Date(currentViewDate);
+                if (viewState === 'CHART_HOUR' || viewState === 'CLOCK') d.setHours(d.getHours() + direction);
+                if (viewState === 'CHART_DAY') d.setDate(d.getDate() + direction);
+                if (viewState === 'CAL_MONTH' || viewState === 'CHART_MONTH') d.setMonth(d.getMonth() + direction);
+                if (viewState === 'CAL_YEAR' || viewState === 'CHART_YEAR') d.setFullYear(d.getFullYear() + direction);
+                if (viewState === 'CAL_DECADE') d.setFullYear(d.getFullYear() + (direction * 12));
+                currentViewDate = d;
+                
+                updateDashboardView(true); 
+                
+                wrapper.classList.remove('slide-out-right', 'slide-out-left');
+                wrapper.classList.add(direction < 0 ? 'slide-in-left' : 'slide-in-right');
+                setTimeout(() => { wrapper.classList.remove('slide-in-left', 'slide-in-right'); }, 400); 
+            }, 400);
+        }
+
+        document.getElementById('btn-prev').addEventListener('click', () => changeTime(-1));
+        document.getElementById('btn-next').addEventListener('click', () => changeTime(1));
+
+        window.flipToChart = function(zoneId) {
+            tabletActualEnGrafico = zoneId;
+            viewState = 'CHART_HOUR';
+            currentViewDate = new Date(); currentMetric = 'count'; 
+            document.getElementById('icon-chrono').style.display = 'block'; document.getElementById('icon-user').style.display = 'none';
+            document.getElementById('btn-volver-mapa').style.display = 'none'; 
+            updateDashboardView();
+            document.getElementById('flip-container').classList.add('flipped');
+        }
+
+        window.flipToFront = function() {
+            document.getElementById('flip-container').classList.remove('flipped');
+            document.getElementById('btn-volver-mapa').style.display = 'block';
+            setTimeout(() => { tabletActualEnGrafico = null; }, 500); 
+        }
+
+        /* --- OVERLAY EN VIVO Y SILUETAS --- */
+        function renderTimer() {
+            const diff = Date.now() - overlayStartTime;
+            document.getElementById('live-timer').innerText = (diff / 1000).toFixed(1);
+            const d = new Date();
+            document.getElementById('live-datetime').innerText = `${d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })} | ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+        }
+
+        function updateLiveOverlay() {
+            const total = conteosActuales[1] + conteosActuales[2] + conteosActuales[3];
+            const overlayEl = document.getElementById('live-overlay'), countEl = document.getElementById('live-count'), timerEl = document.getElementById('live-timer');
+
+            if (total > 0) {
+                clearTimeout(stopTimeout1); clearTimeout(stopTimeout2);
+                if (!isOverlayActive) {
+                    isOverlayActive = true; overlayEl.classList.remove('fade-out-up'); overlayEl.style.display = 'flex';
+                    timerEl.classList.remove('recorded'); overlayStartTime = Date.now(); overlayTimerInterval = setInterval(renderTimer, 47); 
+                }
+                countEl.innerText = total === 1 ? "1 persona" : `${total} personas`;
+            } else {
+                if (isOverlayActive) {
+                    isOverlayActive = false; clearInterval(overlayTimerInterval); timerEl.classList.add('recorded'); 
+                    stopTimeout1 = setTimeout(() => {
+                        overlayEl.classList.add('fade-out-up'); 
+                        stopTimeout2 = setTimeout(() => { overlayEl.style.display = 'none'; overlayEl.classList.remove('fade-out-up'); }, 500); 
+                    }, 1500); 
+                }
+            }
+        }
+
+        function actualizarSiluetas(zoneId, nuevoConteo) {
+            const objetivo = Math.min(nuevoConteo, 5); 
+            let activasActuales = estadoVisual[zoneId] || [];
+
+            if (objetivo > activasActuales.length) {
+                const cantidadAEncender = objetivo - activasActuales.length;
+                let inactivas = [1,2,3,4,5].filter(id => !activasActuales.includes(id)).sort(() => Math.random() - 0.5);
+                for (let j = 0; j < cantidadAEncender; j++) {
+                    const imgId = inactivas[j];
+                    if (imgId) { 
+                        const domImg = document.getElementById(`img-${zoneId}-${imgId}`);
+                        if(domImg) {
+                            domImg.classList.add('active'); 
+                            activasActuales.push(imgId); 
+                        }
+                    }
+                }
+            } else if (objetivo < activasActuales.length) {
+                const cantidadAApagar = activasActuales.length - objetivo;
+                activasActuales = activasActuales.sort(() => Math.random() - 0.5);
+                const paraApagar = activasActuales.splice(0, cantidadAApagar); 
+                for (let j = 0; j < paraApagar.length; j++) { 
+                    const domImg = document.getElementById(`img-${zoneId}-${paraApagar[j]}`);
+                    if(domImg) domImg.classList.remove('active'); 
+                }
+            }
+            estadoVisual[zoneId] = activasActuales; 
+        }
+
+    </script>
 </body>
 </html>
