@@ -901,29 +901,34 @@
                         }
                     }
 
-                    resueltos.forEach(entrada => {
-                        let duracion = (ev.timestamp - entrada.timestamp) / 1000;
-                        let duracionSegundos = Math.round(Math.max(0, Math.min(duracion, 100)));
+    resueltos.forEach(entrada => {
+    let duracion = (ev.timestamp - entrada.timestamp) / 1000;
+    
+    // NUEVA CONDICIÓN: Si la duración es 100 segundos o más, omitimos esta entrada por completo
+    if (duracion >= 100) return; 
 
-                        const fecha = new Date(entrada.timestamp);
-                        const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+    // Ya no forzamos el límite de 100, simplemente redondeamos el tiempo real
+    let duracionSegundos = Math.round(duracion);
 
-                        let sesionAbierta = sesiones.find(s => s.fechaHora === fechaStr);
-                        if (sesionAbierta) {
-                            sesionAbierta.cantidad += 1;
-                            sesionAbierta.tiempos.push(duracionSegundos);
-                            sesionAbierta.tiempoPromedio = Math.round(sesionAbierta.tiempos.reduce((a,b)=>a+b,0) / sesionAbierta.tiempos.length);
-                        } else {
-                            sesiones.push({
-                                fechaHora: fechaStr,
-                                cantidad: 1,
-                                tiempos: [duracionSegundos],
-                                tiempoPromedio: duracionSegundos,
-                                estado: "Finalizado"
-                            });
-                        }
-                    });
-                });
+    const fecha = new Date(entrada.timestamp);
+    const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+
+    let sesionAbierta = sesiones.find(s => s.fechaHora === fechaStr);
+    if (sesionAbierta) {
+        sesionAbierta.cantidad += 1;
+        sesionAbierta.tiempos.push(duracionSegundos);
+        sesionAbierta.tiempoPromedio = Math.round(sesionAbierta.tiempos.reduce((a,b)=>a+b,0) / sesionAbierta.tiempos.length);
+    } else {
+        sesiones.push({
+            fechaHora: fechaStr,
+            cantidad: 1,
+            tiempos: [duracionSegundos],
+            tiempoPromedio: duracionSegundos,
+            estado: "Finalizado"
+        });
+    }
+});
+});
 
                 colaInteracciones.forEach(entrada => {
                     const fecha = new Date(entrada.timestamp);
@@ -1072,7 +1077,7 @@
                         const llegada = colaSimulada.shift();
                         if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
                         let dur = (ev.timestamp - llegada.timestamp) / 1000;
-                        duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 100))); 
+duracionesRealesMap.get(llegada).push(dur); // Guardamos la duración exacta para evaluarla después
                     }
                 } 
                 else if (act > prev) { 
@@ -1084,7 +1089,7 @@
                             const llegada = colaSimulada.shift();
                             if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
                             let dur = (ev.timestamp - llegada.timestamp) / 1000;
-                            duracionesRealesMap.get(llegada).push(Math.max(0, Math.min(dur, 100)));
+duracionesRealesMap.get(llegada).push(dur); // Guardamos la duración exacta para evaluarla después
                         }
                     }
                 }
@@ -1113,25 +1118,35 @@
                     else if (currentViewLevel === 'month') idx = evDate.getDate() - 1;
                     else if (currentViewLevel === 'year') idx = evDate.getMonth();
 
-                    if (currentMetric === 'count') { 
-                        dataBuckets[idx] += nuevas; 
-                    } 
-                    else {
-                        const tiempos = duracionesRealesMap.get(ev) || [];
-                        for (let k = 0; k < nuevas; k++) {
-                            if (k < tiempos.length) {
-                                dataBuckets[idx] += tiempos[k];
-                                countBuckets[idx] += 1;
-                            } else {
-                                if (isCurrentView && conteosActuales[tabletActualEnGrafico] > 0) {
-                                    let duracion = (Date.now() - ev.timestamp) / 1000;
-                                    duracion = Math.max(0, Math.min(duracion, 100));
-                                    dataBuckets[idx] += duracion; 
-                                    countBuckets[idx] += 1;
-                                }
-                            }
-                        }
-                    }
+// UNIFICAMOS EL CICLO PARA FILTRAR EN 'COUNT' Y 'TIME'
+        const tiempos = duracionesRealesMap.get(ev) || [];
+        for (let k = 0; k < nuevas; k++) {
+            let duracion = 0;
+            let esValido = true;
+
+            // Extraemos el tiempo de la persona actual
+            if (k < tiempos.length) {
+                duracion = tiempos[k];
+                if (duracion >= 100) esValido = false; // Excede límite histórico
+            } else {
+                if (isCurrentView && conteosActuales[tabletActualEnGrafico] > 0) {
+                    duracion = (Date.now() - ev.timestamp) / 1000;
+                    if (duracion >= 100) esValido = false; // Excede límite en vivo
+                } else {
+                    esValido = false; // Prevención de fantasmas
+                }
+            }
+
+            // SOLO agregamos al gráfico si el tiempo es menor a 100s
+            if (esValido) {
+                if (currentMetric === 'count') {
+                    dataBuckets[idx] += 1; // Sumamos la persona
+                } else {
+                    dataBuckets[idx] += duracion; // Sumamos el tiempo
+                    countBuckets[idx] += 1; // Aumentamos para promediar
+                }
+            }
+        }
                 }
             });
 
