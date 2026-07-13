@@ -236,6 +236,11 @@
     const card = document.getElementById('card');
     const frontVideo = document.getElementById('front-video');
     let isPlayingVideo = false;
+
+// ------------------------------
+const playlist = ['video2.mp4', 'video3.mp4', 'video4.mp4'];
+let currentVideoIndex = 0; // Guarda la "memoria" del video que toca
+// ------------------------------
     
     let systemReady = false;
     setTimeout(() => { systemReady = true; }, 2000);
@@ -312,15 +317,22 @@
     let camaraIniciada = false;
     let hayPersonasActual = false; // AÑADIDO: Control de estado para Firebase
 
-    frontVideo.addEventListener('ended', () => {
-      if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
-        frontVideo.currentTime = 0;
-        frontVideo.play().catch(e => console.error("Error reproduciendo:", e));
-      } else {
-        frontVideo.style.display = 'none';
-        isPlayingVideo = false;
-      }
-    });
+frontVideo.addEventListener('ended', () => {
+  // 1. Avanzamos la "memoria" al siguiente video (si llega al 3, vuelve al 0)
+  currentVideoIndex = (currentVideoIndex + 1) % playlist.length;
+
+  if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
+    // Si la persona sigue ahí, actualizamos la fuente y reproducimos el siguiente
+    frontVideo.src = playlist[currentVideoIndex];
+    frontVideo.currentTime = 0;
+    frontVideo.play().catch(e => console.error("Error reproduciendo:", e));
+  } else {
+    // Si la persona se fue, detenemos la visualización.
+    // La próxima vez que alguien llegue, arrancará usando el nuevo currentVideoIndex
+    frontVideo.style.display = 'none';
+    isPlayingVideo = false;
+  }
+});
 
     function onResults(results) {
       const loadingEl = document.getElementById('loading');
@@ -379,13 +391,15 @@
         }
       }
 
-      if (systemReady && currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo && !card.classList.contains('is-flipped')) {
-        isPlayingVideo = true;
-        frontVideo.style.display = 'block';
-        frontVideo.play().catch(e => {
-          console.log("Autoplay bloqueado:", e);
-        });
-      }
+if (systemReady && currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo && !card.classList.contains('is-flipped')) {
+  isPlayingVideo = true;
+  // Le inyectamos el video que toca en la memoria antes de darle play
+  frontVideo.src = playlist[currentVideoIndex];
+  frontVideo.style.display = 'block';
+  frontVideo.play().catch(e => {
+    console.log("Autoplay bloqueado:", e);
+  });
+}
 
       if (rostrosActuales > rostrosActivos.length) {
         const nuevosRostros = rostrosActuales - rostrosActivos.length;
