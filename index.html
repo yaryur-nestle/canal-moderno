@@ -901,34 +901,34 @@
                         }
                     }
 
-    resueltos.forEach(entrada => {
-    let duracion = (ev.timestamp - entrada.timestamp) / 1000;
-    
-    // NUEVA CONDICIÓN: Si la duración es 100 segundos o más, omitimos esta entrada por completo
-    if (duracion >= 100) return; 
+                    resueltos.forEach(entrada => {
+                        let duracion = (ev.timestamp - entrada.timestamp) / 1000;
+                        
+                        // NUEVA CONDICIÓN: Si la duración es 100 segundos o más, omitimos esta entrada por completo
+                        if (duracion >= 100) return; 
 
-    // Ya no forzamos el límite de 100, simplemente redondeamos el tiempo real
-    let duracionSegundos = Math.round(duracion);
+                        // Ya no forzamos el límite de 100, simplemente redondeamos el tiempo real
+                        let duracionSegundos = Math.round(duracion);
 
-    const fecha = new Date(entrada.timestamp);
-    const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
+                        const fecha = new Date(entrada.timestamp);
+                        const fechaStr = `${fecha.toLocaleDateString('es-ES')} ${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}`;
 
-    let sesionAbierta = sesiones.find(s => s.fechaHora === fechaStr);
-    if (sesionAbierta) {
-        sesionAbierta.cantidad += 1;
-        sesionAbierta.tiempos.push(duracionSegundos);
-        sesionAbierta.tiempoPromedio = Math.round(sesionAbierta.tiempos.reduce((a,b)=>a+b,0) / sesionAbierta.tiempos.length);
-    } else {
-        sesiones.push({
-            fechaHora: fechaStr,
-            cantidad: 1,
-            tiempos: [duracionSegundos],
-            tiempoPromedio: duracionSegundos,
-            estado: "Finalizado"
-        });
-    }
-});
-});
+                        let sesionAbierta = sesiones.find(s => s.fechaHora === fechaStr);
+                        if (sesionAbierta) {
+                            sesionAbierta.cantidad += 1;
+                            sesionAbierta.tiempos.push(duracionSegundos);
+                            sesionAbierta.tiempoPromedio = Math.round(sesionAbierta.tiempos.reduce((a,b)=>a+b,0) / sesionAbierta.tiempos.length);
+                        } else {
+                            sesiones.push({
+                                fechaHora: fechaStr,
+                                cantidad: 1,
+                                tiempos: [duracionSegundos],
+                                tiempoPromedio: duracionSegundos,
+                                estado: "Finalizado"
+                            });
+                        }
+                    });
+                });
 
                 colaInteracciones.forEach(entrada => {
                     const fecha = new Date(entrada.timestamp);
@@ -1023,6 +1023,31 @@
                 responsive: true, maintainAspectRatio: false, animation: { duration: 400, easing: 'easeOutQuart' },
                 scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f0f0f0' } }, x: { grid: { display: false } } },
                 interaction: { mode: 'index', intersect: false },
+                // --- NUEVA INCLUSIÓN: Cambio de cursor al hacer hover sobre las barras ---
+                onHover: (event, chartElement) => {
+                    event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                },
+                // --- NUEVA INCLUSIÓN: Lógica de Drill-down (profundización) ---
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        
+                        if (currentViewLevel === 'year') {
+                            currentViewDate.setDate(1); // Prevenir saltos de mes en días 31
+                            currentViewDate.setMonth(index);
+                            viewState = 'CHART_MONTH';
+                            updateDashboardView();
+                        } else if (currentViewLevel === 'month') {
+                            currentViewDate.setDate(index + 1); // index es el día - 1
+                            viewState = 'CHART_DAY';
+                            updateDashboardView();
+                        } else if (currentViewLevel === 'day') {
+                            currentViewDate.setHours(index); // index es la hora (0-23)
+                            viewState = 'CHART_HOUR';
+                            updateDashboardView();
+                        }
+                    }
+                },
                 plugins: { 
                     legend: { display: false },
                     tooltip: {
@@ -1077,7 +1102,7 @@
                         const llegada = colaSimulada.shift();
                         if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
                         let dur = (ev.timestamp - llegada.timestamp) / 1000;
-duracionesRealesMap.get(llegada).push(dur); // Guardamos la duración exacta para evaluarla después
+                        duracionesRealesMap.get(llegada).push(dur); // Guardamos la duración exacta para evaluarla después
                     }
                 } 
                 else if (act > prev) { 
@@ -1089,7 +1114,7 @@ duracionesRealesMap.get(llegada).push(dur); // Guardamos la duración exacta par
                             const llegada = colaSimulada.shift();
                             if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
                             let dur = (ev.timestamp - llegada.timestamp) / 1000;
-duracionesRealesMap.get(llegada).push(dur); // Guardamos la duración exacta para evaluarla después
+                            duracionesRealesMap.get(llegada).push(dur); // Guardamos la duración exacta para evaluarla después
                         }
                     }
                 }
@@ -1118,35 +1143,35 @@ duracionesRealesMap.get(llegada).push(dur); // Guardamos la duración exacta par
                     else if (currentViewLevel === 'month') idx = evDate.getDate() - 1;
                     else if (currentViewLevel === 'year') idx = evDate.getMonth();
 
-// UNIFICAMOS EL CICLO PARA FILTRAR EN 'COUNT' Y 'TIME'
-        const tiempos = duracionesRealesMap.get(ev) || [];
-        for (let k = 0; k < nuevas; k++) {
-            let duracion = 0;
-            let esValido = true;
+                    // UNIFICAMOS EL CICLO PARA FILTRAR EN 'COUNT' Y 'TIME'
+                    const tiempos = duracionesRealesMap.get(ev) || [];
+                    for (let k = 0; k < nuevas; k++) {
+                        let duracion = 0;
+                        let esValido = true;
 
-            // Extraemos el tiempo de la persona actual
-            if (k < tiempos.length) {
-                duracion = tiempos[k];
-                if (duracion >= 100) esValido = false; // Excede límite histórico
-            } else {
-                if (isCurrentView && conteosActuales[tabletActualEnGrafico] > 0) {
-                    duracion = (Date.now() - ev.timestamp) / 1000;
-                    if (duracion >= 100) esValido = false; // Excede límite en vivo
-                } else {
-                    esValido = false; // Prevención de fantasmas
-                }
-            }
+                        // Extraemos el tiempo de la persona actual
+                        if (k < tiempos.length) {
+                            duracion = tiempos[k];
+                            if (duracion >= 100) esValido = false; // Excede límite histórico
+                        } else {
+                            if (isCurrentView && conteosActuales[tabletActualEnGrafico] > 0) {
+                                duracion = (Date.now() - ev.timestamp) / 1000;
+                                if (duracion >= 100) esValido = false; // Excede límite en vivo
+                            } else {
+                                esValido = false; // Prevención de fantasmas
+                            }
+                        }
 
-            // SOLO agregamos al gráfico si el tiempo es menor a 100s
-            if (esValido) {
-                if (currentMetric === 'count') {
-                    dataBuckets[idx] += 1; // Sumamos la persona
-                } else {
-                    dataBuckets[idx] += duracion; // Sumamos el tiempo
-                    countBuckets[idx] += 1; // Aumentamos para promediar
-                }
-            }
-        }
+                        // SOLO agregamos al gráfico si el tiempo es menor a 100s
+                        if (esValido) {
+                            if (currentMetric === 'count') {
+                                dataBuckets[idx] += 1; // Sumamos la persona
+                            } else {
+                                dataBuckets[idx] += duracion; // Sumamos el tiempo
+                                countBuckets[idx] += 1; // Aumentamos para promediar
+                            }
+                        }
+                    }
                 }
             });
 
