@@ -131,7 +131,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, set, push, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, set, push, onDisconnect, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -208,14 +208,14 @@
     });
 
     // Conexión de Base de Datos (ACTUALIZADO para limpiar estado_actual en desconexión)
-    function conectarBD() {
-      onValue(connectedRef, (snap) => {
+function conectarBD() {
+    onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
-          onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
-          onDisconnect(estadoActualRef).update({ hayPersonas: false, conteoActual: 0 });
+            onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
+            onDisconnect(estadoActualRef).update({ hayPersonas: false, conteoActual: 0 }); 
         }
-      });
-    }
+    });
+}
 
     // Lógica de UI Principal
     const fullscreenBtn = document.getElementById('fullscreen-btn');
