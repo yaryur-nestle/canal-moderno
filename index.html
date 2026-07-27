@@ -135,14 +135,14 @@
             100% { box-shadow: 0 0 0 0 rgba(42, 161, 42, 0); }
         }
 
-        /* === NUEVA CLASE PARA LATIDO DE PUNTOS SVG EN EL MAPA (VERDE/AMARILLO) === */
-        @keyframes pulseGreenYellow {
-            0% { fill: #2aa12a !important; }
-            50% { fill: #ffd700 !important; }
-            100% { fill: #2aa12a !important; }
+        /* === NUEVA CLASE PARA LATIDO DE PUNTOS SVG EN EL MAPA (Borde Verde Grueso) === */
+        @keyframes heartbeatMarkerStroke {
+            0% { fill: #2aa12a !important; stroke: #ffffff !important; stroke-width: 2px !important; }
+            50% { fill: #32cd32 !important; stroke: #004d00 !important; stroke-width: 6px !important; }
+            100% { fill: #2aa12a !important; stroke: #ffffff !important; stroke-width: 2px !important; }
         }
         .marker-pulse {
-            animation: pulseGreenYellow 1.2s infinite ease-in-out !important;
+            animation: heartbeatMarkerStroke 1.2s infinite ease-in-out !important;
         }
 
         .panel-footer-logo { margin-top: auto; padding-top: 25px; text-align: center; }
@@ -567,33 +567,46 @@
                     let node = retailNodes.find(n => n.id === point.options.id);
                     if (node && node.tabletIds) {
                         
-                        // Lógica de ONLINE/OFFLINE y PULSO
                         let isOnline = node.tabletIds.some(tid => liveTabletStatuses[tid] === "ONLINE");
                         let hasPeople = node.tabletIds.some(tid => liveTabletStatuses[tid] === "ONLINE" && liveTabletCounts[tid] > 0);
 
-                        let newColor = '#ff2a2a'; // Predeterminado: OFFLINE (Rojo)
+                        // Valores por defecto (Offline o Sin detección)
+                        let newColor = '#ff2a2a'; 
+                        let newLineColor = '#ffffff';
+                        let newLineWidth = 2;
+                        let newRadius = 8;
                         let newClassName = '';
 
                         if (isOnline) {
                             if (hasPeople) {
-                                newColor = '#2aa12a'; // Verde base para el pulso (la animación sobreescribe el color)
-                                newClassName = 'marker-pulse';
+                                newColor = '#2aa12a'; // Verde
+                                newLineColor = '#004d00'; // Borde verde oscuro
+                                newLineWidth = 4; // Borde más grueso
+                                newRadius = 12; // Punto más grande
+                                newClassName = 'marker-pulse'; // Animación CSS activa
                             } else {
-                                newColor = '#2aa12a'; // ONLINE y sin personas (Verde estático)
+                                newColor = '#2aa12a'; 
+                                newLineColor = '#ffffff';
+                                newLineWidth = 2;
+                                newRadius = 8;
                                 newClassName = '';
                             }
                         }
 
                         let currentColor = point.options.marker?.fillColor || '#ff2a2a';
                         let currentClassName = point.options.className || '';
+                        let currentRadius = point.options.marker?.radius || 8;
 
-                        // Actualizar sólo si hay un cambio real en el color o en la clase de la animación
-                        if (currentColor !== newColor || currentClassName !== newClassName) {
+                        // Actualizar sólo si hay un cambio real en visuales
+                        if (currentColor !== newColor || currentClassName !== newClassName || currentRadius !== newRadius) {
                             point.update({
                                 className: newClassName,
                                 marker: {
                                     fillColor: newColor,
-                                    states: { hover: { fillColor: newColor } }
+                                    lineColor: newLineColor,
+                                    lineWidth: newLineWidth,
+                                    radius: newRadius,
+                                    states: { hover: { fillColor: newColor, radius: newRadius + 2 } }
                                 }
                             }, false);
                             needsRedraw = true;
@@ -604,7 +617,6 @@
             }
         }
 
-        // --- Actualización para validar si está ONLINE antes de pulsar en el panel ---
         function actualizarPulsoPanelInfo() {
             if (!infoPanel.classList.contains('active')) return;
             
