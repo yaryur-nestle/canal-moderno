@@ -123,16 +123,28 @@
         .panel-images-container img { width: 180px; height: 180px; object-fit: cover; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); transition: transform 0.2s; cursor: pointer; }
         .panel-images-container img:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
         
-        /* === CLASE PARA LATIDO VERDE EN VIVO DEL PANEL === */
-        .en-vivo-pulse {
+        /* === CLASES PARA ESTADO DEL PANEL (ONLINE / ACTIVO) === */
+        .status-online {
             border: 3px solid #2aa12a !important;
             box-shadow: 0 0 10px rgba(42, 161, 42, 0.6), inset 0 0 5px rgba(42, 161, 42, 0.4) !important;
-            animation: pulseGreenEnVivo 1.5s infinite !important;
+            animation: pulseGreenOnline 1.5s infinite !important;
         }
-        @keyframes pulseGreenEnVivo {
+        @keyframes pulseGreenOnline {
             0% { box-shadow: 0 0 0 0 rgba(42, 161, 42, 0.7); }
             70% { box-shadow: 0 0 0 12px rgba(42, 161, 42, 0); }
             100% { box-shadow: 0 0 0 0 rgba(42, 161, 42, 0); }
+        }
+
+        .status-active {
+            border: 4px solid #000000 !important;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.8), inset 0 0 5px rgba(0, 0, 0, 0.5) !important;
+            animation: pulseBlackActive 1.5s infinite !important;
+            transform: scale(1.02);
+        }
+        @keyframes pulseBlackActive {
+            0% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.8); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
         }
 
         /* === NUEVA CLASE PARA LATIDO DE PUNTOS SVG EN EL MAPA (Borde Verde Grueso) === */
@@ -633,10 +645,16 @@
 
                 if (config && config.tabletId) {
                     let isOnline = liveTabletStatuses[config.tabletId] === "ONLINE";
-                    if (isOnline && liveTabletCounts[config.tabletId] > 0) {
-                        img.classList.add('en-vivo-pulse');
-                    } else {
-                        img.classList.remove('en-vivo-pulse');
+                    
+                    // Reset classes
+                    img.classList.remove('status-online', 'status-active');
+                    
+                    if (isOnline) {
+                        if (liveTabletCounts[config.tabletId] > 0) {
+                            img.classList.add('status-active'); // Negro grueso
+                        } else {
+                            img.classList.add('status-online'); // Verde
+                        }
                     }
                 }
             });
