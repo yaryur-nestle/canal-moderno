@@ -242,15 +242,27 @@
                 const scannedValue = scannerBuffer.trim();
                 scannerBuffer = ''; 
 
-                if (baseDeDatos[scannedValue]) {
-                    const recetaID = baseDeDatos[scannedValue];
-                    
-                    // Activamos la receta en la base de datos de manera indefinida 
-                    // (hasta que el video finalice)
-                    set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
-                    
-                } else if (scannedValue !== "") {
-                    lanzarError();
+                if (scannedValue !== "") {
+                    let recetaID = null;
+
+                    // === NUEVA LÓGICA DE COINCIDENCIA ===
+                    // Recorremos las secuencias en la base de datos
+                    for (const secuencia in baseDeDatos) {
+                        // Si el valor escaneado (incluso si es muy largo) INCLUYE la secuencia
+                        if (scannedValue.includes(secuencia)) {
+                            recetaID = baseDeDatos[secuencia];
+                            break; // Detenemos la búsqueda al encontrar la primera coincidencia
+                        }
+                    }
+
+                    if (recetaID) {
+                        // Activamos la receta en la base de datos de manera indefinida 
+                        // (hasta que el video finalice)
+                        set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
+                    } else {
+                        // Si ninguna de las secuencias formó parte del código leído, lanzamos error
+                        lanzarError();
+                    }
                 }
             } else if (event.key.length === 1) { 
                 scannerBuffer += event.key;
