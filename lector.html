@@ -85,17 +85,18 @@
 
         /* === ESTILOS DEL VISOR DE CÓDIGO DE BARRAS === */
         #barcode-display {
-            position: absolute;
-            top: 30px;
+            position: fixed; /* Forzado a la ventana, no al contenedor relativo */
+            top: 50px; /* Separación desde la parte superior */
             left: 50%;
             transform: translateX(-50%);
-            color: #00FF00; /* Color Verde */
-            font-size: 3rem;
+            color: #FFFFFF; /* Color Blanco */
+            font-size: 3.5rem;
             font-weight: bold;
-            z-index: 9999; /* Por encima de TODO */
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.9), 0 0 15px #00FF00;
-            background-color: rgba(0, 0, 0, 0.6);
-            padding: 15px 30px;
+            z-index: 2147483647; /* Máximo z-index absoluto para forzarlo sobre TODO */
+            text-shadow: 2px 2px 10px rgba(0,0,0,1), 0 0 20px rgba(255, 255, 255, 0.8);
+            background-color: rgba(0, 0, 0, 0.8); /* Fondo de alto contraste */
+            border: 2px solid #FFFFFF; /* Borde para enmarcarlo */
+            padding: 15px 40px;
             border-radius: 15px;
             opacity: 0; /* Oculto por defecto */
             transition: opacity 0.3s ease-in-out;
@@ -127,10 +128,10 @@
         </div>
     </div>
 
-    <div id="app-screen">
-        <!-- Contenedor donde se mostrará el número de código de barras -->
-        <div id="barcode-display"></div>
+    <!-- Visor de código fuera de app-screen para evitar conflictos de z-index (aunque position: fixed ya lo soluciona) -->
+    <div id="barcode-display"></div>
 
+    <div id="app-screen">
         <img id="visorImagen" src="TABLET 03.jpg" alt="Pantalla de inicio">
         
         <video id="video1" class="video-player" src="VIDEO_01_reparado.mp4" playsinline></video>
@@ -201,7 +202,6 @@
         let lastKeyTime = Date.now();
 
         // ======= DICCIONARIO ORDENADO Y NORMALIZADO ======= //
-        // Cada lote envía su respectivo número ("01" a "04") a Firebase
         const baseDeDatos = {
             // LOTE 01 LECHE CONDENSADA - Video 1
             "7506475104425": "01", 
@@ -256,7 +256,8 @@
 
             const currentTime = Date.now();
             
-            if (currentTime - lastKeyTime > 200) {
+            // Tolerancia aumentada a 500ms para evitar que escáneres con pausas corten el código a la mitad
+            if (currentTime - lastKeyTime > 500) {
                 scannerBuffer = "";
             }
             lastKeyTime = currentTime;
@@ -286,19 +287,15 @@
 
                     // Recorremos las secuencias en la base de datos
                     for (const secuencia in baseDeDatos) {
-                        // Si el valor escaneado (incluso si es muy largo) INCLUYE la secuencia
                         if (scannedValue.includes(secuencia)) {
                             recetaID = baseDeDatos[secuencia];
-                            break; // Detenemos la búsqueda al encontrar la primera coincidencia
+                            break;
                         }
                     }
 
                     if (recetaID) {
-                        // Activamos la receta en la base de datos de manera indefinida 
-                        // (hasta que el video finalice)
                         set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
                     } else {
-                        // Si ninguna de las secuencias formó parte del código leído, lanzamos error
                         lanzarError();
                     }
                 }
@@ -309,7 +306,6 @@
 
         // ====== LÓGICA DE EVENTOS 'ENDED' DE LOS VIDEOS ====== //
 
-        // Cuando finaliza el VIDEO 01 (Saludo inicial)
         video1.addEventListener('ended', () => {
             isVideo1Playing = false;
             video1.style.display = 'none';
@@ -322,7 +318,6 @@
             }
         });
 
-        // Cuando finaliza el VIDEO 02 (Bucle de presencia manual)
         video2.addEventListener('ended', () => {
             if (personaDetectadaLocalmente && estadoGlobalReceta === "") {
                 video2.currentTime = 0;
@@ -334,7 +329,6 @@
             }
         });
 
-        // Asignamos el evento 'ended' a todos los videos de receta para limpiar el estado
         Object.values(videosReceta).forEach(video => {
             video.addEventListener('ended', () => {
                 set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
@@ -352,7 +346,6 @@
                 // 1. Manejo de la Detección
                 if (deteccionRemota && !personaDetectadaLocalmente) {
                     personaDetectadaLocalmente = true;
-                    // Iniciamos Video 1 solo si todo lo demás está apagado y no hay receta
                     if (!isVideo1Playing && !isVideo2Playing && estadoGlobalReceta === "") {
                         video1.style.display = 'block';
                         video1.currentTime = 0;
@@ -367,7 +360,6 @@
                 // 2. Manejo de la Receta en Pantalla
                 if (estadoGlobalReceta && videosReceta[estadoGlobalReceta]) {
                     
-                    // PRIORIDAD ABSOLUTA: Detiene videos de presencia
                     if (isVideo1Playing) {
                         video1.pause();
                         video1.style.display = 'none';
@@ -379,18 +371,15 @@
                         isVideo2Playing = false;
                     }
 
-                    // Iteramos sobre todos los videos de recetas
                     Object.keys(videosReceta).forEach(key => {
                         const v = videosReceta[key];
                         if (key === estadoGlobalReceta) {
-                            // Reproducimos el activo
                             v.style.display = 'block';
                             if (v.paused) {
                                 v.currentTime = 0;
                                 v.play().catch(e => console.error(`Error reproduciendo Receta ${key}:`, e));
                             }
                         } else {
-                            // Pausamos los demás
                             if (!v.paused || v.style.display === 'block') {
                                 v.pause();
                                 v.style.display = 'none';
@@ -399,10 +388,8 @@
                     });
 
                 } else {
-                    // LIMPIEZA CUANDO LA RECETA DESAPARECE (Fin de cualquier video de receta)
                     let recetaVideoEstabaCorriendo = false;
 
-                    // Cortamos cualquier video de receta si sigue en pantalla
                     Object.values(videosReceta).forEach(v => {
                         if (!v.paused || v.style.display === 'block') {
                             v.pause();
@@ -411,7 +398,6 @@
                         }
                     });
                     
-                    // Si la persona sigue ahí parada tras terminar un video de receta, reanudamos el video 2
                     if (recetaVideoEstabaCorriendo && personaDetectadaLocalmente) {
                         video2.style.display = 'block';
                         video2.currentTime = 0;
