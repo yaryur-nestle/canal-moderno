@@ -115,6 +115,14 @@
             transform: translateX(-50%) scale(1.1) !important; /* Pequeño pop visual */
         }
 
+        /* === INPUT FANTASMA PARA EL LECTOR DE CÓDIGOS === */
+        #scanner-fantasma {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            opacity: 0;
+        }
+
         .bg-error { background-color: #ef4444 !important; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -142,6 +150,9 @@
 
     <!-- Visor siempre presente con el texto por defecto -->
     <div id="barcode-display">Esperando lectura...</div>
+
+    <!-- Input invisible que capturará la lectura súper rápida -->
+    <input type="text" id="scanner-fantasma" autocomplete="off" autofocus>
 
     <div id="app-screen">
         <img id="visorImagen" src="TABLET 03.jpg" alt="Pantalla de inicio">
@@ -190,6 +201,8 @@
         const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
         const barcodeDisplay = document.getElementById('barcode-display'); 
+        const scannerInput = document.getElementById('scanner-fantasma'); // Referencia al input fantasma
+        
         let barcodeTimeout; 
         
         // Elementos de Video
@@ -210,8 +223,6 @@
         let isVideo2Playing = false;
         let estadoGlobalReceta = ""; 
 
-        let scannerBuffer = "";
-
         // ======= DICCIONARIO ORDENADO Y NORMALIZADO ======= //
         const baseDeDatos = {
             "7506475104425": "01", 
@@ -225,16 +236,26 @@
             "7591016204894": "04"
         };
 
+        // ======= LÓGICA DEL INPUT FANTASMA ======= //
+        // 1. OBLIGAR A QUE EL INPUT FANTASMA SIEMPRE TENGA EL FOCO CUANDO LA APP ESTÉ ACTIVA
+        document.addEventListener('click', () => {
+            if (appScreen.style.display === 'block') scannerInput.focus();
+        });
+        scannerInput.addEventListener('blur', () => {
+            if (appScreen.style.display === 'block') scannerInput.focus();
+        });
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 loginScreen.style.display = 'none';
                 appScreen.style.display = 'block';
-                barcodeDisplay.style.display = 'block'; // Mostrar cartel al loguear
+                barcodeDisplay.style.display = 'block'; 
+                scannerInput.focus(); // Dar foco al entrar
                 iniciarSincronizacion();
             } else {
                 loginScreen.style.display = 'flex';
                 appScreen.style.display = 'none';
-                barcodeDisplay.style.display = 'none'; // Ocultar en el login
+                barcodeDisplay.style.display = 'none'; 
             }
         });
 
@@ -256,35 +277,42 @@
                 });
         });
 
-        // ESCUCHADOR GLOBAL DE TECLADO
-        document.addEventListener('keydown', function(event) {
-            if (appScreen.style.display !== 'block') return;
+        // 2. MOSTRAR LOS NÚMEROS EN TIEMPO REAL USANDO EL EVENTO 'INPUT'
+        scannerInput.addEventListener('input', () => {
+            barcodeDisplay.innerHTML = scannerInput.value;
+            
+            if (barcodeTimeout) clearTimeout(barcodeTimeout);
+            
+            // Si pasan 3 segundos sin dar Enter, limpiar
+            barcodeTimeout = setTimeout(() => {
+                scannerInput.value = ""; 
+                barcodeDisplay.innerHTML = "Esperando lectura...";
+                barcodeDisplay.classList.remove('lectura-exitosa');
+            }, 3000);
+        });
 
+        // 3. CAPTURAR EL CÓDIGO COMPLETO AL RECIBIR 'ENTER'
+        scannerInput.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                const scannedValue = scannerBuffer.trim();
-                scannerBuffer = ''; 
-
+                
+                const scannedValue = scannerInput.value.trim();
+                scannerInput.value = ''; // Limpiar buffer físico inmediatamente
+                
                 if (scannedValue !== "") {
-                    // === 1. FORZAR ACTUALIZACIÓN VISUAL INMEDIATA (ÉXITO) ===
+                    // === FORZAR ACTUALIZACIÓN VISUAL (ÉXITO) ===
                     barcodeDisplay.innerHTML = scannedValue;
                     barcodeDisplay.classList.add('lectura-exitosa');
+                    void barcodeDisplay.offsetWidth; // Reflow forzado
                     
-                    // Truco de Hardware Reflow: Obliga al navegador a pintar el DOM ahora mismo
-                    void barcodeDisplay.offsetWidth; 
-                    // ================================================
-
-                    if (barcodeTimeout) {
-                        clearTimeout(barcodeTimeout);
-                    }
+                    if (barcodeTimeout) clearTimeout(barcodeTimeout);
                     
-                    // A los 3 segundos vuelve a "Esperando lectura..."
                     barcodeTimeout = setTimeout(() => {
                         barcodeDisplay.innerHTML = "Esperando lectura...";
                         barcodeDisplay.classList.remove('lectura-exitosa');
                     }, 3000);
 
-                    // === 2. PROCESAR LÓGICA DE VIDEOS/FIREBASE ===
+                    // === LÓGICA DE FIREBASE ===
                     let recetaID = null;
 
                     for (const secuencia in baseDeDatos) {
@@ -300,23 +328,6 @@
                         lanzarError();
                     }
                 }
-            } else if (event.key.length === 1) { 
-                // === SE ESTÁ ESCRIBIENDO A MANO O LEYENDO CÓDIGO ===
-                scannerBuffer += event.key;
-                
-                // Mostrar cada letra en tiempo real
-                barcodeDisplay.innerHTML = scannerBuffer;
-                
-                if (barcodeTimeout) {
-                    clearTimeout(barcodeTimeout);
-                }
-
-                // Si pasan 3 segundos sin escribir nada más y sin dar Enter, se resetea
-                barcodeTimeout = setTimeout(() => {
-                    scannerBuffer = ""; 
-                    barcodeDisplay.innerHTML = "Esperando lectura...";
-                    barcodeDisplay.classList.remove('lectura-exitosa');
-                }, 3000);
             }
         });
 
