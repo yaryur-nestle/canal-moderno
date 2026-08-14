@@ -102,6 +102,7 @@
             text-align: center;
             display: none; /* Oculto en el login, se muestra al entrar a la app */
             min-width: 400px; /* Evita que el cuadro salte mucho de tamaño */
+            transition: all 0.2s ease-in-out; /* Transición para el efecto visual */
         }
 
         .bg-error { background-color: #ef4444 !important; }
@@ -263,16 +264,30 @@
                 scannerBuffer = ''; 
 
                 if (scannedValue !== "") {
-                    // === NUEVA LÓGICA: MOSTRAR CÓDIGO Y REVERTIR ===
-                    barcodeDisplay.innerText = scannedValue; // Muestra el número
+                    // === LIMPIEZA DE CARACTERES INVISIBLES ===
+                    // Eliminamos cualquier caracter de control oculto (como \r) que el lector envíe
+                    const displayValue = scannedValue.replace(/[^a-zA-Z0-9]/g, '');
+
+                    // === NUEVA LÓGICA: MOSTRAR CÓDIGO Y EFECTO VISUAL ===
+                    barcodeDisplay.innerText = displayValue || scannedValue; 
+                    
+                    // Flash visual: Cyan con texto negro para asegurar que el usuario vea el cambio
+                    barcodeDisplay.style.backgroundColor = "#00FFFF";
+                    barcodeDisplay.style.color = "#000000";
+                    barcodeDisplay.style.textShadow = "none";
+                    barcodeDisplay.style.boxShadow = "0 0 20px #00FFFF";
                     
                     if (barcodeTimeout) {
                         clearTimeout(barcodeTimeout);
                     }
                     
-                    // A los 3 segundos vuelve a "Esperando lectura..."
+                    // A los 3 segundos vuelve a "Esperando lectura..." y restaura colores originales
                     barcodeTimeout = setTimeout(() => {
                         barcodeDisplay.innerText = "Esperando lectura...";
+                        barcodeDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+                        barcodeDisplay.style.color = "#FFFFFF";
+                        barcodeDisplay.style.textShadow = "2px 2px 10px rgba(0,0,0,1), 0 0 20px rgba(255, 255, 255, 0.8)";
+                        barcodeDisplay.style.boxShadow = "none";
                     }, 3000);
                     // ==============================================
 
