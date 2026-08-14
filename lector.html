@@ -201,7 +201,7 @@
         const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
         const barcodeDisplay = document.getElementById('barcode-display'); 
-        const scannerInput = document.getElementById('scanner-fantasma'); // Referencia al input fantasma
+        const scannerInput = document.getElementById('scanner-fantasma'); 
         
         let barcodeTimeout; 
         
@@ -222,6 +222,8 @@
         let isVideo1Playing = false;
         let isVideo2Playing = false;
         let estadoGlobalReceta = ""; 
+        let ultimoEstadoFirebase = null; // Guardamos el estado para poder restaurarlo si la lectura falla
+        let estaEscaneando = false; // Bandera para pausar las operaciones pesadas mientras lee
 
         // ======= DICCIONARIO ORDENADO Y NORMALIZADO ======= //
         const baseDeDatos = {
@@ -236,8 +238,23 @@
             "7591016204894": "04"
         };
 
-        // ======= LÓGICA DEL INPUT FANTASMA ======= //
-        // 1. OBLIGAR A QUE EL INPUT FANTASMA SIEMPRE TENGA EL FOCO CUANDO LA APP ESTÉ ACTIVA
+        // ======= LÓGICA DE OPTIMIZACIÓN EXTREMA: DETENER TODO AL DETECTAR TECLADO ======= //
+        function detenerTodoParaEscanear() {
+            // Recolectamos todos los videos de la app
+            const todosLosVideos = [video1, video2, ...Object.values(videosReceta)];
+            
+            // Los pausamos y los ocultamos instantáneamente (Descarga de procesador)
+            todosLosVideos.forEach(v => {
+                if (!v.paused) v.pause();
+                v.style.display = 'none';
+            });
+            
+            isVideo1Playing = false;
+            isVideo2Playing = false;
+            // Al hacer display none, se mostrará el TABLET 03.jpg de fondo dándonos la velocidad necesaria
+        }
+
+        // 1. OBLIGAR A QUE EL INPUT FANTASMA SIEMPRE TENGA EL FOCO
         document.addEventListener('click', () => {
             if (appScreen.style.display === 'block') scannerInput.focus();
         });
@@ -250,7 +267,7 @@
                 loginScreen.style.display = 'none';
                 appScreen.style.display = 'block';
                 barcodeDisplay.style.display = 'block'; 
-                scannerInput.focus(); // Dar foco al entrar
+                scannerInput.focus(); 
                 iniciarSincronizacion();
             } else {
                 loginScreen.style.display = 'flex';
@@ -277,21 +294,31 @@
                 });
         });
 
-        // 2. MOSTRAR LOS NÚMEROS EN TIEMPO REAL USANDO EL EVENTO 'INPUT'
+        // 2. DETECCIÓN DE LA PRIMERA TECLA EN TIEMPO REAL
         scannerInput.addEventListener('input', () => {
-            barcodeDisplay.innerHTML = scannerInput.value;
-            
+            // SI ES EL PRIMER CARACTER DEL CÓDIGO DE BARRAS: Apagamos todos los recursos pesados
+            if (scannerInput.value.length === 1) {
+                estaEscaneando = true; // Evita que Firebase intente encender videos
+                detenerTodoParaEscanear(); // Detiene CPU y Gráfica localmente
+            }
+
             if (barcodeTimeout) clearTimeout(barcodeTimeout);
             
-            // Si pasan 3 segundos sin dar Enter, limpiar
+            // Si pasan 500ms sin recibir el 'Enter', asumimos fallo, limpiamos y restauramos videos.
             barcodeTimeout = setTimeout(() => {
                 scannerInput.value = ""; 
-                barcodeDisplay.innerHTML = "Esperando lectura...";
-                barcodeDisplay.classList.remove('lectura-exitosa');
-            }, 3000);
+                if (barcodeDisplay.innerHTML !== "Esperando lectura...") {
+                    barcodeDisplay.innerHTML = "Esperando lectura...";
+                    barcodeDisplay.classList.remove('lectura-exitosa');
+                }
+                
+                // Si la lectura se canceló a medias, restauramos lo que sea que estaba antes
+                estaEscaneando = false; 
+                if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
+            }, 500); 
         });
 
-        // 3. CAPTURAR EL CÓDIGO COMPLETO AL RECIBIR 'ENTER'
+        // 3. CAPTURAR EL CÓDIGO COMPLETO AL RECIBIR 'ENTER' Y TERMINAR
         scannerInput.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -300,7 +327,7 @@
                 scannerInput.value = ''; // Limpiar buffer físico inmediatamente
                 
                 if (scannedValue !== "") {
-                    // === FORZAR ACTUALIZACIÓN VISUAL (ÉXITO) ===
+                    // Actualización visual rápida
                     barcodeDisplay.innerHTML = scannedValue;
                     barcodeDisplay.classList.add('lectura-exitosa');
                     void barcodeDisplay.offsetWidth; // Reflow forzado
@@ -312,9 +339,8 @@
                         barcodeDisplay.classList.remove('lectura-exitosa');
                     }, 3000);
 
-                    // === LÓGICA DE FIREBASE ===
+                    // Lógica para enviar a Firebase
                     let recetaID = null;
-
                     for (const secuencia in baseDeDatos) {
                         if (scannedValue.includes(secuencia)) {
                             recetaID = baseDeDatos[secuencia];
@@ -323,10 +349,21 @@
                     }
 
                     if (recetaID) {
-                        set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
+                        set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID)
+                            .then(() => {
+                                // Al subir a Firebase, se liberará el bloqueo
+                                estaEscaneando = false; 
+                                // El Listener onValue se encargará de encender el video correcto
+                            });
                     } else {
                         lanzarError();
+                        // Como falló la lectura, restauramos el video anterior
+                        estaEscaneando = false;
+                        if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
                     }
+                } else {
+                    estaEscaneando = false;
+                    if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
                 }
             }
         });
@@ -361,75 +398,86 @@
             });
         });
 
+        // ====== CONEXIÓN CON FIREBASE Y MANEJO DE ESTADOS ====== //
         function iniciarSincronizacion() {
             onValue(estadoRef, (snapshot) => {
                 const estado = snapshot.val();
                 if (!estado) return;
 
-                estadoGlobalReceta = estado.recetaActiva || "";
-                const deteccionRemota = estado.hayPersonas;
+                ultimoEstadoFirebase = estado; // Guardar siempre el último estado confiable
+                
+                // Solo aplicar los videos visualmente SI NO ESTAMOS ESCANEANDO AHORA MISMO
+                if (!estaEscaneando) {
+                    procesarEstadoFirebase(estado);
+                }
+            });
+        }
 
-                if (deteccionRemota && !personaDetectadaLocalmente) {
-                    personaDetectadaLocalmente = true;
-                    if (!isVideo1Playing && !isVideo2Playing && estadoGlobalReceta === "") {
-                        video1.style.display = 'block';
-                        video1.currentTime = 0;
-                        video1.play().catch(e => console.error("Error reproduciendo Video 01:", e));
-                        isVideo1Playing = true;
-                    }
-                } 
-                else if (!deteccionRemota && personaDetectadaLocalmente) {
-                    personaDetectadaLocalmente = false;
+        // Función separada que evalúa qué video debe sonar según el estado actual de la BD
+        function procesarEstadoFirebase(estado) {
+            estadoGlobalReceta = estado.recetaActiva || "";
+            const deteccionRemota = estado.hayPersonas;
+
+            if (deteccionRemota && !personaDetectadaLocalmente) {
+                personaDetectadaLocalmente = true;
+                if (!isVideo1Playing && !isVideo2Playing && estadoGlobalReceta === "") {
+                    video1.style.display = 'block';
+                    video1.currentTime = 0;
+                    video1.play().catch(e => console.error("Error reproduciendo Video 01:", e));
+                    isVideo1Playing = true;
+                }
+            } 
+            else if (!deteccionRemota && personaDetectadaLocalmente) {
+                personaDetectadaLocalmente = false;
+            }
+
+            if (estadoGlobalReceta && videosReceta[estadoGlobalReceta]) {
+                
+                if (isVideo1Playing) {
+                    video1.pause();
+                    video1.style.display = 'none';
+                    isVideo1Playing = false;
+                }
+                if (isVideo2Playing) {
+                    video2.pause();
+                    video2.style.display = 'none';
+                    isVideo2Playing = false;
                 }
 
-                if (estadoGlobalReceta && videosReceta[estadoGlobalReceta]) {
-                    
-                    if (isVideo1Playing) {
-                        video1.pause();
-                        video1.style.display = 'none';
-                        isVideo1Playing = false;
-                    }
-                    if (isVideo2Playing) {
-                        video2.pause();
-                        video2.style.display = 'none';
-                        isVideo2Playing = false;
-                    }
-
-                    Object.keys(videosReceta).forEach(key => {
-                        const v = videosReceta[key];
-                        if (key === estadoGlobalReceta) {
-                            v.style.display = 'block';
-                            if (v.paused) {
-                                v.currentTime = 0;
-                                v.play().catch(e => console.error(`Error reproduciendo Receta ${key}:`, e));
-                            }
-                        } else {
-                            if (!v.paused || v.style.display === 'block') {
-                                v.pause();
-                                v.style.display = 'none';
-                            }
+                Object.keys(videosReceta).forEach(key => {
+                    const v = videosReceta[key];
+                    if (key === estadoGlobalReceta) {
+                        v.style.display = 'block';
+                        if (v.paused) {
+                            v.currentTime = 0;
+                            v.play().catch(e => console.error(`Error reproduciendo Receta ${key}:`, e));
                         }
-                    });
-
-                } else {
-                    let recetaVideoEstabaCorriendo = false;
-
-                    Object.values(videosReceta).forEach(v => {
+                    } else {
                         if (!v.paused || v.style.display === 'block') {
                             v.pause();
                             v.style.display = 'none';
-                            recetaVideoEstabaCorriendo = true;
                         }
-                    });
-                    
-                    if (recetaVideoEstabaCorriendo && personaDetectadaLocalmente) {
-                        video2.style.display = 'block';
-                        video2.currentTime = 0;
-                        video2.play().catch(e => console.error("Error reanudando Video 02:", e));
-                        isVideo2Playing = true;
                     }
+                });
+
+            } else {
+                let recetaVideoEstabaCorriendo = false;
+
+                Object.values(videosReceta).forEach(v => {
+                    if (!v.paused || v.style.display === 'block') {
+                        v.pause();
+                        v.style.display = 'none';
+                        recetaVideoEstabaCorriendo = true;
+                    }
+                });
+                
+                if (recetaVideoEstabaCorriendo && personaDetectadaLocalmente) {
+                    video2.style.display = 'block';
+                    video2.currentTime = 0;
+                    video2.play().catch(e => console.error("Error reanudando Video 02:", e));
+                    isVideo2Playing = true;
                 }
-            });
+            }
         }
 
         function lanzarError() {
