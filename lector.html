@@ -83,6 +83,25 @@
             z-index: 5;
         }
 
+        /* === ESTILOS DEL VISOR DE CÓDIGO DE BARRAS === */
+        #barcode-display {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00FF00; /* Color Verde */
+            font-size: 3rem;
+            font-weight: bold;
+            z-index: 9999; /* Por encima de TODO */
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.9), 0 0 15px #00FF00;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 15px 30px;
+            border-radius: 15px;
+            opacity: 0; /* Oculto por defecto */
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none; /* Para no bloquear clics en la pantalla */
+        }
+
         .bg-error { background-color: #ef4444 !important; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -109,6 +128,9 @@
     </div>
 
     <div id="app-screen">
+        <!-- Contenedor donde se mostrará el número de código de barras -->
+        <div id="barcode-display"></div>
+
         <img id="visorImagen" src="TABLET 03.jpg" alt="Pantalla de inicio">
         
         <video id="video1" class="video-player" src="VIDEO_01_reparado.mp4" playsinline></video>
@@ -154,6 +176,8 @@
         const appScreen = document.getElementById('app-screen');
         const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
+        const barcodeDisplay = document.getElementById('barcode-display'); // Referencia al texto en pantalla
+        let barcodeTimeout; // Variable para manejar el temporizador de los 3 segundos
         
         // Elementos de Video
         const video1 = document.getElementById('video1');
@@ -243,9 +267,23 @@
                 scannerBuffer = ''; 
 
                 if (scannedValue !== "") {
+                    // === NUEVA LÓGICA: MOSTRAR CÓDIGO ESCANEADO ===
+                    barcodeDisplay.innerText = scannedValue;
+                    barcodeDisplay.style.opacity = '1';
+                    
+                    // Si ya había un temporizador corriendo, lo reiniciamos
+                    if (barcodeTimeout) {
+                        clearTimeout(barcodeTimeout);
+                    }
+                    
+                    // Ocultar a los 3 segundos
+                    barcodeTimeout = setTimeout(() => {
+                        barcodeDisplay.style.opacity = '0';
+                    }, 3000);
+                    // ==============================================
+
                     let recetaID = null;
 
-                    // === NUEVA LÓGICA DE COINCIDENCIA ===
                     // Recorremos las secuencias en la base de datos
                     for (const secuencia in baseDeDatos) {
                         // Si el valor escaneado (incluso si es muy largo) INCLUYE la secuencia
