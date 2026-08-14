@@ -85,22 +85,23 @@
 
         /* === ESTILOS DEL VISOR DE CÓDIGO DE BARRAS === */
         #barcode-display {
-            position: fixed; /* Forzado a la ventana, no al contenedor relativo */
-            top: 50px; /* Separación desde la parte superior */
+            position: fixed; 
+            top: 50px; 
             left: 50%;
             transform: translateX(-50%);
-            color: #FFFFFF; /* Color Blanco */
-            font-size: 3.5rem;
+            color: #FFFFFF; 
+            font-size: 2.5rem; /* Ajustado para que quepa "Esperando lectura..." */
             font-weight: bold;
-            z-index: 2147483647; /* Máximo z-index absoluto para forzarlo sobre TODO */
+            z-index: 2147483647; 
             text-shadow: 2px 2px 10px rgba(0,0,0,1), 0 0 20px rgba(255, 255, 255, 0.8);
-            background-color: rgba(0, 0, 0, 0.8); /* Fondo de alto contraste */
-            border: 2px solid #FFFFFF; /* Borde para enmarcarlo */
+            background-color: rgba(0, 0, 0, 0.8); 
+            border: 2px solid #FFFFFF; 
             padding: 15px 40px;
             border-radius: 15px;
-            opacity: 0; /* Oculto por defecto */
-            transition: opacity 0.3s ease-in-out;
-            pointer-events: none; /* Para no bloquear clics en la pantalla */
+            pointer-events: none; 
+            text-align: center;
+            display: none; /* Oculto en el login, se muestra al entrar a la app */
+            min-width: 400px; /* Evita que el cuadro salte mucho de tamaño */
         }
 
         .bg-error { background-color: #ef4444 !important; }
@@ -128,8 +129,8 @@
         </div>
     </div>
 
-    <!-- Visor de código fuera de app-screen para evitar conflictos de z-index (aunque position: fixed ya lo soluciona) -->
-    <div id="barcode-display"></div>
+    <!-- Visor siempre presente con el texto por defecto -->
+    <div id="barcode-display">Esperando lectura...</div>
 
     <div id="app-screen">
         <img id="visorImagen" src="TABLET 03.jpg" alt="Pantalla de inicio">
@@ -177,8 +178,8 @@
         const appScreen = document.getElementById('app-screen');
         const loginForm = document.getElementById('login-form');
         const errorMsg = document.getElementById('error-msg');
-        const barcodeDisplay = document.getElementById('barcode-display'); // Referencia al texto en pantalla
-        let barcodeTimeout; // Variable para manejar el temporizador de los 3 segundos
+        const barcodeDisplay = document.getElementById('barcode-display'); 
+        let barcodeTimeout; 
         
         // Elementos de Video
         const video1 = document.getElementById('video1');
@@ -203,21 +204,14 @@
 
         // ======= DICCIONARIO ORDENADO Y NORMALIZADO ======= //
         const baseDeDatos = {
-            // LOTE 01 LECHE CONDENSADA - Video 1
             "7506475104425": "01", 
             "17506475104422": "01", 
             "7891000107263": "01", 
-
-            // LOTE 02 CHOCOLATE SAVOY - Video 2
             "7591016155097": "02", 
             "7591016855096": "02", 
-
-            // LOTE 03 - Video 3
             "7591016206409": "03", 
             "7591016406403": "03", 
             "17591016206406": "03", 
-
-            // LOTE 04 SOPA DE POLLO - Video 4
             "7591016204894": "04"
         };
 
@@ -225,10 +219,12 @@
             if (user) {
                 loginScreen.style.display = 'none';
                 appScreen.style.display = 'block';
+                barcodeDisplay.style.display = 'block'; // Mostrar cartel al loguear
                 iniciarSincronizacion();
             } else {
                 loginScreen.style.display = 'flex';
                 appScreen.style.display = 'none';
+                barcodeDisplay.style.display = 'none'; // Ocultar en el login
             }
         });
 
@@ -256,7 +252,6 @@
 
             const currentTime = Date.now();
             
-            // Tolerancia aumentada a 500ms para evitar que escáneres con pausas corten el código a la mitad
             if (currentTime - lastKeyTime > 500) {
                 scannerBuffer = "";
             }
@@ -268,24 +263,21 @@
                 scannerBuffer = ''; 
 
                 if (scannedValue !== "") {
-                    // === NUEVA LÓGICA: MOSTRAR CÓDIGO ESCANEADO ===
-                    barcodeDisplay.innerText = scannedValue;
-                    barcodeDisplay.style.opacity = '1';
+                    // === NUEVA LÓGICA: MOSTRAR CÓDIGO Y REVERTIR ===
+                    barcodeDisplay.innerText = scannedValue; // Muestra el número
                     
-                    // Si ya había un temporizador corriendo, lo reiniciamos
                     if (barcodeTimeout) {
                         clearTimeout(barcodeTimeout);
                     }
                     
-                    // Ocultar a los 3 segundos
+                    // A los 3 segundos vuelve a "Esperando lectura..."
                     barcodeTimeout = setTimeout(() => {
-                        barcodeDisplay.style.opacity = '0';
+                        barcodeDisplay.innerText = "Esperando lectura...";
                     }, 3000);
                     // ==============================================
 
                     let recetaID = null;
 
-                    // Recorremos las secuencias en la base de datos
                     for (const secuencia in baseDeDatos) {
                         if (scannedValue.includes(secuencia)) {
                             recetaID = baseDeDatos[secuencia];
@@ -305,7 +297,6 @@
         });
 
         // ====== LÓGICA DE EVENTOS 'ENDED' DE LOS VIDEOS ====== //
-
         video1.addEventListener('ended', () => {
             isVideo1Playing = false;
             video1.style.display = 'none';
@@ -343,7 +334,6 @@
                 estadoGlobalReceta = estado.recetaActiva || "";
                 const deteccionRemota = estado.hayPersonas;
 
-                // 1. Manejo de la Detección
                 if (deteccionRemota && !personaDetectadaLocalmente) {
                     personaDetectadaLocalmente = true;
                     if (!isVideo1Playing && !isVideo2Playing && estadoGlobalReceta === "") {
@@ -357,7 +347,6 @@
                     personaDetectadaLocalmente = false;
                 }
 
-                // 2. Manejo de la Receta en Pantalla
                 if (estadoGlobalReceta && videosReceta[estadoGlobalReceta]) {
                     
                     if (isVideo1Playing) {
