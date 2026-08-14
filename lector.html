@@ -83,36 +83,34 @@
             z-index: 5;
         }
 
-        /* === ESTILOS DEL VISOR DE CÓDIGO DE BARRAS === */
+        /* === ESTILOS DEL CARTEL DE ERROR ROTADO === */
         #barcode-display {
             position: fixed; 
-            top: 50px; 
-            left: 50%;
-            transform: translateX(-50%);
+            top: 50%; /* Centrado verticalmente */
+            left: 80px; /* Más a la izquierda, ajusta este valor si lo quieres más a la orilla */
+            transform: translate(-50%, -50%) rotate(-90deg); /* Traslada su centro y lo rota 90 grados anti-horario */
+            
             color: #FFFFFF; 
             font-size: 2.5rem; 
             font-weight: bold;
             z-index: 2147483647; 
-            text-shadow: 2px 2px 10px rgba(0,0,0,1), 0 0 20px rgba(255, 255, 255, 0.8);
-            background-color: rgba(0, 0, 0, 0.8); 
-            border: 2px solid #FFFFFF; 
+            text-shadow: 2px 2px 10px rgba(0,0,0,1), 0 0 20px rgba(255, 0, 85, 0.8);
+            background-color: rgba(0, 0, 0, 0.85); 
+            border: 3px solid #FF0055; /* Borde rojo de error */
             padding: 15px 40px;
             border-radius: 15px;
             pointer-events: none; 
             text-align: center;
-            display: none; /* Oculto en el login, se muestra al entrar a la app */
-            min-width: 400px;
-            transition: all 0.2s ease-out; /* Transición suave */
+            white-space: nowrap; /* Evita que el texto se rompa en dos líneas al estar rotado */
+            
+            /* Oculto por defecto */
+            opacity: 0; 
+            transition: opacity 0.3s ease-out; 
         }
 
-        /* CLASE DE ÉXITO: Fuerza el estilo pase lo que pase */
-        .lectura-exitosa {
-            background-color: #00FFFF !important;
-            color: #000000 !important;
-            text-shadow: none !important;
-            box-shadow: 0 0 30px #00FFFF !important;
-            border-color: #000000 !important;
-            transform: translateX(-50%) scale(1.1) !important; /* Pequeño pop visual */
+        /* Clase para encender el cartel cuando hay un error */
+        .mostrar-error {
+            opacity: 1 !important;
         }
 
         /* === INPUT FANTASMA PARA EL LECTOR DE CÓDIGOS === */
@@ -148,8 +146,8 @@
         </div>
     </div>
 
-    <!-- Visor siempre presente con el texto por defecto -->
-    <div id="barcode-display">Esperando lectura...</div>
+    <!-- Contenedor del texto de error (oculto por defecto) -->
+    <div id="barcode-display"></div>
 
     <!-- Input invisible que capturará la lectura súper rápida -->
     <input type="text" id="scanner-fantasma" autocomplete="off" autofocus>
@@ -262,13 +260,11 @@
             if (user) {
                 loginScreen.style.display = 'none';
                 appScreen.style.display = 'block';
-                barcodeDisplay.style.display = 'block'; 
                 scannerInput.focus(); 
                 iniciarSincronizacion();
             } else {
                 loginScreen.style.display = 'flex';
                 appScreen.style.display = 'none';
-                barcodeDisplay.style.display = 'none'; 
             }
         });
 
@@ -296,22 +292,17 @@
             // SI ES EL PRIMER DÍGITO DEL ESCÁNER:
             if (scannerInput.value.length === 1) {
                 estaEscaneando = true; 
-                detenerTodoParaEscanear(); // Detenemos CPU local
+                detenerTodoParaEscanear(); 
                 
-                // === NUEVO: LIMPIAMOS FIREBASE INMEDIATAMENTE ===
-                // Le decimos a la base de datos que la receta anterior se abortó.
+                // Limpiamos la base de datos instantáneamente
                 set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
             }
 
             if (barcodeTimeout) clearTimeout(barcodeTimeout);
             
+            // Si el código queda a medias (ej. el lector falla a la mitad)
             barcodeTimeout = setTimeout(() => {
                 scannerInput.value = ""; 
-                if (barcodeDisplay.innerHTML !== "Esperando lectura...") {
-                    barcodeDisplay.innerHTML = "Esperando lectura...";
-                    barcodeDisplay.classList.remove('lectura-exitosa');
-                }
-                
                 estaEscaneando = false; 
                 if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
             }, 500); 
@@ -326,16 +317,7 @@
                 scannerInput.value = ''; 
                 
                 if (scannedValue !== "") {
-                    barcodeDisplay.innerHTML = scannedValue;
-                    barcodeDisplay.classList.add('lectura-exitosa');
-                    void barcodeDisplay.offsetWidth; 
-                    
                     if (barcodeTimeout) clearTimeout(barcodeTimeout);
-                    
-                    barcodeTimeout = setTimeout(() => {
-                        barcodeDisplay.innerHTML = "Esperando lectura...";
-                        barcodeDisplay.classList.remove('lectura-exitosa');
-                    }, 3000);
 
                     let recetaID = null;
                     for (const secuencia in baseDeDatos) {
@@ -346,13 +328,14 @@
                     }
 
                     if (recetaID) {
-                        // Enviamos la nueva receta y liberamos el bloqueo para que se reproduzca
+                        // LECTURA CORRECTA: Silenciosa y directa, activamos Firebase
                         set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID)
                             .then(() => {
                                 estaEscaneando = false;
                                 if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
                             });
                     } else {
+                        // LECTURA INCORRECTA O CÓDIGO DESCONOCIDO
                         lanzarError();
                         estaEscaneando = false;
                         if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
@@ -475,14 +458,26 @@
         }
 
         function lanzarError() {
+            // Efecto visual de flash y temblor de la pantalla
             document.getElementById('app-screen').classList.remove('shake');
             void document.getElementById('app-screen').offsetWidth;
             document.body.className = 'bg-error';
             document.getElementById('app-screen').classList.add('shake');
+            
+            // Mostrar nuestro cartel rotado
+            barcodeDisplay.innerHTML = "¡Vuelve a Intentarlo!";
+            barcodeDisplay.classList.add('mostrar-error');
+            
+            // Apagar flash rojo de la pantalla al segundo
             setTimeout(() => {
                 document.body.className = '';
                 document.getElementById('app-screen').classList.remove('shake');
             }, 1000);
+
+            // Ocultar el cartel de error después de 3 segundos
+            setTimeout(() => {
+                barcodeDisplay.classList.remove('mostrar-error');
+            }, 3000);
         }
     </script>
 </body>
