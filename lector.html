@@ -211,7 +211,6 @@
         let estadoGlobalReceta = ""; 
 
         let scannerBuffer = "";
-        let lastKeyTime = Date.now();
 
         // ======= DICCIONARIO ORDENADO Y NORMALIZADO ======= //
         const baseDeDatos = {
@@ -261,20 +260,13 @@
         document.addEventListener('keydown', function(event) {
             if (appScreen.style.display !== 'block') return;
 
-            const currentTime = Date.now();
-            
-            if (currentTime - lastKeyTime > 500) {
-                scannerBuffer = "";
-            }
-            lastKeyTime = currentTime;
-
             if (event.key === 'Enter') {
                 event.preventDefault();
                 const scannedValue = scannerBuffer.trim();
                 scannerBuffer = ''; 
 
                 if (scannedValue !== "") {
-                    // === 1. FORZAR ACTUALIZACIÓN VISUAL INMEDIATA ===
+                    // === 1. FORZAR ACTUALIZACIÓN VISUAL INMEDIATA (ÉXITO) ===
                     barcodeDisplay.innerHTML = scannedValue;
                     barcodeDisplay.classList.add('lectura-exitosa');
                     
@@ -309,7 +301,22 @@
                     }
                 }
             } else if (event.key.length === 1) { 
+                // === SE ESTÁ ESCRIBIENDO A MANO O LEYENDO CÓDIGO ===
                 scannerBuffer += event.key;
+                
+                // Mostrar cada letra en tiempo real
+                barcodeDisplay.innerHTML = scannerBuffer;
+                
+                if (barcodeTimeout) {
+                    clearTimeout(barcodeTimeout);
+                }
+
+                // Si pasan 3 segundos sin escribir nada más y sin dar Enter, se resetea
+                barcodeTimeout = setTimeout(() => {
+                    scannerBuffer = ""; 
+                    barcodeDisplay.innerHTML = "Esperando lectura...";
+                    barcodeDisplay.classList.remove('lectura-exitosa');
+                }, 3000);
             }
         });
 
