@@ -222,8 +222,8 @@
         let isVideo1Playing = false;
         let isVideo2Playing = false;
         let estadoGlobalReceta = ""; 
-        let ultimoEstadoFirebase = null; // Guardamos el estado para poder restaurarlo si la lectura falla
-        let estaEscaneando = false; // Bandera para pausar las operaciones pesadas mientras lee
+        let ultimoEstadoFirebase = null; 
+        let estaEscaneando = false; 
 
         // ======= DICCIONARIO ORDENADO Y NORMALIZADO ======= //
         const baseDeDatos = {
@@ -238,12 +238,10 @@
             "7591016204894": "04"
         };
 
-        // ======= LÓGICA DE OPTIMIZACIÓN EXTREMA: DETENER TODO AL DETECTAR TECLADO ======= //
+        // ======= LÓGICA DE OPTIMIZACIÓN EXTREMA ======= //
         function detenerTodoParaEscanear() {
-            // Recolectamos todos los videos de la app
             const todosLosVideos = [video1, video2, ...Object.values(videosReceta)];
             
-            // Los pausamos y los ocultamos instantáneamente (Descarga de procesador)
             todosLosVideos.forEach(v => {
                 if (!v.paused) v.pause();
                 v.style.display = 'none';
@@ -251,10 +249,8 @@
             
             isVideo1Playing = false;
             isVideo2Playing = false;
-            // Al hacer display none, se mostrará el TABLET 03.jpg de fondo dándonos la velocidad necesaria
         }
 
-        // 1. OBLIGAR A QUE EL INPUT FANTASMA SIEMPRE TENGA EL FOCO
         document.addEventListener('click', () => {
             if (appScreen.style.display === 'block') scannerInput.focus();
         });
@@ -296,15 +292,19 @@
 
         // 2. DETECCIÓN DE LA PRIMERA TECLA EN TIEMPO REAL
         scannerInput.addEventListener('input', () => {
-            // SI ES EL PRIMER CARACTER DEL CÓDIGO DE BARRAS: Apagamos todos los recursos pesados
+            
+            // SI ES EL PRIMER DÍGITO DEL ESCÁNER:
             if (scannerInput.value.length === 1) {
-                estaEscaneando = true; // Evita que Firebase intente encender videos
-                detenerTodoParaEscanear(); // Detiene CPU y Gráfica localmente
+                estaEscaneando = true; 
+                detenerTodoParaEscanear(); // Detenemos CPU local
+                
+                // === NUEVO: LIMPIAMOS FIREBASE INMEDIATAMENTE ===
+                // Le decimos a la base de datos que la receta anterior se abortó.
+                set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
             }
 
             if (barcodeTimeout) clearTimeout(barcodeTimeout);
             
-            // Si pasan 500ms sin recibir el 'Enter', asumimos fallo, limpiamos y restauramos videos.
             barcodeTimeout = setTimeout(() => {
                 scannerInput.value = ""; 
                 if (barcodeDisplay.innerHTML !== "Esperando lectura...") {
@@ -312,25 +312,23 @@
                     barcodeDisplay.classList.remove('lectura-exitosa');
                 }
                 
-                // Si la lectura se canceló a medias, restauramos lo que sea que estaba antes
                 estaEscaneando = false; 
                 if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
             }, 500); 
         });
 
-        // 3. CAPTURAR EL CÓDIGO COMPLETO AL RECIBIR 'ENTER' Y TERMINAR
+        // 3. CAPTURAR EL CÓDIGO COMPLETO AL RECIBIR 'ENTER'
         scannerInput.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 
                 const scannedValue = scannerInput.value.trim();
-                scannerInput.value = ''; // Limpiar buffer físico inmediatamente
+                scannerInput.value = ''; 
                 
                 if (scannedValue !== "") {
-                    // Actualización visual rápida
                     barcodeDisplay.innerHTML = scannedValue;
                     barcodeDisplay.classList.add('lectura-exitosa');
-                    void barcodeDisplay.offsetWidth; // Reflow forzado
+                    void barcodeDisplay.offsetWidth; 
                     
                     if (barcodeTimeout) clearTimeout(barcodeTimeout);
                     
@@ -339,7 +337,6 @@
                         barcodeDisplay.classList.remove('lectura-exitosa');
                     }, 3000);
 
-                    // Lógica para enviar a Firebase
                     let recetaID = null;
                     for (const secuencia in baseDeDatos) {
                         if (scannedValue.includes(secuencia)) {
@@ -349,15 +346,14 @@
                     }
 
                     if (recetaID) {
+                        // Enviamos la nueva receta y liberamos el bloqueo para que se reproduzca
                         set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID)
                             .then(() => {
-                                // Al subir a Firebase, se liberará el bloqueo
-                                estaEscaneando = false; 
-                                // El Listener onValue se encargará de encender el video correcto
+                                estaEscaneando = false;
+                                if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
                             });
                     } else {
                         lanzarError();
-                        // Como falló la lectura, restauramos el video anterior
                         estaEscaneando = false;
                         if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
                     }
@@ -404,16 +400,14 @@
                 const estado = snapshot.val();
                 if (!estado) return;
 
-                ultimoEstadoFirebase = estado; // Guardar siempre el último estado confiable
+                ultimoEstadoFirebase = estado; 
                 
-                // Solo aplicar los videos visualmente SI NO ESTAMOS ESCANEANDO AHORA MISMO
                 if (!estaEscaneando) {
                     procesarEstadoFirebase(estado);
                 }
             });
         }
 
-        // Función separada que evalúa qué video debe sonar según el estado actual de la BD
         function procesarEstadoFirebase(estado) {
             estadoGlobalReceta = estado.recetaActiva || "";
             const deteccionRemota = estado.hayPersonas;
