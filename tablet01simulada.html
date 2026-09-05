@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TABLET 01 (SIMULACIÓN)</title>
+  <style>
+    body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
+    
+    #init-fullscreen-btn {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; 
+      background: transparent; border: none; outline: none; cursor: pointer;
+    }
+
+    #login-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1000; display: flex; justify-content: center; align-items: center; }
+    .login-box { border: 1px solid #00FFFF; padding: 40px; background: rgba(0, 255, 255, 0.05); text-align: center; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); border-radius: 8px; backdrop-filter: blur(10px); width: 300px; }
+    .login-box h2 { color: #00FFFF; margin-top: 0; margin-bottom: 25px; text-shadow: 0 0 5px #00FFFF; letter-spacing: 2px; }
+    .login-box input { display: block; width: 100%; box-sizing: border-box; margin-bottom: 15px; padding: 12px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00FFFF; color: #00FFFF; font-family: inherit; font-size: 1rem; text-align: center; }
+    .login-box input:focus { outline: none; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); background: rgba(0, 255, 255, 0.1); }
+    .login-box button { background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; padding: 12px 20px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1rem; width: 100%; transition: all 0.3s; letter-spacing: 1px; }
+    .login-box button:hover { background: #00FFFF; color: #000; box-shadow: 0 0 15px #00FFFF; }
+    .error-msg { color: #FF0055; margin-top: 15px; font-size: 0.85rem; display: none; text-shadow: 0 0 5px #FF0055; }
+
+    .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; display: none; } 
+    
+    .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
+    .card.is-flipped { transform: rotateY(180deg); }
+    .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: #000; }
+    
+    .face-front { background-image: url('TABLET 01.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
+    .face-back { transform: rotateY(180deg); }
+    
+    .flip-btn { 
+      position: absolute; bottom: 12%; right: 5%; z-index: 50; 
+      background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; 
+      width: 50px; height: 50px; border-radius: 50%; cursor: pointer; 
+      display: flex; justify-content: center; align-items: center; 
+      backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); 
+      transition: all 0.3s ease; opacity: 0; pointer-events: none; 
+    }
+    .card.is-flipped ~ .flip-btn { opacity: 1; pointer-events: auto; }
+    .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
+    
+    video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    canvas { z-index: 10; }
+    .panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
+    .left { top: 0; left: 0; }
+    .right { top: 0; right: 0; align-items: flex-end; }
+    .counter-box { padding: 10px 20px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; backdrop-filter: blur(8px); border: 1px solid; min-width: 150px; text-shadow: 0 0 5px currentColor; }
+    #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
+    #total-counter { background: rgba(0, 255, 255, 0.15); color: #00FFFF; border-color: #00FFFF; }
+    #time-counter { background: rgba(255, 255, 0, 0.15); color: #FFFF00; border-color: #FFFF00; }
+    #avg-counter { background: rgba(255, 0, 255, 0.15); color: #FF00FF; border-color: #FF00FF; }
+    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 40; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid #00FFFF; color: #00FFFF; font-weight: bold; font-size: 1.2rem; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <button id="init-fullscreen-btn" title="Activar Pantalla Completa"></button>
+
+  <div id="login-screen">
+    <div class="login-box">
+      <h2>SISTEMA MUEBLE 01</h2>
+      <form id="login-form">
+        <input type="email" id="email" placeholder="Correo Electrónico" autocomplete="email" value="demo@yaryur.com">
+        <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password" value="123456">
+        <button type="submit" id="login-btn">AUTENTICAR</button>
+        <div id="error-msg" class="error-msg">Error de credenciales.</div>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-screen" class="scene">
+    
+    <div id="card" class="card">
+      <div class="face face-front">
+        <video id="front-video" src="video.mp4" playsinline preload="auto" style="display: none; width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 5; transform: scaleX(1);"></video>
+      </div>
+      
+      <div class="face face-back">
+        <div id="loading">SISTEMA INICIANDO...</div>
+        <div class="panel left">
+          <div id="face-counter" class="counter-box">ACTUAL: 0</div>
+          <div id="total-counter" class="counter-box">HISTÓRICO: 0</div>
+        </div>
+        <div class="panel right">
+          <div id="time-counter" class="counter-box">TIEMPO: 0.0s</div>
+          <div id="avg-counter" class="counter-box">PROMEDIO: 0.0s</div>
+        </div>
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+    
+    <button id="flip-btn" class="flip-btn" title="Regresar al Frente">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="17 11 21 7 17 3"></polyline><line x1="21" y1="7" x2="9" y2="7"></line><polyline points="7 13 3 17 7 21"></polyline><line x1="3" y1="17" x2="15" y2="17"></line>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    const initFullscreenBtn = document.getElementById('init-fullscreen-btn');
+    initFullscreenBtn.addEventListener('click', () => {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) elem.requestFullscreen();
+      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+      else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+      initFullscreenBtn.remove();
+    });
+
+    const loginScreen = document.getElementById('login-screen');
+    const appScreen = document.getElementById('app-screen');
+    const loginForm = document.getElementById('login-form');
+
+    // Autenticación de simulación local (sin Firebase Auth)
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      loginScreen.style.display = 'none';
+      appScreen.style.display = 'block';
+      iniciarCamaraYReconocimiento();
+    });
+
+    const btnFlip = document.getElementById('flip-btn');
+    const card = document.getElementById('card');
+    const frontVideo = document.getElementById('front-video');
+    let isPlayingVideo = false;
+    let systemReady = false;
+    setTimeout(() => { systemReady = true; }, 2000);
+    
+    btnFlip.addEventListener('click', () => { card.classList.remove('is-flipped'); });
+
+    // Habilitado para demostración: 3 clics rápidos en pantalla voltean la tarjeta
+    let clickCount = 0;
+    let clickTimeout;
+    document.addEventListener('click', (e) => {
+      if (loginScreen.style.display !== 'none') return;
+      if (card.classList.contains('is-flipped')) return;
+
+      if (e.target !== btnFlip) {
+        clickCount++;
+        clearTimeout(clickTimeout);
+        if (clickCount >= 3) {
+          card.classList.add('is-flipped');
+          clickCount = 0;
+          if (isPlayingVideo) {
+            frontVideo.pause();
+            frontVideo.currentTime = 0;
+            frontVideo.style.display = 'none';
+            isPlayingVideo = false;
+          }
+          inicioSesionActual = null;
+          tiempoSesionActual = 0;
+        } else {
+          clickTimeout = setTimeout(() => { clickCount = 0; }, 400);
+        }
+      }
+    });
+
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('canvas');
+    const faceElement = document.getElementById('face-counter');
+    const totalElement = document.getElementById('total-counter');
+    const timeElement = document.getElementById('time-counter');
+    const avgElement = document.getElementById('avg-counter');
+
+    let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
+    let currentFacesCount = 0;
+    let camaraIniciada = false;
+
+    frontVideo.addEventListener('ended', () => {
+      if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
+        frontVideo.currentTime = 0;
+        frontVideo.play().catch(e => console.error("Error reproduciendo:", e));
+      } else {
+        frontVideo.style.display = 'none';
+        isPlayingVideo = false;
+      }
+    });
+
+    function onResults(results) {
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) loadingEl.style.display = 'none';
+
+      const rostrosActuales = results.multiFaceLandmarks ? results.multiFaceLandmarks.length : 0;
+      const ahora = Date.now();
+      currentFacesCount = rostrosActuales;
+
+      if (rostrosActuales > 0) {
+        if (!inicioSesionActual) { inicioSesionActual = ahora; }
+        tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
+      } else {
+        if (inicioSesionActual) {
+          tiempoAcumuladoTotal += (ahora - inicioSesionActual) / 1000;
+          inicioSesionActual = null; 
+          tiempoSesionActual = 0;
+        }
+      }
+
+      if (systemReady && currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo && !card.classList.contains('is-flipped')) {
+        isPlayingVideo = true;
+        frontVideo.style.display = 'block';
+        frontVideo.play().catch(e => { console.log("Autoplay bloqueado:", e); });
+      }
+
+      if (rostrosActuales > rostrosActivos.length) {
+        const nuevosRostros = rostrosActuales - rostrosActivos.length;
+        for (let i = 0; i < nuevosRostros; i++) { rostrosActivos.push({ startTime: ahora, contado: false }); }
+      } else if (rostrosActuales < rostrosActivos.length) { 
+        rostrosActivos.splice(rostrosActuales); 
+      }
+
+      for (let i = 0; i < rostrosActivos.length; i++) {
+        if (!rostrosActivos[i].contado && (ahora - rostrosActivos[i].startTime >= 2000)) {
+          totalHistorico++; 
+          rostrosActivos[i].contado = true;
+        }
+      }
+
+      let tiempoTotalParaCalculo = tiempoAcumuladoTotal + tiempoSesionActual;
+      let promedio = totalHistorico > 0 ? (tiempoTotalParaCalculo / totalHistorico) : 0;
+
+      faceElement.innerText = `ACTUAL: ${rostrosActuales}`;
+      totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
+      timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
+      avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
+    }
+
+    function iniciarCamaraYReconocimiento() {
+      if (camaraIniciada) return;
+      camaraIniciada = true;
+      try {
+        const faceMesh = new window.FaceMesh({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        });
+        faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        faceMesh.onResults(onResults);
+        const camera = new window.Camera(videoElement, { 
+          onFrame: async () => { await faceMesh.send({image: videoElement}); }, 
+          width: 480, 
+          height: 360 
+        });
+        camera.start().catch(err => {
+          console.warn("Cámara no disponible o permiso denegado en simulación:", err);
+          const loadingEl = document.getElementById('loading');
+          if (loadingEl) loadingEl.innerText = "SIMULACIÓN ACTIVA (CÁMARA INACTIVA)";
+        });
+      } catch (e) {
+        console.warn("MediaPipe no pudo iniciarse en este entorno:", e);
+      }
+    }
+  </script>
+</body>
+</html>
