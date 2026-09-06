@@ -3,96 +3,402 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TABLET 03 (SIMULACIÓN)</title>
+  <title>SIMULADOR INTEGRADO: TABLET 03 + LECTOR RECETAS</title>
   <style>
-    body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
-    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #000;
+      color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
     /* === BOTÓN FULLSCREEN INICIAL === */
     #init-fullscreen-btn {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; 
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; 
       background: transparent; border: none; outline: none; cursor: pointer;
     }
 
-    .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; display: block; }
-    .fullscreen-btn { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 100; width: 150px; height: 80px; background: transparent; border: none; outline: none; cursor: pointer; }
+    /* === CONTENEDOR DIVIDIDO (SPLIT SCREEN 50/50) === */
+    .split-pane {
+      position: relative;
+      width: 100vw;
+      height: 50vh;
+      overflow: hidden;
+      background-color: #050505;
+    }
 
-    .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
+    #top-half {
+      border-bottom: 2px solid rgba(0, 255, 255, 0.4);
+    }
+
+    #bottom-half {
+      border-top: 2px solid rgba(0, 255, 255, 0.4);
+    }
+
+    /* Etiquetas de identificación */
+    .section-badge {
+      position: absolute;
+      top: 10px;
+      left: 15px;
+      z-index: 90;
+      background: rgba(0, 0, 0, 0.75);
+      color: #00FFFF;
+      border: 1px solid #00FFFF;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+      pointer-events: none;
+    }
+
+    /* Control de simulación manual */
+    .sim-presence-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      z-index: 95;
+      background: rgba(0, 255, 255, 0.15);
+      color: #00FFFF;
+      border: 1px solid #00FFFF;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s;
+      outline: none;
+    }
+    .sim-presence-btn:hover {
+      background: rgba(0, 255, 255, 0.35);
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.6);
+    }
+    .sim-presence-btn.active {
+      background: #00FF88;
+      color: #000;
+      border-color: #00FF88;
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+    }
+
+    /* =========================================================
+       MITAD SUPERIOR: TABLET 03
+       ========================================================= */
+    .scene-tablet {
+      width: 100%;
+      height: 100%;
+      perspective: 1000px;
+      position: relative;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform-style: preserve-3d;
+    }
     .card.is-flipped { transform: rotateY(180deg); }
-    .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: #000; }
-    
-    .face-front { background-image: url('TABLET 03 h.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; cursor: pointer; }
+
+    .face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      background-color: #000;
+    }
+
+    .face-front {
+      background-image: url('TABLET 03 h.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
     .face-back { transform: rotateY(180deg); }
 
-    #overlayReceta {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0, 0, 0, 0.6); display: none; 
-        justify-content: center; align-items: center; z-index: 50; 
+    /* Video superpuesto en Tablet 03 */
+    #overlayRecetaTablet {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
     }
-    
-    #videoReceta { 
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-        object-fit: cover; 
-        background-color: #000;
-        transform: none; display: none; z-index: 55; 
+    #videoRecetaTablet {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #000;
     }
-    
-    video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-    canvas { z-index: 10; }
-    .panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
-    .left { top: 0; left: 0; }
-    .right { top: 0; right: 0; align-items: flex-end; }
-    .counter-box { padding: 10px 20px; border-radius: 4px; font-weight: bold; font-size: 1.1rem; backdrop-filter: blur(8px); border: 1px solid; min-width: 150px; text-shadow: 0 0 5px currentColor; }
+
+    /* Botonera flotante de recetas superpuesta en Tablet 03 */
+    #recipe-selection-overlay {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 80;
+      display: flex;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.75);
+      padding: 10px 20px;
+      border-radius: 35px;
+      border: 1px solid #00FFFF;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.35);
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    #recipe-selection-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    .recipe-btn {
+      background: rgba(0, 255, 255, 0.15);
+      color: #00FFFF;
+      border: 1px solid #00FFFF;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+    }
+    .recipe-btn:hover {
+      background: #00FFFF;
+      color: #000;
+      box-shadow: 0 0 15px #00FFFF;
+      transform: scale(1.05);
+    }
+    .recipe-btn.active {
+      background: #00FF88;
+      color: #000;
+      border-color: #00FF88;
+      box-shadow: 0 0 15px #00FF88;
+    }
+
+    /* Flip View Técnico (Cámara + Diagnóstico) */
+    video#videoCamera, canvas#canvasMesh {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    canvas#canvasMesh { z-index: 10; }
+    .diag-panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+    .diag-panel.left { top: 0; left: 0; }
+    .diag-panel.right { top: 0; right: 0; align-items: flex-end; }
+    .diag-box {
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      backdrop-filter: blur(8px);
+      border: 1px solid;
+      min-width: 130px;
+      text-shadow: 0 0 5px currentColor;
+    }
     #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
     #total-counter { background: rgba(0, 255, 255, 0.15); color: #00FFFF; border-color: #00FFFF; }
     #time-counter { background: rgba(255, 255, 0, 0.15); color: #FFFF00; border-color: #FFFF00; }
     #avg-counter { background: rgba(255, 0, 255, 0.15); color: #FF00FF; border-color: #FF00FF; }
-    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 40; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid #00FFFF; color: #00FFFF; font-weight: bold; font-size: 1.2rem; }
-    
-    .flip-btn { position: absolute; bottom: 12%; right: 5%; z-index: 50; background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.3s ease; opacity: 0; pointer-events: none; }
+    #loading-cam {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 40;
+      background: rgba(0,0,0,0.85);
+      padding: 10px 20px;
+      border: 1px solid #00FFFF;
+      color: #00FFFF;
+      font-size: 0.9rem;
+      font-weight: bold;
+      border-radius: 6px;
+    }
+
+    .flip-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 15px;
+      z-index: 50;
+      background: rgba(0, 255, 255, 0.15);
+      border: 1px solid #00FFFF;
+      color: #00FFFF;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
     .card.is-flipped ~ .flip-btn { opacity: 1; pointer-events: auto; }
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
+
+    /* =========================================================
+       MITAD INFERIOR: LECTOR TV
+       ========================================================= */
+    #visorImagenLector {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    .video-player-tv {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #000;
+      z-index: 10;
+      display: none;
+    }
+
+    #videoReceta1, #videoReceta2, #videoReceta3, #videoReceta4 {
+      z-index: 20;
+    }
+
+    /* Toast de estado de escaneo */
+    #scan-status-toast {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 85;
+      background: rgba(0, 0, 0, 0.8);
+      color: #00FF88;
+      border: 1px solid #00FF88;
+      padding: 6px 14px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    #scan-status-toast.show { opacity: 1; }
   </style>
+
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
+  <!-- Capturador de pantalla completa al primer toque -->
   <button id="init-fullscreen-btn" title="Activar Pantalla Completa"></button>
 
-  <div id="app-screen" class="scene">
-    <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
+  <!-- =========================================================
+       MITAD SUPERIOR: TABLET 03 (MUEBLE)
+       ========================================================= -->
+  <div id="top-half" class="split-pane">
+    <div class="section-badge">Tablet 03 &bull; Mueble Inteligente</div>
+    
+    <button id="btn-toggle-presence" class="sim-presence-btn" title="Alternar detección de persona para demostración manual">
+      👤 Presencia: Auto (Cámara)
+    </button>
 
     <div id="card" class="card">
+      <!-- Frente de la Tablet -->
       <div class="face face-front">
-        <div id="overlayReceta">
-            <video id="videoReceta" preload="auto" muted playsinline style="background-color: #000;"></video>
+        <!-- Video interactivo de receta en Tablet -->
+        <div id="overlayRecetaTablet">
+          <video id="videoRecetaTablet" preload="auto" playsinline></video>
+        </div>
+
+        <!-- 4 Botones superpuestos de recetas -->
+        <div id="recipe-selection-overlay">
+          <button class="recipe-btn" data-receta="01">RECETA 01</button>
+          <button class="recipe-btn" data-receta="02">RECETA 02</button>
+          <button class="recipe-btn" data-receta="03">RECETA 03</button>
+          <button class="recipe-btn" data-receta="04">RECETA 04</button>
         </div>
       </div>
-      
+
+      <!-- Reverso: Feed técnico MediaPipe y métricas -->
       <div class="face face-back">
-        <div id="loading">SISTEMA INICIANDO...</div>
-        <div class="panel left">
-          <div id="face-counter" class="counter-box">ACTUAL: 0</div>
-          <div id="total-counter" class="counter-box">HISTÓRICO: 0</div>
+        <div id="loading-cam">SISTEMA INICIANDO...</div>
+        <div class="diag-panel left">
+          <div id="face-counter" class="diag-box">ACTUAL: 0</div>
+          <div id="total-counter" class="diag-box">HISTÓRICO: 0</div>
         </div>
-        <div class="panel right">
-          <div id="time-counter" class="counter-box">TIEMPO: 0.0s</div>
-          <div id="avg-counter" class="counter-box">PROMEDIO: 0.0s</div>
+        <div class="diag-panel right">
+          <div id="time-counter" class="diag-box">TIEMPO: 0.0s</div>
+          <div id="avg-counter" class="diag-box">PROMEDIO: 0.0s</div>
         </div>
-        <video id="video" autoplay playsinline muted></video>
-        <canvas id="canvas"></canvas>
+        <video id="videoCamera" autoplay playsinline muted></video>
+        <canvas id="canvasMesh"></canvas>
       </div>
     </div>
-    
+
+    <!-- Botón para regresar al frente -->
     <button id="flip-btn" class="flip-btn" title="Regresar al Frente">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="17 11 21 7 17 3"></polyline><line x1="21" y1="7" x2="9" y2="7"></line><polyline points="7 13 3 17 7 21"></polyline><line x1="3" y1="17" x2="15" y2="17"></line>
       </svg>
     </button>
   </div>
 
+  <!-- =========================================================
+       MITAD INFERIOR: LECTOR TV (PANTALLA INTERACTIVA)
+       ========================================================= -->
+  <div id="bottom-half" class="split-pane">
+    <div class="section-badge">TV Lector &bull; Pantalla Interactiva</div>
+    <div id="scan-status-toast">RECETA SELECCIONADA</div>
+
+    <!-- Fondo inactivo -->
+    <img id="visorImagenLector" src="TABLET 03.jpg" alt="Pantalla base Lector">
+
+    <!-- Videos de atención (cuando se detecta una persona) -->
+    <video id="video1" class="video-player-tv" src="VIDEO_01_reparado.mp4" playsinline></video>
+    <video id="video2" class="video-player-tv" src="VIDEO_02.mp4" playsinline></video>
+
+    <!-- Videos de las 4 recetas en el TV Lector -->
+    <video id="videoReceta1" class="video-player-tv" src="VIDEO_RECETA1.mp4" playsinline></video>
+    <video id="videoReceta2" class="video-player-tv" src="VIDEO_RECETA2.mp4" playsinline></video>
+    <video id="videoReceta3" class="video-player-tv" src="VIDEO_RECETA3.mp4" playsinline></video>
+    <video id="videoReceta4" class="video-player-tv" src="VIDEO_RECETA4.mp4" playsinline></video>
+  </div>
+
   <script>
+    // =========================================================
+    // FULLSCREEN INICIAL
+    // =========================================================
     const initFullscreenBtn = document.getElementById('init-fullscreen-btn');
     initFullscreenBtn.addEventListener('click', () => {
       const elem = document.documentElement;
@@ -103,142 +409,301 @@
       initFullscreenBtn.remove();
     });
 
-    const fullscreenBtn = document.getElementById('fullscreen-btn');
-    fullscreenBtn.addEventListener('click', () => {
-      const elem = document.documentElement;
-      if (!document.fullscreenElement) {
-        if (elem.requestFullscreen) elem.requestFullscreen();
-        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.msExitFullscreen) document.msExitFullscreen();
-      }
-    });
-
-    const btnFlip = document.getElementById('flip-btn');
+    // =========================================================
+    // ELEMENTOS: MITAD SUPERIOR (TABLET 03)
+    // =========================================================
     const card = document.getElementById('card');
-    btnFlip.addEventListener('click', () => { card.classList.remove('is-flipped'); });
+    const btnFlip = document.getElementById('flip-btn');
+    const overlayRecetaTablet = document.getElementById('overlayRecetaTablet');
+    const videoRecetaTablet = document.getElementById('videoRecetaTablet');
+    const recipeButtonsOverlay = document.getElementById('recipe-selection-overlay');
+    const recipeBtns = document.querySelectorAll('.recipe-btn');
+    const btnTogglePresence = document.getElementById('btn-toggle-presence');
 
-    const videoElement = document.getElementById('video');
-    const canvasElement = document.getElementById('canvas');
-    const overlayReceta = document.getElementById('overlayReceta');
-    const videoReceta = document.getElementById('videoReceta');
+    const videoCamera = document.getElementById('videoCamera');
+    const canvasMesh = document.getElementById('canvasMesh');
     const faceElement = document.getElementById('face-counter');
     const totalElement = document.getElementById('total-counter');
     const timeElement = document.getElementById('time-counter');
     const avgElement = document.getElementById('avg-counter');
 
-    let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
+    // =========================================================
+    // ELEMENTOS: MITAD INFERIOR (LECTOR TV)
+    // =========================================================
+    const video1 = document.getElementById('video1');
+    const video2 = document.getElementById('video2');
+    const scanStatusToast = document.getElementById('scan-status-toast');
+
+    const videosRecetaLector = {
+      "01": document.getElementById('videoReceta1'),
+      "02": document.getElementById('videoReceta2'),
+      "03": document.getElementById('videoReceta3'),
+      "04": document.getElementById('videoReceta4')
+    };
+
+    // Diccionario de videos de recetas para Tablet 03
+    const videosRecetaTabletMap = {
+      "01": "VIDEO_1RECETA.mp4",
+      "02": "VIDEO_2RECETA.mp4",
+      "03": "VIDEO_3RECETA.mp4",
+      "04": "VIDEO_4RECETA.mp4"
+    };
+
+    // =========================================================
+    // VARIABLES DE ESTADO Y SINCRONIZACIÓN LOCAL
+    // =========================================================
+    let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0;
     let currentFacesCount = 0;
     let camaraIniciada = false;
-    let systemReady = false;
-    setTimeout(() => { systemReady = true; }, 2000);
+    let manualPresenceForced = false;
 
-    let isVideoPlaying = false;
-    const videoMap = {
-        "01": "VIDEO_1RECETA.mp4",
-        "02": "VIDEO_2RECETA.mp4",
-        "03": "VIDEO_3RECETA.mp4",
-        "04": "VIDEO_4RECETA.mp4"
-    };
-    const recetasKeys = ["01", "02", "03", "04"];
-    let indiceRecetaActual = 0;
+    let isVideo1Playing = false;
+    let isVideo2Playing = false;
+    let isRecipePlaying = false;
+    let estadoGlobalReceta = ""; // "", "01", "02", "03", "04"
+    let personaDetectada = false;
 
-    function reproducirReceta(claveReceta) {
-      if (!claveReceta) claveReceta = recetasKeys[indiceRecetaActual];
-      const targetVideo = videoMap[claveReceta];
-      if (targetVideo) {
-        overlayReceta.style.display = 'flex';
-        videoReceta.style.display = 'block';
+    // =========================================================
+    // 1. SINCRONIZACIÓN DE DETECCIÓN DE PERSONAS (TABLET ➔ LECTOR)
+    // =========================================================
+    function actualizarEstadoPresencia(hayPersonas) {
+      personaDetectada = hayPersonas;
 
-        if (videoReceta.getAttribute('src') !== targetVideo) {
-          videoReceta.src = targetVideo;
+      // Mostrar/ocultar los 4 botones superpuestos en Tablet 03
+      if (personaDetectada) {
+        recipeButtonsOverlay.classList.add('visible');
+      } else {
+        if (!isRecipePlaying) {
+          recipeButtonsOverlay.classList.remove('visible');
         }
-        
-        videoReceta.currentTime = 0; 
-        videoReceta.play().catch(e => console.log("Autoplay pendiente o bloqueado:", e));
-        isVideoPlaying = true;
+      }
+
+      // Reacción de Lector TV si no hay ninguna receta reproduciéndose
+      if (estadoGlobalReceta === "") {
+        if (personaDetectada) {
+          // Si una persona llega y no hay video corriendo en el Lector TV:
+          if (!isVideo1Playing && !isVideo2Playing) {
+            reproducirVideo1Lector();
+          }
+        } else {
+          // Si la persona se retira: detener videos de atención del TV
+          detenerVideosAtencionLector();
+        }
       }
     }
 
-    videoReceta.addEventListener('ended', () => {
-      isVideoPlaying = false;
-      overlayReceta.style.display = 'none';
-      videoReceta.style.display = 'none';
-      indiceRecetaActual = (indiceRecetaActual + 1) % recetasKeys.length;
-    });
+    function reproducirVideo1Lector() {
+      isVideo1Playing = true;
+      isVideo2Playing = false;
+      video1.style.display = 'block';
+      video1.currentTime = 0;
+      video1.play().catch(e => console.log("Video 01 pendiente de interacción:", e));
+    }
 
-    // Control táctil de demostración:
-    // - 3 clics rápidos voltean la tarjeta a la vista de diagnóstico.
-    // - 1 clic en la carátula frontal reproduce/avanza la receta interactiva.
-    let clickCount = 0;
-    let clickTimeout;
-    document.addEventListener('click', (e) => {
-      if (card.classList.contains('is-flipped')) return;
+    video1.addEventListener('ended', () => {
+      isVideo1Playing = false;
+      video1.style.display = 'none';
 
-      if (e.target !== fullscreenBtn && e.target !== btnFlip && e.target !== initFullscreenBtn) {
-        clickCount++;
-        clearTimeout(clickTimeout);
-        
-        if (clickCount >= 3) {
-          card.classList.add('is-flipped');
-          clickCount = 0;
-          if (isVideoPlaying) {
-            videoReceta.pause();
-            overlayReceta.style.display = 'none';
-            videoReceta.style.display = 'none';
-            isVideoPlaying = false;
-          }
-          inicioSesionActual = null;
-          tiempoSesionActual = 0;
-        } else {
-          clickTimeout = setTimeout(() => {
-            if (clickCount === 1 && !card.classList.contains('is-flipped')) {
-              // Tocar la pantalla para probar la siguiente receta
-              reproducirReceta();
-            }
-            clickCount = 0;
-          }, 400);
-        }
+      // Si la persona sigue ahí y no se ha seleccionado receta, pasa a video 2 en bucle
+      if (personaDetectada && estadoGlobalReceta === "") {
+        video2.style.display = 'block';
+        video2.currentTime = 0;
+        video2.play().catch(e => console.error("Error reproduciendo Video 02:", e));
+        isVideo2Playing = true;
       }
     });
 
+    video2.addEventListener('ended', () => {
+      if (personaDetectada && estadoGlobalReceta === "") {
+        video2.currentTime = 0;
+        video2.play().catch(e => console.error("Error Video 02 bucle:", e));
+        isVideo2Playing = true;
+      } else {
+        isVideo2Playing = false;
+        video2.style.display = 'none';
+      }
+    });
+
+    function detenerVideosAtencionLector() {
+      if (isVideo1Playing) {
+        video1.pause();
+        video1.style.display = 'none';
+        isVideo1Playing = false;
+      }
+      if (isVideo2Playing) {
+        video2.pause();
+        video2.style.display = 'none';
+        isVideo2Playing = false;
+      }
+    }
+
+    // =========================================================
+    // 2. DISPARADOR DE RECETA (SIMULA ESCANEO DE CÓDIGO DE BARRAS)
+    // =========================================================
+    function activarRecetaSimulada(recetaID) {
+      if (!recetaID || !videosRecetaTabletMap[recetaID]) return;
+      estadoGlobalReceta = recetaID;
+      isRecipePlaying = true;
+
+      // Actualizar estilo visual de los botones
+      recipeBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-receta') === recetaID);
+      });
+
+      // Mostrar toast de escaneo
+      scanStatusToast.textContent = `RECETA ${recetaID} ESCANEADA`;
+      scanStatusToast.classList.add('show');
+      setTimeout(() => scanStatusToast.classList.remove('show'), 2500);
+
+      // --- A) ACCIÓN EN MITAD INFERIOR (LECTOR TV) ---
+      detenerVideosAtencionLector();
+
+      // Ocultar cualquier otra receta en Lector TV
+      Object.keys(videosRecetaLector).forEach(key => {
+        const v = videosRecetaLector[key];
+        if (key === recetaID) {
+          v.style.display = 'block';
+          v.currentTime = 0;
+          v.play().catch(e => console.error(`Error TV Receta ${key}:`, e));
+        } else {
+          v.pause();
+          v.style.display = 'none';
+        }
+      });
+
+      // --- B) ACCIÓN EN MITAD SUPERIOR (TABLET 03) ---
+      const videoSrcTablet = videosRecetaTabletMap[recetaID];
+      overlayRecetaTablet.style.display = 'flex';
+      
+      if (videoRecetaTablet.getAttribute('src') !== videoSrcTablet) {
+        videoRecetaTablet.src = videoSrcTablet;
+      }
+      videoRecetaTablet.currentTime = 0;
+      videoRecetaTablet.play().catch(e => console.error("Error Tablet Receta:", e));
+    }
+
+    // Finalización de la receta en Tablet 03
+    videoRecetaTablet.addEventListener('ended', () => {
+      overlayRecetaTablet.style.display = 'none';
+      videoRecetaTablet.pause();
+      verificarFinReceta();
+    });
+
+    // Finalización de la receta en Lector TV
+    Object.values(videosRecetaLector).forEach(video => {
+      video.addEventListener('ended', () => {
+        video.style.display = 'none';
+        video.pause();
+        verificarFinReceta();
+      });
+    });
+
+    function verificarFinReceta() {
+      // Cuando la receta termina en ambos o en el TV principal
+      estadoGlobalReceta = "";
+      isRecipePlaying = false;
+      recipeBtns.forEach(btn => btn.classList.remove('active'));
+
+      // Reanudar el estado según si hay una persona frente al mueble
+      if (personaDetectada) {
+        recipeButtonsOverlay.classList.add('visible');
+        video2.style.display = 'block';
+        video2.currentTime = 0;
+        video2.play().catch(e => console.log("Reanudando bucle 2:", e));
+        isVideo2Playing = true;
+      } else {
+        recipeButtonsOverlay.classList.remove('visible');
+        detenerVideosAtencionLector();
+      }
+    }
+
+    // Clic en cualquiera de los 4 botones de recetas
+    recipeBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-receta');
+        activarRecetaSimulada(id);
+      });
+    });
+
+    // =========================================================
+    // 3. FLIP Y CONTROL DE DETECCIÓN TÉCNICA (TABLET 03)
+    // =========================================================
+    btnFlip.addEventListener('click', (e) => {
+      e.stopPropagation();
+      card.classList.remove('is-flipped');
+    });
+
+    // 3 clics rápidos en el fondo de Tablet 03 para girar tarjeta
+    let clickCountTop = 0;
+    let clickTimeoutTop;
+    document.getElementById('top-half').addEventListener('click', (e) => {
+      if (card.classList.contains('is-flipped')) return;
+      if (e.target.closest('#recipe-selection-overlay') || e.target === btnFlip || e.target === btnTogglePresence || e.target === initFullscreenBtn) {
+        return;
+      }
+
+      clickCountTop++;
+      clearTimeout(clickTimeoutTop);
+      if (clickCountTop >= 3) {
+        card.classList.add('is-flipped');
+        clickCountTop = 0;
+      } else {
+        clickTimeoutTop = setTimeout(() => { clickCountTop = 0; }, 400);
+      }
+    });
+
+    // Alternador manual de presencia (en caso de no tener webcam)
+    btnTogglePresence.addEventListener('click', (e) => {
+      e.stopPropagation();
+      manualPresenceForced = !manualPresenceForced;
+      
+      if (manualPresenceForced) {
+        btnTogglePresence.classList.add('active');
+        btnTogglePresence.textContent = '👤 Presencia: FORZADA (Activa)';
+        actualizarEstadoPresencia(true);
+      } else {
+        btnTogglePresence.classList.remove('active');
+        btnTogglePresence.textContent = '👤 Presencia: Auto (Cámara)';
+        actualizarEstadoPresencia(currentFacesCount > 0);
+      }
+    });
+
+    // =========================================================
+    // 4. MEDIAPIPE FACE MESH (VISIÓN COMPUTACIONAL)
+    // =========================================================
     function onResults(results) {
-      const loadingEl = document.getElementById('loading');
+      const loadingEl = document.getElementById('loading-cam');
       if (loadingEl) loadingEl.style.display = 'none';
 
       const rostrosActuales = results.multiFaceLandmarks ? results.multiFaceLandmarks.length : 0;
       const ahora = Date.now();
       currentFacesCount = rostrosActuales;
 
+      const hayAlguien = manualPresenceForced || (rostrosActuales > 0);
+      actualizarEstadoPresencia(hayAlguien);
+
       if (rostrosActuales > 0) {
-        if (!inicioSesionActual) { inicioSesionActual = ahora; }
+        if (!inicioSesionActual) inicioSesionActual = ahora;
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
       } else {
         if (inicioSesionActual) {
           tiempoAcumuladoTotal += (ahora - inicioSesionActual) / 1000;
-          inicioSesionActual = null; 
+          inicioSesionActual = null;
           tiempoSesionActual = 0;
         }
       }
 
-      // Al detectar presencia >= 1.0s, activar automáticamente la receta
-      if (systemReady && currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isVideoPlaying && !card.classList.contains('is-flipped')) {
-        reproducirReceta();
-      }
-
       if (rostrosActuales > rostrosActivos.length) {
-        const nuevosRostros = rostrosActuales - rostrosActivos.length;
-        for (let i = 0; i < nuevosRostros; i++) { rostrosActivos.push({ startTime: ahora, contado: false }); }
-      } else if (rostrosActuales < rostrosActivos.length) { 
-        rostrosActivos.splice(rostrosActuales); 
+        const nuevos = rostrosActuales - rostrosActivos.length;
+        for (let i = 0; i < nuevos; i++) rostrosActivos.push({ startTime: ahora, contado: false });
+      } else if (rostrosActuales < rostrosActivos.length) {
+        rostrosActivos.splice(rostrosActuales);
       }
 
       for (let i = 0; i < rostrosActivos.length; i++) {
         if (!rostrosActivos[i].contado && (ahora - rostrosActivos[i].startTime >= 2000)) {
-          totalHistorico++; 
+          totalHistorico++;
           rostrosActivos[i].contado = true;
         }
       }
@@ -261,22 +726,21 @@
         });
         faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
         faceMesh.onResults(onResults);
-        const camera = new window.Camera(videoElement, { 
-          onFrame: async () => { await faceMesh.send({image: videoElement}); }, 
+        const camera = new window.Camera(videoCamera, { 
+          onFrame: async () => { await faceMesh.send({image: videoCamera}); }, 
           width: 480, 
           height: 360 
         });
         camera.start().catch(err => {
-          console.warn("Cámara no disponible o permiso denegado en simulación:", err);
-          const loadingEl = document.getElementById('loading');
-          if (loadingEl) loadingEl.innerText = "SIMULACIÓN ACTIVA (CÁMARA INACTIVA)";
+          console.warn("Cámara no disponible o bloqueada:", err);
+          const loadingEl = document.getElementById('loading-cam');
+          if (loadingEl) loadingEl.innerText = "CÁMARA INACTIVA (USA EL BOTÓN PRESENCIA)";
         });
       } catch (e) {
-        console.warn("MediaPipe no pudo iniciarse en este entorno:", e);
+        console.warn("MediaPipe no pudo iniciarse:", e);
       }
     }
 
-    // Iniciar cámara y reconocimiento directamente al cargar la página
     window.addEventListener('DOMContentLoaded', iniciarCamaraYReconocimiento);
     setTimeout(iniciarCamaraYReconocimiento, 500);
   </script>
