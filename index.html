@@ -416,7 +416,6 @@
                         <button class="accordion-btn">Sucursales <span>+</span></button>
                         <div class="accordion-content">
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-REDVITAL.jpg"><img src="logo-REDVITAL.jpg" alt="REDVITAL"></div><div class="filter-results"></div></div>
-                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-LUXOR.jpg"><img src="logo-LUXOR.jpg" alt="LUXOR"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-KROMI.jpg"><img src="logo-KROMI.jpg" alt="KROMI"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-GARZON.jpg"><img src="logo-GARZON.jpg" alt="Garzón"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-YARYUR.png"><img src="logo-YARYUR.png" alt="Inversiones Yar-Yur"></div><div class="filter-results"></div></div>
@@ -565,7 +564,7 @@
             'RECETAS_Redvital La Yaguara': { tabletId: 3, bgImage: 'RECETAS_MONITOR.jpg', zone: 2 },
             'NIDO_Redvital San Diego': { tabletId: 4, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
             'NIDO_Kromi Market': { tabletId: 5, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
-            'MULTIMARCA_Luxor Círculo Militar': { tabletId: 6, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
+            'MULTIMARCA_Inversiones Yar-Yur': { tabletId: 6, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
             'SAVOY_Inversiones Yar-Yur': { tabletId: 7, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 }
         };
 
@@ -892,8 +891,7 @@
             { id: 2, sucursal: "Redvital San Diego", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2540, lon: -67.9510, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" } ], tabletIds: [4] },
             { id: 3, sucursal: "Redvital La Yaguara", estadoNombre: "Distrito Capital", estadoId: "ve-df", lat: 10.4772, lon: -66.9597, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" }, { src: "RECETAS.png" } ], tabletIds: [1, 3] },
             { id: 4, sucursal: "Garzón Hiperahorro", estadoNombre: "Táchira", estadoId: "ve-ta", lat: 7.7669, lon: -72.2250, logo: "logo-GARZON.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [2] },
-            { id: 5, sucursal: "Luxor Círculo Militar", estadoNombre: "Aragua", estadoId: "ve-ar", lat: 10.2670, lon: -67.5950, logo: "logo-LUXOR.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [6] },
-            { id: 6, sucursal: "Inversiones Yar-Yur", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.3793, lon: -66.9742, logo: "logo-YARYUR.png", images: [ { src: "SAVOY.png" } ], tabletIds: [7] }
+            { id: 5, sucursal: "Inversiones Yar-Yur", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.3793, lon: -66.9742, logo: "logo-YARYUR.png", images: [ { src: "SAVOY.png" }, { src: "MULTIMARCA.png" } ], tabletIds: [7, 6] }
         ];
 
         function iluminarEstados(arr) {
@@ -1022,7 +1020,7 @@
                 { nombre: "RECETAS Redvital La Yaguara", tablet: "03" },
                 { nombre: "NIDO Kromi Market", tablet: "05" },
                 { nombre: "NIDO Redvital San Diego", tablet: "04" },
-                { nombre: "MULTIMARCA Luxor", tablet: "06" },
+                { nombre: "MULTIMARCA Inversiones Yar-Yur", tablet: "06" },
                 { nombre: "SAVOY Inversiones Yar-Yur", tablet: "07" }
             ];
 
