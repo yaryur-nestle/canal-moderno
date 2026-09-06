@@ -409,6 +409,7 @@
                             <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="NIDO.png"><img src="NIDO.png" alt="NIDO"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="RECETAS.png"><img src="RECETAS.png" alt="RECETAS"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="MULTIMARCA.png"><img src="MULTIMARCA.png" alt="Multimarca"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="SAVOY.png"><img src="SAVOY.png" alt="Savoy"></div><div class="filter-results"></div></div>
                         </div>
                     </div>
                     <div class="accordion-item">
@@ -418,6 +419,7 @@
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-LUXOR.jpg"><img src="logo-LUXOR.jpg" alt="LUXOR"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-KROMI.jpg"><img src="logo-KROMI.jpg" alt="KROMI"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-GARZON.jpg"><img src="logo-GARZON.jpg" alt="Garzón"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-YARYUR.png"><img src="logo-YARYUR.png" alt="Inversiones Yar-Yur"></div><div class="filter-results"></div></div>
                         </div>
                     </div>
 
@@ -563,7 +565,8 @@
             'RECETAS_Redvital La Yaguara': { tabletId: 3, bgImage: 'RECETAS_MONITOR.jpg', zone: 2 },
             'NIDO_Redvital San Diego': { tabletId: 4, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
             'NIDO_Kromi Market': { tabletId: 5, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
-            'MULTIMARCA_Luxor Círculo Militar': { tabletId: 6, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 }
+            'MULTIMARCA_Luxor Círculo Militar': { tabletId: 6, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
+            'SAVOY_Inversiones Yar-Yur': { tabletId: 7, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 }
         };
 
         const configZonas = {
@@ -632,8 +635,8 @@
         });
 
         /* --- ESTADO GLOBAL DE MAPA EN VIVO --- */
-        let liveTabletCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-        let liveTabletStatuses = { 1: "OFFLINE", 2: "OFFLINE", 3: "OFFLINE", 4: "OFFLINE", 5: "OFFLINE", 6: "OFFLINE" };
+        let liveTabletCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
+        let liveTabletStatuses = { 1: "OFFLINE", 2: "OFFLINE", 3: "OFFLINE", 4: "OFFLINE", 5: "OFFLINE", 6: "OFFLINE", 7: "OFFLINE" };
         let isGlobalListenerInit = false;
 
         function updateMapMarkers() {
@@ -735,7 +738,7 @@
         }
 
         function initGlobalMapListeners() {
-            for (let i = 1; i <= 6; i++) {
+            for (let i = 1; i <= 7; i++) {
                 let numFormat = i.toString().padStart(2, '0');
                 
                 // 1. Escuchar la cantidad de personas
@@ -889,7 +892,8 @@
             { id: 2, sucursal: "Redvital San Diego", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2540, lon: -67.9510, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" } ], tabletIds: [4] },
             { id: 3, sucursal: "Redvital La Yaguara", estadoNombre: "Distrito Capital", estadoId: "ve-df", lat: 10.4772, lon: -66.9597, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" }, { src: "RECETAS.png" } ], tabletIds: [1, 3] },
             { id: 4, sucursal: "Garzón Hiperahorro", estadoNombre: "Táchira", estadoId: "ve-ta", lat: 7.7669, lon: -72.2250, logo: "logo-GARZON.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [2] },
-            { id: 5, sucursal: "Luxor Círculo Militar", estadoNombre: "Aragua", estadoId: "ve-ar", lat: 10.2670, lon: -67.5950, logo: "logo-LUXOR.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [6] }
+            { id: 5, sucursal: "Luxor Círculo Militar", estadoNombre: "Aragua", estadoId: "ve-ar", lat: 10.2670, lon: -67.5950, logo: "logo-LUXOR.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [6] },
+            { id: 6, sucursal: "Inversiones Yar-Yur", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.3793, lon: -66.9742, logo: "logo-YARYUR.png", images: [ { src: "SAVOY.png" } ], tabletIds: [7] }
         ];
 
         function iluminarEstados(arr) {
@@ -1018,7 +1022,8 @@
                 { nombre: "RECETAS Redvital La Yaguara", tablet: "03" },
                 { nombre: "NIDO Kromi Market", tablet: "05" },
                 { nombre: "NIDO Redvital San Diego", tablet: "04" },
-                { nombre: "MULTIMARCA Luxor", tablet: "06" }
+                { nombre: "MULTIMARCA Luxor", tablet: "06" },
+                { nombre: "SAVOY Inversiones Yar-Yur", tablet: "07" }
             ];
 
             const dbRef = ref(db);
