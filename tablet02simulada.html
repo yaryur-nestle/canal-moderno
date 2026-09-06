@@ -7,10 +7,32 @@
   <style>
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
     
-    /* === BOTÓN FULLSCREEN INICIAL DE TABLET 02 === */
-    #init-fullscreen-btn {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; 
-      background: transparent; border: none; outline: none; cursor: pointer;
+    .btn-fullscreen-toggle {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 10000;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1.5px solid rgba(255, 255, 255, 0.4);
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      transition: background 0.2s, transform 0.2s, border-color 0.2s;
+      outline: none;
+      padding: 0;
+    }
+    .btn-fullscreen-toggle:hover {
+      background: rgba(0, 0, 0, 0.9);
+      border-color: #00FFFF;
+      color: #00FFFF;
+      transform: scale(1.08);
     }
 
     /* === ESTILOS DE LA APLICACIÓN === */
@@ -26,12 +48,6 @@
       background-color: #000;
       box-shadow: 0 0 50px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.12);
       border-radius: 12px;
-    }
-    
-    .fullscreen-btn {
-      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-      z-index: 100; width: 150px; height: 80px; background: transparent;
-      border: none; outline: none; cursor: pointer;
     }
 
     .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; border-radius: 12px; }
@@ -106,11 +122,13 @@
 </head>
 <body>
 
-  <button id="init-fullscreen-btn" title="Activar Pantalla Completa"></button>
+  <button id="btn-fullscreen-toggle" class="btn-fullscreen-toggle" title="Pantalla Completa">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+    </svg>
+  </button>
 
   <div id="app-screen" class="scene">
-    
-    <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
 
     <!-- Botón de Presencia (Solo Emoji) -->
     <button id="btn-toggle-presence" class="person-toggle-btn" title="Simular / Alternar Presencia de Persona">
@@ -145,30 +163,29 @@
   </div>
 
   <script>
-    const initFullscreenBtn = document.getElementById('init-fullscreen-btn');
-    initFullscreenBtn.addEventListener('click', () => {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) elem.requestFullscreen();
-      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-      else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-      iniciarCamaraYReconocimiento();
-      initFullscreenBtn.remove();
-    });
-
-    // Control de pantalla completa
-    const fullscreenBtn = document.getElementById('fullscreen-btn');
-    fullscreenBtn.addEventListener('click', () => {
-      const elem = document.documentElement;
-      if (!document.fullscreenElement) {
-        if (elem.requestFullscreen) elem.requestFullscreen();
+    const btnFullscreen = document.getElementById('btn-fullscreen-toggle');
+    function isFullscreen() {
+      return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+    }
+    function updateFullscreenBtn() {
+      if (!btnFullscreen) return;
+      btnFullscreen.style.display = isFullscreen() ? 'none' : 'flex';
+    }
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) elem.requestFullscreen().catch(() => {});
         else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
         else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.msExitFullscreen) document.msExitFullscreen();
-      }
-    });
+        iniciarCamaraYReconocimiento();
+      });
+    }
+    document.addEventListener('fullscreenchange', updateFullscreenBtn);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+    document.addEventListener('mozfullscreenchange', updateFullscreenBtn);
+    document.addEventListener('MSFullscreenChange', updateFullscreenBtn);
+    updateFullscreenBtn();
 
     const btnFlip = document.getElementById('flip-btn');
     const card = document.getElementById('card');
@@ -232,7 +249,7 @@
     document.addEventListener('click', (e) => {
       if (card.classList.contains('is-flipped')) return;
 
-      if (e.target !== fullscreenBtn && e.target !== btnFlip && e.target !== initFullscreenBtn && e.target !== btnTogglePresence) {
+      if (e.target !== btnFlip && !e.target.closest('#btn-fullscreen-toggle') && e.target !== btnTogglePresence) {
         clickCount++;
         clearTimeout(clickTimeout);
         

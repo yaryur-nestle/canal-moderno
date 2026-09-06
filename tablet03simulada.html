@@ -20,10 +20,33 @@
       user-select: none;
     }
 
-    /* === BOTÓN FULLSCREEN INICIAL === */
-    #init-fullscreen-btn {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99999; 
-      background: transparent; border: none; outline: none; cursor: pointer;
+    /* === BOTÓN TOGGLE FULLSCREEN (ESQUINA SUPERIOR IZQUIERDA) === */
+    .btn-fullscreen-toggle {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 10000;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1.5px solid rgba(255, 255, 255, 0.4);
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      transition: background 0.2s, transform 0.2s, border-color 0.2s;
+      outline: none;
+      padding: 0;
+    }
+    .btn-fullscreen-toggle:hover {
+      background: rgba(0, 0, 0, 0.9);
+      border-color: #00FFFF;
+      color: #00FFFF;
+      transform: scale(1.08);
     }
 
     /* === CONTENEDOR DIVIDIDO (SPLIT SCREEN 25/75) === */
@@ -341,8 +364,12 @@
 </head>
 <body>
 
-  <!-- Capturador de pantalla completa al primer toque -->
-  <button id="init-fullscreen-btn" title="Activar Pantalla Completa"></button>
+  <!-- Botón pequeño en esquina superior izquierda para alternar pantalla completa cuando no esté activo -->
+  <button id="btn-fullscreen-toggle" class="btn-fullscreen-toggle" title="Pantalla Completa">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+    </svg>
+  </button>
 
   <!-- =========================================================
        MITAD SUPERIOR: TABLET 03 (MUEBLE)
@@ -421,17 +448,31 @@
 
   <script>
     // =========================================================
-    // FULLSCREEN INICIAL
+    // FULLSCREEN REACTIVO (BOTÓN SUPERIOR IZQUIERDO)
     // =========================================================
-    const initFullscreenBtn = document.getElementById('init-fullscreen-btn');
-    initFullscreenBtn.addEventListener('click', () => {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) elem.requestFullscreen();
-      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-      else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-      iniciarCamaraYReconocimiento();
-      initFullscreenBtn.remove();
-    });
+    const btnFullscreen = document.getElementById('btn-fullscreen-toggle');
+    function isFullscreen() {
+      return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+    }
+    function updateFullscreenBtn() {
+      if (!btnFullscreen) return;
+      btnFullscreen.style.display = isFullscreen() ? 'none' : 'flex';
+    }
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) elem.requestFullscreen().catch(() => {});
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+        if (typeof iniciarCamaraYReconocimiento === 'function') iniciarCamaraYReconocimiento();
+      });
+    }
+    document.addEventListener('fullscreenchange', updateFullscreenBtn);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+    document.addEventListener('mozfullscreenchange', updateFullscreenBtn);
+    document.addEventListener('MSFullscreenChange', updateFullscreenBtn);
+    updateFullscreenBtn();
 
     // =========================================================
     // ELEMENTOS: MITAD SUPERIOR (TABLET 03)
@@ -519,7 +560,7 @@
       }
 
       // Reacción de Lector TV si no hay ninguna receta reproduciéndose
-      if (estadoGlobalReceta === "") {
+      if (estadoGlobalReceta === "" && !isRecipePlaying) {
         if (personaDetectada) {
           // Si una persona llega y no hay video corriendo en el Lector TV:
           if (!isVideo1Playing && !isVideo2Playing) {
@@ -533,6 +574,7 @@
     }
 
     function reproducirVideo1Lector() {
+      if (isRecipePlaying || estadoGlobalReceta !== "") return;
       isVideo1Playing = true;
       isVideo2Playing = false;
       video1.style.display = 'block';
@@ -567,10 +609,53 @@
     });
 
     // =========================================================
-    // 2. DISPARADOR DE RECETA (SIMULA ESCANEO DE CÓDIGO DE BARRAS)
+    // 2. DISPARADOR Y DESACTIVADOR DE RECETA (SIMULA ESCANEO DE CÓDIGO DE BARRAS)
     // =========================================================
+    function desactivarRecetaSimulada() {
+      estadoGlobalReceta = "";
+      isRecipePlaying = false;
+      recipeBtns.forEach(btn => btn.classList.remove('active'));
+
+      // Detener y resetear video en Tablet 03
+      videoRecetaTablet.pause();
+      videoRecetaTablet.currentTime = 0;
+      overlayRecetaTablet.style.display = 'none';
+
+      // Detener y resetear videos de recetas en Lector TV
+      Object.values(videosRecetaLector).forEach(video => {
+        video.pause();
+        video.currentTime = 0;
+        video.style.display = 'none';
+      });
+
+      // Notificación toast informativa
+      scanStatusToast.textContent = "RECETA DESACTIVADA";
+      scanStatusToast.classList.add('show');
+      setTimeout(() => scanStatusToast.classList.remove('show'), 2000);
+
+      // Reanudar estado anterior en el visor Lector TV
+      if (personaDetectada) {
+        recipeButtonsOverlay.classList.add('visible');
+        video2.style.display = 'block';
+        video2.currentTime = 0;
+        video2.play().catch(e => console.log("Reanudando bucle 2:", e));
+        isVideo2Playing = true;
+      } else {
+        recipeButtonsOverlay.classList.remove('visible');
+        isVideo2Playing = false;
+        video2.style.display = 'none';
+      }
+    }
+
     function activarRecetaSimulada(recetaID) {
       if (!recetaID || !videosRecetaTabletMap[recetaID]) return;
+
+      // Si la receta tocada ya está activa, se desactiva
+      if (estadoGlobalReceta === recetaID && isRecipePlaying) {
+        desactivarRecetaSimulada();
+        return;
+      }
+
       estadoGlobalReceta = recetaID;
       isRecipePlaying = true;
 
@@ -691,7 +776,7 @@
     let clickTimeoutTop;
     document.getElementById('top-half').addEventListener('click', (e) => {
       if (card.classList.contains('is-flipped')) return;
-      if (e.target.closest('#recipe-selection-overlay') || e.target === btnFlip || e.target === btnTogglePresence || e.target === initFullscreenBtn) {
+      if (e.target.closest('#recipe-selection-overlay') || e.target === btnFlip || e.target === btnTogglePresence || e.target === btnFullscreen || e.target.closest('#btn-fullscreen-toggle')) {
         return;
       }
 
