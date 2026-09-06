@@ -392,6 +392,118 @@
             left: 15px;
         }
 
+        /* Botón de Ayuda / Semáforo en Esquina Superior Izquierda del Mapa */
+        .btn-help-semaforo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10002;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(179, 156, 110, 0.9);
+            border: 1.5px solid rgba(255, 255, 255, 0.6);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            outline: none;
+            padding: 0;
+        }
+        .btn-help-semaforo:hover {
+            background: rgba(150, 129, 87, 1);
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(179, 156, 110, 0.4);
+        }
+
+        body.not-fullscreen .btn-help-semaforo {
+            left: 65px;
+        }
+        body.is-fullscreen .btn-help-semaforo {
+            left: 20px;
+        }
+
+        /* =========================================
+           MODAL FLOTANTE: SEMÁFORO Y ESTADOS
+           ========================================= */
+        .semaforo-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(8px);
+            z-index: 30000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .semaforo-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .semaforo-modal-content {
+            position: relative;
+            max-width: 95vw;
+            max-height: 95vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: zoomInModal 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes zoomInModal {
+            from { transform: scale(0.92); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .semaforo-img {
+            max-width: 92vw;
+            max-height: 90vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 16px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-close-semaforo {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            color: #ffffff;
+            font-size: 32px;
+            line-height: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.25s ease;
+            outline: none;
+            padding: 0;
+            z-index: 30001;
+        }
+        .btn-close-semaforo:hover {
+            background: rgba(255, 50, 50, 0.85);
+            border-color: #ff3333;
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 0 20px rgba(255, 50, 50, 0.8);
+        }
+
     </style>
 </head>
 <body>
@@ -439,6 +551,14 @@
                 <div id="map"></div>
                 <img src="CAPA.png" id="capa-superior" alt="Capa Decorativa">
                 
+                <button id="btn-help-semaforo" class="btn-help-semaforo" title="Explicación del Semáforo y Estados">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </button>
+
                 <button id="hamburger-btn">
                     <span></span><span></span><span></span>
                 </button>
@@ -669,6 +789,7 @@
         document.addEventListener('MSFullscreenChange', updateFullscreenBtn);
 
         function toggleAppView(viewPathInput) {
+            cerrarModalSemaforo();
             loginView.style.display = 'none';
             welcomeView.style.display = 'none';
             mapView.style.display = 'none';
@@ -1853,6 +1974,65 @@
             estadoVisual[zoneId] = activasActuales; 
         }
 
+        /* --- MODAL FLOTANTE: SEMÁFORO Y ESTADOS --- */
+        const semaforoModal = document.getElementById('semaforo-modal');
+        const btnHelpSemaforo = document.getElementById('btn-help-semaforo');
+        const btnCloseSemaforo = document.getElementById('btn-close-semaforo');
+
+        function abrirModalSemaforo() {
+            if (!semaforoModal) return;
+            semaforoModal.style.display = 'flex';
+            void semaforoModal.offsetWidth; // Forzar reflujo para transición CSS
+            semaforoModal.classList.add('active');
+        }
+
+        function cerrarModalSemaforo() {
+            if (!semaforoModal) return;
+            semaforoModal.classList.remove('active');
+            setTimeout(() => {
+                if (!semaforoModal.classList.contains('active')) {
+                    semaforoModal.style.display = 'none';
+                }
+            }, 300);
+        }
+
+        if (btnHelpSemaforo) {
+            btnHelpSemaforo.addEventListener('click', (e) => {
+                e.stopPropagation();
+                abrirModalSemaforo();
+            });
+        }
+
+        if (btnCloseSemaforo) {
+            btnCloseSemaforo.addEventListener('click', (e) => {
+                e.stopPropagation();
+                cerrarModalSemaforo();
+            });
+        }
+
+        if (semaforoModal) {
+            semaforoModal.addEventListener('click', (e) => {
+                if (e.target === semaforoModal) {
+                    cerrarModalSemaforo();
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && semaforoModal && semaforoModal.classList.contains('active')) {
+                cerrarModalSemaforo();
+            }
+        });
+
     </script>
+
+    <!-- Modal Flotante: Explicación del Semáforo y Estados -->
+    <div id="semaforo-modal" class="semaforo-modal" style="display: none;">
+        <button id="btn-close-semaforo" class="btn-close-semaforo" title="Cerrar">&times;</button>
+        <div class="semaforo-modal-content">
+            <img src="Semaforo.png" alt="Explicación del Semáforo y Estados" class="semaforo-img">
+        </div>
+    </div>
+
 </body>
 </html>
