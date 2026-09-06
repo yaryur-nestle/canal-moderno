@@ -45,6 +45,8 @@
       color: #00FFFF;
       border: 2px solid rgba(0, 255, 255, 0.6);
       font-size: 1.35rem;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
       cursor: pointer;
       display: flex;
       justify-content: center;
@@ -143,13 +145,17 @@
     let manualPresenceForced = false;
     let currentFacesCount = 0;
 
-    function actualizarVisualBotonPresencia(hayAlguien) {
-      if (btnTogglePresence) {
-        if (hayAlguien) {
-          btnTogglePresence.classList.add('active');
-        } else {
-          btnTogglePresence.classList.remove('active');
-        }
+    function actualizarVisualBotonPresencia(countCamara) {
+      if (!btnTogglePresence) return;
+      if (countCamara > 0) {
+        btnTogglePresence.classList.add('active');
+        btnTogglePresence.textContent = countCamara;
+      } else if (manualPresenceForced) {
+        btnTogglePresence.classList.add('active');
+        btnTogglePresence.textContent = '👤';
+      } else {
+        btnTogglePresence.classList.remove('active');
+        btnTogglePresence.textContent = '👤';
       }
     }
 
@@ -157,7 +163,7 @@
       e.stopPropagation();
       manualPresenceForced = !manualPresenceForced;
       const hayAlguien = manualPresenceForced || (currentFacesCount > 0);
-      actualizarVisualBotonPresencia(hayAlguien);
+      actualizarVisualBotonPresencia(currentFacesCount);
 
       if (hayAlguien && systemReady && !isPlayingVideo && !card.classList.contains('is-flipped')) {
         isPlayingVideo = true;
@@ -166,13 +172,37 @@
         frontVideo.play().catch(err => console.log("Autoplay:", err));
       }
     });
+
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('canvas');
+    const canvasCtx = canvasElement ? canvasElement.getContext('2d') : null;
+
+    // PRE-RENDERIZADO DEL PUNTO BRILLANTE
+    const glowCanvas = document.createElement('canvas');
+    const glowCtx = glowCanvas.getContext('2d');
+    const glowSize = 16; 
+    const puntoRadius = 2;
+    const centro = glowSize / 2;
+
+    glowCanvas.width = glowSize;
+    glowCanvas.height = glowSize;
+
+    glowCtx.shadowColor = '#00FFFF';
+    glowCtx.shadowBlur = 8;
+    glowCtx.fillStyle = '#00FFFF';
+    glowCtx.beginPath();
+    glowCtx.arc(centro, centro, puntoRadius, 0, 2 * Math.PI);
+    glowCtx.fill();
     
     btnFlip.addEventListener('click', (e) => { 
       e.stopPropagation();
-      card.classList.remove('is-flipped'); 
+      card.classList.remove('is-flipped');
+      if (canvasCtx && canvasElement) {
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      }
     });
 
-    // Habilitado para demostración: 3 clics rápidos en pantalla voltean la tarjeta
+    // Habilitado para demostración: 5 clics rápidos en pantalla voltean la tarjeta
     let clickCount = 0;
     let clickTimeout;
     document.addEventListener('click', (e) => {
@@ -181,7 +211,7 @@
       if (e.target !== btnFlip && e.target !== initFullscreenBtn && e.target !== btnTogglePresence) {
         clickCount++;
         clearTimeout(clickTimeout);
-        if (clickCount >= 3) {
+        if (clickCount >= 5) {
           card.classList.add('is-flipped');
           clickCount = 0;
           if (isPlayingVideo) {
@@ -193,13 +223,11 @@
           inicioSesionActual = null;
           tiempoSesionActual = 0;
         } else {
-          clickTimeout = setTimeout(() => { clickCount = 0; }, 400);
+          clickTimeout = setTimeout(() => { clickCount = 0; }, 500);
         }
       }
     });
 
-    const videoElement = document.getElementById('video');
-    const canvasElement = document.getElementById('canvas');
     const faceElement = document.getElementById('face-counter');
     const totalElement = document.getElementById('total-counter');
     const timeElement = document.getElementById('time-counter');
@@ -228,7 +256,7 @@
       currentFacesCount = rostrosActuales;
 
       const hayAlguien = manualPresenceForced || (rostrosActuales > 0);
-      actualizarVisualBotonPresencia(hayAlguien);
+      actualizarVisualBotonPresencia(rostrosActuales);
 
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) { inicioSesionActual = ahora; }
@@ -268,6 +296,37 @@
       totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
       timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
       avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
+
+      // Renderizado de la Malla de MediaPipe sobre el rostro si la tarjeta está girada
+      if (results.image && canvasElement) {
+        if (canvasElement.width !== results.image.width || canvasElement.height !== results.image.height) {
+          canvasElement.width = results.image.width;
+          canvasElement.height = results.image.height;
+        }
+      }
+
+      if (canvasElement && canvasCtx) {
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+        if (card.classList.contains('is-flipped') && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+          canvasCtx.globalCompositeOperation = "lighter";
+          const drawFn = window.drawConnectors || (typeof drawConnectors !== 'undefined' ? drawConnectors : null);
+          const tess = window.FACEMESH_TESSELATION || (typeof FACEMESH_TESSELATION !== 'undefined' ? FACEMESH_TESSELATION : null);
+
+          for (const landmarks of results.multiFaceLandmarks) {
+            if (drawFn && tess) {
+              drawFn(canvasCtx, landmarks, tess, { color: '#00FF0050', lineWidth: 0.8 });
+            }
+            for (let i = 0; i < landmarks.length; i += 2) {
+              const px = landmarks[i].x * canvasElement.width;
+              const py = landmarks[i].y * canvasElement.height;
+              canvasCtx.drawImage(glowCanvas, px - centro, py - centro);
+            }
+          }
+        }
+        canvasCtx.restore();
+      }
     }
 
     function iniciarCamaraYReconocimiento() {

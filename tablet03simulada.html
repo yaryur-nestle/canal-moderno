@@ -26,20 +26,21 @@
       background: transparent; border: none; outline: none; cursor: pointer;
     }
 
-    /* === CONTENEDOR DIVIDIDO (SPLIT SCREEN 50/50) === */
+    /* === CONTENEDOR DIVIDIDO (SPLIT SCREEN 25/75) === */
     .split-pane {
       position: relative;
       width: 100vw;
-      height: 50vh;
       overflow: hidden;
       background-color: #050505;
     }
 
     #top-half {
+      height: 25vh;
       border-bottom: 2px solid rgba(0, 255, 255, 0.4);
     }
 
     #bottom-half {
+      height: 75vh;
       border-top: 2px solid rgba(0, 255, 255, 0.4);
       display: flex;
       justify-content: center;
@@ -47,19 +48,21 @@
       background-color: #000;
     }
 
-    /* Botón de Presencia (Solo Emoji) */
+    /* Botón de Presencia (Emoji o Número de Personas) */
     .person-toggle-btn {
       position: absolute;
-      bottom: 15px;
-      right: 15px;
+      bottom: 10px;
+      right: 10px;
       z-index: 100;
-      width: 46px;
-      height: 46px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       background: rgba(0, 0, 0, 0.65);
       color: #00FFFF;
       border: 2px solid rgba(0, 255, 255, 0.6);
-      font-size: 1.35rem;
+      font-size: 1.25rem;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
       cursor: pointer;
       display: flex;
       justify-content: center;
@@ -139,17 +142,17 @@
     /* Botonera flotante de recetas superpuesta en Tablet 03 */
     #recipe-selection-overlay {
       position: absolute;
-      bottom: 15px;
+      bottom: 8px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 80;
       display: flex;
-      gap: 12px;
-      background: rgba(0, 0, 0, 0.75);
-      padding: 10px 20px;
-      border-radius: 35px;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 6px 14px;
+      border-radius: 25px;
       border: 1px solid #00FFFF;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.35);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.35);
       backdrop-filter: blur(10px);
       opacity: 0;
       pointer-events: none;
@@ -164,10 +167,10 @@
       background: rgba(0, 255, 255, 0.15);
       color: #00FFFF;
       border: 1px solid #00FFFF;
-      padding: 8px 18px;
-      border-radius: 20px;
+      padding: 5px 12px;
+      border-radius: 14px;
       font-family: inherit;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       font-weight: bold;
       cursor: pointer;
       letter-spacing: 1px;
@@ -198,17 +201,17 @@
       transform: scaleX(-1);
     }
     canvas#canvasMesh { z-index: 10; }
-    .diag-panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+    .diag-panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 4px; padding: 6px; }
     .diag-panel.left { top: 0; left: 0; }
     .diag-panel.right { top: 0; right: 0; align-items: flex-end; }
     .diag-box {
-      padding: 6px 14px;
+      padding: 3px 8px;
       border-radius: 4px;
       font-weight: bold;
-      font-size: 0.85rem;
+      font-size: 0.72rem;
       backdrop-filter: blur(8px);
       border: 1px solid;
-      min-width: 130px;
+      min-width: 90px;
       text-shadow: 0 0 5px currentColor;
     }
     #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
@@ -222,24 +225,24 @@
       transform: translate(-50%, -50%);
       z-index: 40;
       background: rgba(0,0,0,0.85);
-      padding: 10px 20px;
+      padding: 6px 14px;
       border: 1px solid #00FFFF;
       color: #00FFFF;
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       font-weight: bold;
       border-radius: 6px;
     }
 
     .flip-btn {
       position: absolute;
-      bottom: 15px;
-      left: 15px;
+      bottom: 10px;
+      left: 10px;
       z-index: 50;
       background: rgba(0, 255, 255, 0.15);
       border: 1px solid #00FFFF;
       color: #00FFFF;
-      width: 44px;
-      height: 44px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       cursor: pointer;
       display: flex;
@@ -255,14 +258,14 @@
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
 
     /* =========================================================
-       MITAD INFERIOR: LECTOR TV (ROTADO 90° HORARIO)
+       MITAD INFERIOR: LECTOR TV (ROTADO 90° HORARIO, 75vh)
        ========================================================= */
     .tv-rotate-container {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 50vh;
-      height: calc(50vh * 9 / 16);
+      width: 75vh;
+      height: calc(75vh * 9 / 16);
       transform: translate(-50%, -50%) rotate(90deg);
       background-color: #000;
       overflow: hidden;
@@ -471,23 +474,27 @@
     let estadoGlobalReceta = ""; // "", "01", "02", "03", "04"
     let personaDetectada = false;
 
-    // Actualiza el aspecto del botón de personita (verde = detectada / presionado)
-    function actualizarVisualBotonPresencia(hayAlguien) {
-      if (btnTogglePresence) {
-        if (hayAlguien) {
-          btnTogglePresence.classList.add('active');
-        } else {
-          btnTogglePresence.classList.remove('active');
-        }
+    // Actualiza el aspecto del botón de personita (verde = detectada / presionado; muestra número si detecta cámara)
+    function actualizarVisualBotonPresencia(countCamara) {
+      if (!btnTogglePresence) return;
+      if (countCamara > 0) {
+        btnTogglePresence.classList.add('active');
+        btnTogglePresence.textContent = countCamara;
+      } else if (manualPresenceForced) {
+        btnTogglePresence.classList.add('active');
+        btnTogglePresence.textContent = '👤';
+      } else {
+        btnTogglePresence.classList.remove('active');
+        btnTogglePresence.textContent = '👤';
       }
     }
 
     // =========================================================
     // 1. SINCRONIZACIÓN DE DETECCIÓN DE PERSONAS (TABLET ➔ LECTOR)
     // =========================================================
-    function actualizarEstadoPresencia(hayPersonas) {
+    function actualizarEstadoPresencia(hayPersonas, countCamara = 0) {
       personaDetectada = hayPersonas;
-      actualizarVisualBotonPresencia(personaDetectada);
+      actualizarVisualBotonPresencia(countCamara);
 
       // Mostrar/ocultar los 4 botones superpuestos en Tablet 03
       if (personaDetectada) {
@@ -652,15 +659,38 @@
       e.stopPropagation();
       manualPresenceForced = !manualPresenceForced;
       const hayAlguien = manualPresenceForced || (currentFacesCount > 0);
-      actualizarEstadoPresencia(hayAlguien);
+      actualizarEstadoPresencia(hayAlguien, currentFacesCount);
     });
+
+    const canvasElement = document.getElementById('canvasMesh');
+    const canvasCtx = canvasElement ? canvasElement.getContext('2d') : null;
+
+    // PRE-RENDERIZADO DEL PUNTO BRILLANTE
+    const glowCanvas = document.createElement('canvas');
+    const glowCtx = glowCanvas.getContext('2d');
+    const glowSize = 16; 
+    const puntoRadius = 2;
+    const centro = glowSize / 2;
+
+    glowCanvas.width = glowSize;
+    glowCanvas.height = glowSize;
+
+    glowCtx.shadowColor = '#00FFFF';
+    glowCtx.shadowBlur = 8;
+    glowCtx.fillStyle = '#00FFFF';
+    glowCtx.beginPath();
+    glowCtx.arc(centro, centro, puntoRadius, 0, 2 * Math.PI);
+    glowCtx.fill();
 
     btnFlip.addEventListener('click', (e) => {
       e.stopPropagation();
       card.classList.remove('is-flipped');
+      if (canvasCtx && canvasElement) {
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      }
     });
 
-    // 3 clics rápidos en el fondo de Tablet 03 para girar tarjeta
+    // 5 clics rápidos en el fondo de Tablet 03 para girar tarjeta
     let clickCountTop = 0;
     let clickTimeoutTop;
     document.getElementById('top-half').addEventListener('click', (e) => {
@@ -671,11 +701,11 @@
 
       clickCountTop++;
       clearTimeout(clickTimeoutTop);
-      if (clickCountTop >= 3) {
+      if (clickCountTop >= 5) {
         card.classList.add('is-flipped');
         clickCountTop = 0;
       } else {
-        clickTimeoutTop = setTimeout(() => { clickCountTop = 0; }, 400);
+        clickTimeoutTop = setTimeout(() => { clickCountTop = 0; }, 500);
       }
     });
 
@@ -691,7 +721,7 @@
       currentFacesCount = rostrosActuales;
 
       const hayAlguien = manualPresenceForced || (rostrosActuales > 0);
-      actualizarEstadoPresencia(hayAlguien);
+      actualizarEstadoPresencia(hayAlguien, rostrosActuales);
 
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) inicioSesionActual = ahora;
@@ -725,6 +755,37 @@
       totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
       timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
       avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
+
+      // Renderizado de la Malla de MediaPipe sobre el rostro si la tarjeta está girada
+      if (results.image && canvasElement) {
+        if (canvasElement.width !== results.image.width || canvasElement.height !== results.image.height) {
+          canvasElement.width = results.image.width;
+          canvasElement.height = results.image.height;
+        }
+      }
+
+      if (canvasElement && canvasCtx) {
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+        if (card.classList.contains('is-flipped') && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+          canvasCtx.globalCompositeOperation = "lighter";
+          const drawFn = window.drawConnectors || (typeof drawConnectors !== 'undefined' ? drawConnectors : null);
+          const tess = window.FACEMESH_TESSELATION || (typeof FACEMESH_TESSELATION !== 'undefined' ? FACEMESH_TESSELATION : null);
+
+          for (const landmarks of results.multiFaceLandmarks) {
+            if (drawFn && tess) {
+              drawFn(canvasCtx, landmarks, tess, { color: '#00FF0050', lineWidth: 0.8 });
+            }
+            for (let i = 0; i < landmarks.length; i += 2) {
+              const px = landmarks[i].x * canvasElement.width;
+              const py = landmarks[i].y * canvasElement.height;
+              canvasCtx.drawImage(glowCanvas, px - centro, py - centro);
+            }
+          }
+        }
+        canvasCtx.restore();
+      }
     }
 
     function iniciarCamaraYReconocimiento() {
