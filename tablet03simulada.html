@@ -174,55 +174,77 @@
       background-color: #000;
     }
 
-    /* Botonera flotante de recetas superpuesta en Tablet 03 */
-    #recipe-selection-overlay {
+    /* =========================================================
+       BOTONERA LATERAL DE RECETAS (IZQUIERDA Y DERECHA EN ESPACIO SUPERIOR)
+       ========================================================= */
+    .recipe-side-container {
       position: absolute;
-      bottom: 8px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 80;
+      top: 0;
+      bottom: 0;
+      width: calc((100vw - min(100vw, calc(25vh * (21.5 / 13.5)))) / 2);
       display: flex;
-      gap: 6px;
-      background: rgba(0, 0, 0, 0.85);
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid #00FFFF;
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.35);
-      backdrop-filter: blur(10px);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s ease, transform 0.4s ease;
-    }
-    #recipe-selection-overlay.visible {
-      opacity: 1;
+      flex-direction: column;
+      justify-content: space-evenly;
+      align-items: center;
+      z-index: 90;
       pointer-events: auto;
-      transform: translateX(-50%) translateY(0);
-    }
-    .recipe-btn {
-      background: rgba(0, 255, 255, 0.15);
-      color: #00FFFF;
-      border: 1px solid #00FFFF;
       padding: 4px 8px;
+      box-sizing: border-box;
+    }
+    .recipe-side-container.left {
+      left: 0;
+    }
+    .recipe-side-container.right {
+      right: 0;
+    }
+
+    .recipe-btn {
+      position: relative;
+      background: rgba(18, 18, 18, 0.7);
+      border: 1.5px solid rgba(0, 255, 255, 0.4);
       border-radius: 12px;
-      font-family: inherit;
-      font-size: 0.68rem;
-      font-weight: bold;
+      padding: 4px 6px;
       cursor: pointer;
-      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 10.5vh;
+      max-height: 110px;
       transition: all 0.25s ease;
-      white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      outline: none;
+    }
+    .recipe-btn img {
+      height: 100%;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.85));
+      transition: transform 0.25s ease;
+      pointer-events: none;
     }
     .recipe-btn:hover {
-      background: #00FFFF;
-      color: #000;
-      box-shadow: 0 0 15px #00FFFF;
-      transform: scale(1.05);
+      background: rgba(0, 255, 255, 0.15);
+      border-color: #00FFFF;
+      box-shadow: 0 0 18px rgba(0, 255, 255, 0.6);
+      transform: scale(1.08);
+    }
+    .recipe-btn:hover img {
+      transform: scale(1.04);
     }
     .recipe-btn.active {
-      background: #00FF88;
-      color: #000;
+      background: rgba(0, 255, 136, 0.25);
       border-color: #00FF88;
-      box-shadow: 0 0 15px #00FF88;
+      box-shadow: 0 0 22px rgba(0, 255, 136, 0.95), inset 0 0 10px rgba(0, 255, 136, 0.35);
+      transform: scale(1.06);
+      animation: pulse-active-recipe 1.8s infinite;
+    }
+
+    @keyframes pulse-active-recipe {
+      0% { box-shadow: 0 0 10px rgba(0, 255, 136, 0.7); }
+      50% { box-shadow: 0 0 22px rgba(0, 255, 136, 1), 0 0 35px rgba(0, 255, 136, 0.5); }
+      100% { box-shadow: 0 0 10px rgba(0, 255, 136, 0.7); }
     }
 
     /* Flip View Técnico (Cámara + Diagnóstico) */
@@ -375,6 +397,16 @@
        MITAD SUPERIOR: TABLET 03 (MUEBLE)
        ========================================================= -->
   <div id="top-half" class="split-pane">
+    <!-- Columna lateral izquierda de recetas: 01 (arriba) y 02 (abajo) -->
+    <div class="recipe-side-container left">
+      <button class="recipe-btn" data-receta="01" title="Receta 01: Savoy Postres Chocolate Oscuro 55%">
+        <img src="01RECETA.png" alt="Receta 01 - Savoy Postres">
+      </button>
+      <button class="recipe-btn" data-receta="02" title="Receta 02: Leche Condensada Nestlé">
+        <img src="02RECETA.png" alt="Receta 02 - Leche Condensada">
+      </button>
+    </div>
+
     <div class="scene-tablet">
       <!-- Botón de Presencia en la esquina inferior derecha (solo emoji 👤) -->
       <button id="btn-toggle-presence" class="person-toggle-btn" title="Simular / Alternar Presencia de Persona">
@@ -387,14 +419,6 @@
           <!-- Video interactivo de receta en Tablet -->
           <div id="overlayRecetaTablet">
             <video id="videoRecetaTablet" preload="auto" playsinline></video>
-          </div>
-
-          <!-- 4 Botones superpuestos de recetas -->
-          <div id="recipe-selection-overlay">
-            <button class="recipe-btn" data-receta="01">RECETA 01</button>
-            <button class="recipe-btn" data-receta="02">RECETA 02</button>
-            <button class="recipe-btn" data-receta="03">RECETA 03</button>
-            <button class="recipe-btn" data-receta="04">RECETA 04</button>
           </div>
         </div>
 
@@ -419,6 +443,16 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="17 11 21 7 17 3"></polyline><line x1="21" y1="7" x2="9" y2="7"></line><polyline points="7 13 3 17 7 21"></polyline><line x1="3" y1="17" x2="15" y2="17"></line>
         </svg>
+      </button>
+    </div>
+
+    <!-- Columna lateral derecha de recetas: 03 (arriba) y 04 (abajo) -->
+    <div class="recipe-side-container right">
+      <button class="recipe-btn" data-receta="03" title="Receta 03: Maggi Sopa Casera Cruzado Criollo">
+        <img src="03RECETA.png" alt="Receta 03 - Maggi Cruzado Criollo">
+      </button>
+      <button class="recipe-btn" data-receta="04" title="Receta 04: Maggi Sopa de Pollo con Fideos">
+        <img src="04RECETA.png" alt="Receta 04 - Maggi Sopa de Pollo">
       </button>
     </div>
   </div>
@@ -481,7 +515,6 @@
     const btnFlip = document.getElementById('flip-btn');
     const overlayRecetaTablet = document.getElementById('overlayRecetaTablet');
     const videoRecetaTablet = document.getElementById('videoRecetaTablet');
-    const recipeButtonsOverlay = document.getElementById('recipe-selection-overlay');
     const recipeBtns = document.querySelectorAll('.recipe-btn');
     const btnTogglePresence = document.getElementById('btn-toggle-presence');
 
@@ -549,15 +582,6 @@
     function actualizarEstadoPresencia(hayPersonas, countCamara = 0) {
       personaDetectada = hayPersonas;
       actualizarVisualBotonPresencia(countCamara);
-
-      // Mostrar/ocultar los 4 botones superpuestos en Tablet 03
-      if (personaDetectada) {
-        recipeButtonsOverlay.classList.add('visible');
-      } else {
-        if (!isRecipePlaying) {
-          recipeButtonsOverlay.classList.remove('visible');
-        }
-      }
 
       // Reacción de Lector TV si no hay ninguna receta reproduciéndose
       if (estadoGlobalReceta === "" && !isRecipePlaying) {
@@ -635,13 +659,11 @@
 
       // Reanudar estado anterior en el visor Lector TV
       if (personaDetectada) {
-        recipeButtonsOverlay.classList.add('visible');
         video2.style.display = 'block';
         video2.currentTime = 0;
         video2.play().catch(e => console.log("Reanudando bucle 2:", e));
         isVideo2Playing = true;
       } else {
-        recipeButtonsOverlay.classList.remove('visible');
         isVideo2Playing = false;
         video2.style.display = 'none';
       }
@@ -728,13 +750,11 @@
 
       // Reanudar el estado según si hay una persona frente al mueble
       if (personaDetectada) {
-        recipeButtonsOverlay.classList.add('visible');
         video2.style.display = 'block';
         video2.currentTime = 0;
         video2.play().catch(e => console.log("Reanudando bucle 2:", e));
         isVideo2Playing = true;
       } else {
-        recipeButtonsOverlay.classList.remove('visible');
         isVideo2Playing = false;
         video2.style.display = 'none';
       }
@@ -776,7 +796,7 @@
     let clickTimeoutTop;
     document.getElementById('top-half').addEventListener('click', (e) => {
       if (card.classList.contains('is-flipped')) return;
-      if (e.target.closest('#recipe-selection-overlay') || e.target === btnFlip || e.target === btnTogglePresence || e.target === btnFullscreen || e.target.closest('#btn-fullscreen-toggle')) {
+      if (e.target.closest('.recipe-side-container') || e.target.closest('.recipe-btn') || e.target === btnFlip || e.target === btnTogglePresence || e.target === btnFullscreen || e.target.closest('#btn-fullscreen-toggle')) {
         return;
       }
 
