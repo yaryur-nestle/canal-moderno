@@ -381,7 +381,18 @@
       const faceMesh = new window.FaceMesh({locateFile: (file) => { return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`; }});
       faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
       faceMesh.onResults(onResults);
-      const camera = new window.Camera(videoElement, { onFrame: async () => { await faceMesh.send({image: videoElement}); }, width: 1280, height: 720 });
+      let lastFrameTime = 0;
+      const camera = new window.Camera(videoElement, { 
+        onFrame: async () => { 
+          if (isVideoPlaying) return; 
+          const now = performance.now();
+          if (now - lastFrameTime < 90) return;
+          lastFrameTime = now;
+          await faceMesh.send({image: videoElement}); 
+        }, 
+        width: 480, 
+        height: 360 
+      });
       camera.start();
     }
   </script>

@@ -167,11 +167,15 @@
       align-items: center;
       z-index: 50;
     }
-    #videoRecetaTablet {
+    .video-receta-tablet {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: contain;
       background-color: #000;
+      display: none;
     }
 
     /* =========================================================
@@ -418,7 +422,10 @@
         <div class="face face-front">
           <!-- Video interactivo de receta en Tablet -->
           <div id="overlayRecetaTablet">
-            <video id="videoRecetaTablet" preload="auto" playsinline></video>
+            <video id="videoRecetaTablet1" class="video-receta-tablet" src="VIDEO_1RECETA.mp4" preload="auto" muted playsinline></video>
+            <video id="videoRecetaTablet2" class="video-receta-tablet" src="VIDEO_2RECETA.mp4" preload="auto" muted playsinline></video>
+            <video id="videoRecetaTablet3" class="video-receta-tablet" src="VIDEO_3RECETA.mp4" preload="auto" muted playsinline></video>
+            <video id="videoRecetaTablet4" class="video-receta-tablet" src="VIDEO_4RECETA.mp4" preload="auto" muted playsinline></video>
           </div>
         </div>
 
@@ -469,14 +476,14 @@
       <img id="visorImagenLector" src="TABLET 03.jpg" alt="Pantalla base Lector">
 
       <!-- Videos de atención (cuando se detecta una persona) -->
-      <video id="video1" class="video-player-tv" src="VIDEO_01_reparado.mp4" playsinline></video>
-      <video id="video2" class="video-player-tv" src="VIDEO_02.mp4" playsinline></video>
+      <video id="video1" class="video-player-tv" src="VIDEO_01_reparado.mp4" preload="auto" playsinline></video>
+      <video id="video2" class="video-player-tv" src="VIDEO_02.mp4" preload="auto" playsinline></video>
 
       <!-- Videos de las 4 recetas en el TV Lector -->
-      <video id="videoReceta1" class="video-player-tv" src="VIDEO_RECETA1.mp4" playsinline></video>
-      <video id="videoReceta2" class="video-player-tv" src="VIDEO_RECETA2.mp4" playsinline></video>
-      <video id="videoReceta3" class="video-player-tv" src="VIDEO_RECETA3.mp4" playsinline></video>
-      <video id="videoReceta4" class="video-player-tv" src="VIDEO_RECETA4.mp4" playsinline></video>
+      <video id="videoReceta1" class="video-player-tv" src="VIDEO_RECETA1.mp4" preload="auto" playsinline></video>
+      <video id="videoReceta2" class="video-player-tv" src="VIDEO_RECETA2.mp4" preload="auto" playsinline></video>
+      <video id="videoReceta3" class="video-player-tv" src="VIDEO_RECETA3.mp4" preload="auto" playsinline></video>
+      <video id="videoReceta4" class="video-player-tv" src="VIDEO_RECETA4.mp4" preload="auto" playsinline></video>
     </div>
   </div>
 
@@ -514,7 +521,12 @@
     const card = document.getElementById('card');
     const btnFlip = document.getElementById('flip-btn');
     const overlayRecetaTablet = document.getElementById('overlayRecetaTablet');
-    const videoRecetaTablet = document.getElementById('videoRecetaTablet');
+    const videosRecetaTablet = {
+      "01": document.getElementById('videoRecetaTablet1'),
+      "02": document.getElementById('videoRecetaTablet2'),
+      "03": document.getElementById('videoRecetaTablet3'),
+      "04": document.getElementById('videoRecetaTablet4')
+    };
     const recipeBtns = document.querySelectorAll('.recipe-btn');
     const btnTogglePresence = document.getElementById('btn-toggle-presence');
 
@@ -640,9 +652,12 @@
       isRecipePlaying = false;
       recipeBtns.forEach(btn => btn.classList.remove('active'));
 
-      // Detener y resetear video en Tablet 03
-      videoRecetaTablet.pause();
-      videoRecetaTablet.currentTime = 0;
+      // Detener y resetear videos en Tablet 03
+      Object.values(videosRecetaTablet).forEach(vt => {
+        vt.pause();
+        vt.currentTime = 0;
+        vt.style.display = 'none';
+      });
       overlayRecetaTablet.style.display = 'none';
 
       // Detener y resetear videos de recetas en Lector TV
@@ -716,22 +731,28 @@
         }
       });
 
-      // --- B) ACCIÓN EN MITAD SUPERIOR (TABLET 03) ---
-      const videoSrcTablet = videosRecetaTabletMap[recetaID];
+      // --- B) ACCIÓN EN MITAD SUPERIOR (TABLET 03: PRECARGADO, MUTED, 0MS DELAY) ---
       overlayRecetaTablet.style.display = 'flex';
-      
-      if (videoRecetaTablet.getAttribute('src') !== videoSrcTablet) {
-        videoRecetaTablet.src = videoSrcTablet;
-      }
-      videoRecetaTablet.currentTime = 0;
-      videoRecetaTablet.play().catch(e => console.error("Error Tablet Receta:", e));
+      Object.keys(videosRecetaTablet).forEach(key => {
+        const vt = videosRecetaTablet[key];
+        if (key === recetaID) {
+          vt.style.display = 'block';
+          vt.currentTime = 0;
+          vt.play().catch(e => console.error(`Error Tablet Receta ${key}:`, e));
+        } else {
+          vt.pause();
+          vt.style.display = 'none';
+        }
+      });
     }
 
     // Finalización de la receta en Tablet 03
-    videoRecetaTablet.addEventListener('ended', () => {
-      overlayRecetaTablet.style.display = 'none';
-      videoRecetaTablet.pause();
-      verificarFinReceta();
+    Object.values(videosRecetaTablet).forEach(vt => {
+      vt.addEventListener('ended', () => {
+        vt.style.display = 'none';
+        vt.pause();
+        verificarFinReceta();
+      });
     });
 
     // Finalización de la receta en Lector TV
@@ -747,6 +768,11 @@
       estadoGlobalReceta = "";
       isRecipePlaying = false;
       recipeBtns.forEach(btn => btn.classList.remove('active'));
+      overlayRecetaTablet.style.display = 'none';
+      Object.values(videosRecetaTablet).forEach(vt => {
+        vt.pause();
+        vt.style.display = 'none';
+      });
 
       // Reanudar el estado según si hay una persona frente al mueble
       if (personaDetectada) {
@@ -890,8 +916,19 @@
         });
         faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
         faceMesh.onResults(onResults);
+        let lastFaceMeshFrameTime = 0;
         const camera = new window.Camera(videoCamera, { 
-          onFrame: async () => { await faceMesh.send({image: videoCamera}); }, 
+          onFrame: async () => { 
+            // Si hay una receta reproduciéndose, pausar por completo la inferencia para 0 lag en video
+            if (isRecipePlaying) return; 
+
+            // Throttling inteligente a ~11 FPS (libera más del 65% de GPU en idle/navegación)
+            const now = performance.now();
+            if (now - lastFaceMeshFrameTime < 90) return;
+            lastFaceMeshFrameTime = now;
+
+            await faceMesh.send({image: videoCamera}); 
+          }, 
           width: 480, 
           height: 360 
         });
