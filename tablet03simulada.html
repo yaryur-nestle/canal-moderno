@@ -49,8 +49,9 @@
       transform: scale(1.08);
     }
 
-    /* === BOTÓN INDICADOR DE SINCRONIZACIÓN CON LECTORCAM === */
+    /* === BOTÓN INDICADOR DE SINCRONIZACIÓN CON LECTORCAM (OCULTO) === */
     .btn-firebase-sync {
+      display: none !important;
       position: fixed;
       top: 15px;
       left: 62px;
@@ -549,8 +550,8 @@
     </svg>
   </button>
 
-  <!-- Botón de estado / sincronización con LectorCam (Firebase) -->
-  <button id="btn-firebase-sync" class="btn-firebase-sync" title="Sincronización con LectorCam vía Firebase">
+  <!-- Botón de estado / sincronización con LectorCam (Firebase - oculto) -->
+  <button id="btn-firebase-sync" class="btn-firebase-sync" style="display: none;" title="Sincronización con LectorCam vía Firebase">
     <span class="sync-dot"></span>
     <span class="sync-text">Conectar LectorCam</span>
   </button>
