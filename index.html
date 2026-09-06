@@ -205,6 +205,50 @@
         #btn-volver-mapa { position: absolute; top: 15px; left: 15px; padding: 8px 15px; background: rgba(179, 156, 110, 0.9); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; z-index: 1000; transition: background 0.3s; font-size: 0.9rem;}
         #btn-volver-mapa:hover { background: rgba(150, 129, 87, 1); }
 
+        #btn-simular-tablet { 
+            position: absolute; 
+            top: 15px; 
+            right: 15px; 
+            padding: 8px 16px; 
+            background: rgba(179, 156, 110, 0.9); 
+            color: #fff; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            z-index: 1000; 
+            transition: background 0.3s, transform 0.2s; 
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-block;
+            box-sizing: border-box;
+            line-height: normal;
+        }
+        #btn-simular-tablet:hover { 
+            background: rgba(150, 129, 87, 1); 
+            transform: translateY(-1px);
+        }
+
+        #btn-atras-monitor {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            padding: 8px 18px;
+            background: rgba(179, 156, 110, 0.9);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            transition: background 0.3s, transform 0.2s;
+            font-size: 0.9rem;
+        }
+        #btn-atras-monitor:hover {
+            background: rgba(150, 129, 87, 1);
+            transform: translateY(-1px);
+        }
+
         .flip-container { perspective: 1500px; width: 100%; height: 100%; }
         .flipper { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.68, -0.15, 0.265, 1.15); }
         .flip-container.flipped .flipper { transform: rotateY(180deg); }
@@ -378,6 +422,7 @@
 
         <div id="monitor-view" class="spa-view">
             <button id="btn-volver-mapa">Volver al Mapa</button>
+            <a id="btn-simular-tablet" target="_blank" href="#">Simular Tablet</a>
 
             <div class="flip-container" id="flip-container">
                 <div class="flipper">
@@ -415,6 +460,8 @@
 
                     <div class="back">
                         <div class="back-content">
+                            <button id="btn-atras-monitor" onclick="flipToFront()">Atrás</button>
+
                             <button id="btn-metric" class="icon-btn metric-toggle" title="Cambiar Métrica">
                                 <svg id="icon-chrono" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A8.962 8.962 0 0012 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
                                 <svg id="icon-user" viewBox="0 0 24 24" style="display:none;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
@@ -461,7 +508,6 @@
 
                                 <button id="btn-next" class="nav-arrow" disabled><svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></button>
                             </div>
-                            <div class="hint" onclick="flipToFront()">Toca aquí para volver al exhibidor en tiempo real</div>
                             
                             <button id="btn-refresh-live" onclick="goToCurrentTime()">⟳ EN VIVO</button>
                         </div>
@@ -772,6 +818,13 @@
             const zoneId = config.zone;
             const numFormat = config.tabletId.toString().padStart(2, '0');
             
+            const simularBtn = document.getElementById('btn-simular-tablet');
+            if (simularBtn) {
+                simularBtn.href = `tablet${numFormat}simulada.html`;
+                simularBtn.style.display = 'inline-block';
+            }
+            document.getElementById('btn-volver-mapa').style.display = 'block';
+
             const estadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
             const unsubEstado = onValue(estadoQuery, (snapshot) => {
                 const data = snapshot.val();
@@ -1604,6 +1657,8 @@
             currentViewDate = new Date(); currentMetric = 'count'; 
             document.getElementById('icon-chrono').style.display = 'block'; document.getElementById('icon-user').style.display = 'none';
             document.getElementById('btn-volver-mapa').style.display = 'none'; 
+            const btnSimular = document.getElementById('btn-simular-tablet');
+            if (btnSimular) btnSimular.style.display = 'none';
             updateDashboardView();
             document.getElementById('flip-container').classList.add('flipped');
         }
@@ -1611,6 +1666,8 @@
         window.flipToFront = function() {
             document.getElementById('flip-container').classList.remove('flipped');
             document.getElementById('btn-volver-mapa').style.display = 'block';
+            const btnSimular = document.getElementById('btn-simular-tablet');
+            if (btnSimular) btnSimular.style.display = 'inline-block';
             setTimeout(() => { tabletActualEnGrafico = null; }, 500); 
         }
 
