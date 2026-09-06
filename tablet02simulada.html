@@ -30,15 +30,49 @@
     .face-back { transform: rotateY(180deg); }
     
     .flip-btn { 
-      position: absolute; bottom: 12%; right: 5%; z-index: 50; 
+      position: absolute; bottom: 15px; left: 15px; z-index: 50; 
       background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; 
-      width: 50px; height: 50px; border-radius: 50%; cursor: pointer; 
+      width: 46px; height: 46px; border-radius: 50%; cursor: pointer; 
       display: flex; justify-content: center; align-items: center; 
       backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); 
       transition: all 0.3s ease; opacity: 0; pointer-events: none; 
     }
     .card.is-flipped ~ .flip-btn { opacity: 1; pointer-events: auto; }
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
+
+    /* Botón de Presencia (Solo Emoji) */
+    .person-toggle-btn {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      z-index: 100;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      color: #00FFFF;
+      border: 2px solid rgba(0, 255, 255, 0.6);
+      font-size: 1.35rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      transition: all 0.3s ease;
+      outline: none;
+    }
+    .person-toggle-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+    }
+    .person-toggle-btn.active {
+      background: #00FF88 !important;
+      border-color: #00FF88 !important;
+      color: #000 !important;
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.9), inset 0 0 8px rgba(0, 0, 0, 0.3) !important;
+      transform: scale(1.08);
+    }
     
     video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
     canvas { z-index: 10; }
@@ -63,6 +97,11 @@
   <div id="app-screen" class="scene">
     
     <button id="fullscreen-btn" class="fullscreen-btn" title="Pantalla Completa"></button>
+
+    <!-- Botón de Presencia (Solo Emoji) -->
+    <button id="btn-toggle-presence" class="person-toggle-btn" title="Simular / Alternar Presencia de Persona">
+      👤
+    </button>
 
     <div id="card" class="card">
       <div class="face face-front">
@@ -120,7 +159,11 @@
     const btnFlip = document.getElementById('flip-btn');
     const card = document.getElementById('card');
     const frontVideo = document.getElementById('front-video');
+    const btnTogglePresence = document.getElementById('btn-toggle-presence');
+
     let isPlayingVideo = false;
+    let manualPresenceForced = false;
+    let currentFacesCount = 0;
 
     // Playlist de videos interactivos para Multimarca
     const playlist = ['video2.mp4', 'video3.mp4', 'video4.mp4'];
@@ -128,8 +171,33 @@
     
     let systemReady = false;
     setTimeout(() => { systemReady = true; }, 2000);
+
+    function actualizarVisualBotonPresencia(hayAlguien) {
+      if (btnTogglePresence) {
+        if (hayAlguien) {
+          btnTogglePresence.classList.add('active');
+        } else {
+          btnTogglePresence.classList.remove('active');
+        }
+      }
+    }
+
+    btnTogglePresence.addEventListener('click', (e) => {
+      e.stopPropagation();
+      manualPresenceForced = !manualPresenceForced;
+      const hayAlguien = manualPresenceForced || (currentFacesCount > 0);
+      actualizarVisualBotonPresencia(hayAlguien);
+
+      if (hayAlguien && systemReady && !isPlayingVideo && !card.classList.contains('is-flipped')) {
+        isPlayingVideo = true;
+        frontVideo.style.display = 'block';
+        frontVideo.currentTime = 0;
+        frontVideo.play().catch(err => console.log("Autoplay:", err));
+      }
+    });
     
-    btnFlip.addEventListener('click', () => { 
+    btnFlip.addEventListener('click', (e) => { 
+      e.stopPropagation();
       card.classList.remove('is-flipped'); 
     });
 
@@ -139,7 +207,7 @@
     document.addEventListener('click', (e) => {
       if (card.classList.contains('is-flipped')) return;
 
-      if (e.target !== fullscreenBtn && e.target !== btnFlip && e.target !== initFullscreenBtn) {
+      if (e.target !== fullscreenBtn && e.target !== btnFlip && e.target !== initFullscreenBtn && e.target !== btnTogglePresence) {
         clickCount++;
         clearTimeout(clickTimeout);
         
@@ -169,14 +237,14 @@
     const avgElement = document.getElementById('avg-counter');
 
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
-    let currentFacesCount = 0;
     let camaraIniciada = false;
 
     frontVideo.addEventListener('ended', () => {
       currentVideoIndex = (currentVideoIndex + 1) % playlist.length;
       frontVideo.src = playlist[currentVideoIndex];
       
-      if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
+      const hayAlguien = manualPresenceForced || (currentFacesCount > 0);
+      if (hayAlguien && !card.classList.contains('is-flipped')) {
         frontVideo.currentTime = 0;
         frontVideo.play().catch(e => console.error("Error reproduciendo:", e));
       } else {
@@ -193,6 +261,9 @@
       const ahora = Date.now();
       currentFacesCount = rostrosActuales;
 
+      const hayAlguien = manualPresenceForced || (rostrosActuales > 0);
+      actualizarVisualBotonPresencia(hayAlguien);
+
       if (rostrosActuales > 0) {
         if (!inicioSesionActual) { inicioSesionActual = ahora; }
         tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
@@ -204,7 +275,7 @@
         }
       }
 
-      if (systemReady && currentFacesCount > 0 && tiempoSesionActual >= 1.0 && !isPlayingVideo && !card.classList.contains('is-flipped')) {
+      if (systemReady && hayAlguien && (tiempoSesionActual >= 1.0 || manualPresenceForced) && !isPlayingVideo && !card.classList.contains('is-flipped')) {
         isPlayingVideo = true;
         frontVideo.style.display = 'block';
         frontVideo.play().catch(e => { console.log("Autoplay bloqueado:", e); });
@@ -250,7 +321,7 @@
         camera.start().catch(err => {
           console.warn("Cámara no disponible o permiso denegado en simulación:", err);
           const loadingEl = document.getElementById('loading');
-          if (loadingEl) loadingEl.innerText = "SIMULACIÓN ACTIVA (CÁMARA INACTIVA)";
+          if (loadingEl) loadingEl.innerText = "SIMULACIÓN ACTIVA (USA EL BOTÓN 👤)";
         });
       } catch (e) {
         console.warn("MediaPipe no pudo iniciarse en este entorno:", e);

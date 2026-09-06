@@ -41,54 +41,44 @@
 
     #bottom-half {
       border-top: 2px solid rgba(0, 255, 255, 0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #000;
     }
 
-    /* Etiquetas de identificación */
-    .section-badge {
+    /* Botón de Presencia (Solo Emoji) */
+    .person-toggle-btn {
       position: absolute;
-      top: 10px;
-      left: 15px;
-      z-index: 90;
-      background: rgba(0, 0, 0, 0.75);
-      color: #00FFFF;
-      border: 1px solid #00FFFF;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-      pointer-events: none;
-    }
-
-    /* Control de simulación manual */
-    .sim-presence-btn {
-      position: absolute;
-      top: 10px;
+      bottom: 15px;
       right: 15px;
-      z-index: 95;
-      background: rgba(0, 255, 255, 0.15);
+      z-index: 100;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
       color: #00FFFF;
-      border: 1px solid #00FFFF;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: bold;
+      border: 2px solid rgba(0, 255, 255, 0.6);
+      font-size: 1.35rem;
       cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       backdrop-filter: blur(8px);
-      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      transition: all 0.3s ease;
       outline: none;
     }
-    .sim-presence-btn:hover {
-      background: rgba(0, 255, 255, 0.35);
-      box-shadow: 0 0 12px rgba(0, 255, 255, 0.6);
+    .person-toggle-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
     }
-    .sim-presence-btn.active {
-      background: #00FF88;
-      color: #000;
-      border-color: #00FF88;
-      box-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+    .person-toggle-btn.active {
+      background: #00FF88 !important;
+      border-color: #00FF88 !important;
+      color: #000 !important;
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.9), inset 0 0 8px rgba(0, 0, 0, 0.3) !important;
+      transform: scale(1.08);
     }
 
     /* =========================================================
@@ -242,14 +232,14 @@
 
     .flip-btn {
       position: absolute;
-      bottom: 12px;
-      right: 15px;
+      bottom: 15px;
+      left: 15px;
       z-index: 50;
       background: rgba(0, 255, 255, 0.15);
       border: 1px solid #00FFFF;
       color: #00FFFF;
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       cursor: pointer;
       display: flex;
@@ -265,8 +255,24 @@
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
 
     /* =========================================================
-       MITAD INFERIOR: LECTOR TV
+       MITAD INFERIOR: LECTOR TV (ROTADO 90° HORARIO)
        ========================================================= */
+    .tv-rotate-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 50vh;
+      height: calc(50vh * 9 / 16);
+      transform: translate(-50%, -50%) rotate(90deg);
+      background-color: #000;
+      overflow: hidden;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.95);
+      border: 1px solid rgba(0, 255, 255, 0.25);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
     #visorImagenLector {
       position: absolute;
       top: 0;
@@ -293,13 +299,13 @@
       z-index: 20;
     }
 
-    /* Toast de estado de escaneo */
+    /* Toast de estado de escaneo (no rotado, legible horizontalmente) */
     #scan-status-toast {
       position: absolute;
       top: 15px;
       right: 15px;
       z-index: 85;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       color: #00FF88;
       border: 1px solid #00FF88;
       padding: 6px 14px;
@@ -327,10 +333,10 @@
        MITAD SUPERIOR: TABLET 03 (MUEBLE)
        ========================================================= -->
   <div id="top-half" class="split-pane">
-    <div class="section-badge">Tablet 03 &bull; Mueble Inteligente</div>
     
-    <button id="btn-toggle-presence" class="sim-presence-btn" title="Alternar detección de persona para demostración manual">
-      👤 Presencia: Auto (Cámara)
+    <!-- Botón de Presencia en la esquina inferior derecha (solo emoji 👤) -->
+    <button id="btn-toggle-presence" class="person-toggle-btn" title="Simular / Alternar Presencia de Persona">
+      👤
     </button>
 
     <div id="card" class="card">
@@ -366,7 +372,7 @@
       </div>
     </div>
 
-    <!-- Botón para regresar al frente -->
+    <!-- Botón para regresar al frente al girar tarjeta -->
     <button id="flip-btn" class="flip-btn" title="Regresar al Frente">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="17 11 21 7 17 3"></polyline><line x1="21" y1="7" x2="9" y2="7"></line><polyline points="7 13 3 17 7 21"></polyline><line x1="3" y1="17" x2="15" y2="17"></line>
@@ -375,24 +381,26 @@
   </div>
 
   <!-- =========================================================
-       MITAD INFERIOR: LECTOR TV (PANTALLA INTERACTIVA)
+       MITAD INFERIOR: LECTOR TV (ROTADO 90° HORARIO COMO EN EL MUEBLE)
        ========================================================= -->
   <div id="bottom-half" class="split-pane">
-    <div class="section-badge">TV Lector &bull; Pantalla Interactiva</div>
     <div id="scan-status-toast">RECETA SELECCIONADA</div>
 
-    <!-- Fondo inactivo -->
-    <img id="visorImagenLector" src="TABLET 03.jpg" alt="Pantalla base Lector">
+    <!-- Contenedor rotado 90 grados en la dirección de las agujas del reloj -->
+    <div class="tv-rotate-container">
+      <!-- Fondo inactivo -->
+      <img id="visorImagenLector" src="TABLET 03.jpg" alt="Pantalla base Lector">
 
-    <!-- Videos de atención (cuando se detecta una persona) -->
-    <video id="video1" class="video-player-tv" src="VIDEO_01_reparado.mp4" playsinline></video>
-    <video id="video2" class="video-player-tv" src="VIDEO_02.mp4" playsinline></video>
+      <!-- Videos de atención (cuando se detecta una persona) -->
+      <video id="video1" class="video-player-tv" src="VIDEO_01_reparado.mp4" playsinline></video>
+      <video id="video2" class="video-player-tv" src="VIDEO_02.mp4" playsinline></video>
 
-    <!-- Videos de las 4 recetas en el TV Lector -->
-    <video id="videoReceta1" class="video-player-tv" src="VIDEO_RECETA1.mp4" playsinline></video>
-    <video id="videoReceta2" class="video-player-tv" src="VIDEO_RECETA2.mp4" playsinline></video>
-    <video id="videoReceta3" class="video-player-tv" src="VIDEO_RECETA3.mp4" playsinline></video>
-    <video id="videoReceta4" class="video-player-tv" src="VIDEO_RECETA4.mp4" playsinline></video>
+      <!-- Videos de las 4 recetas en el TV Lector -->
+      <video id="videoReceta1" class="video-player-tv" src="VIDEO_RECETA1.mp4" playsinline></video>
+      <video id="videoReceta2" class="video-player-tv" src="VIDEO_RECETA2.mp4" playsinline></video>
+      <video id="videoReceta3" class="video-player-tv" src="VIDEO_RECETA3.mp4" playsinline></video>
+      <video id="videoReceta4" class="video-player-tv" src="VIDEO_RECETA4.mp4" playsinline></video>
+    </div>
   </div>
 
   <script>
@@ -463,11 +471,23 @@
     let estadoGlobalReceta = ""; // "", "01", "02", "03", "04"
     let personaDetectada = false;
 
+    // Actualiza el aspecto del botón de personita (verde = detectada / presionado)
+    function actualizarVisualBotonPresencia(hayAlguien) {
+      if (btnTogglePresence) {
+        if (hayAlguien) {
+          btnTogglePresence.classList.add('active');
+        } else {
+          btnTogglePresence.classList.remove('active');
+        }
+      }
+    }
+
     // =========================================================
     // 1. SINCRONIZACIÓN DE DETECCIÓN DE PERSONAS (TABLET ➔ LECTOR)
     // =========================================================
     function actualizarEstadoPresencia(hayPersonas) {
       personaDetectada = hayPersonas;
+      actualizarVisualBotonPresencia(personaDetectada);
 
       // Mostrar/ocultar los 4 botones superpuestos en Tablet 03
       if (personaDetectada) {
@@ -485,10 +505,10 @@
           if (!isVideo1Playing && !isVideo2Playing) {
             reproducirVideo1Lector();
           }
-        } else {
-          // Si la persona se retira: detener videos de atención del TV
-          detenerVideosAtencionLector();
         }
+        // NOTA: Si personaDetectada es false, NO cortamos el video a la fuerza.
+        // Se espera a que el video termine de reproducir hasta el final
+        // y no vuelve a empezar en bucle (manejado en los eventos 'ended').
       }
     }
 
@@ -514,17 +534,37 @@
     });
 
     video2.addEventListener('ended', () => {
+      // Si la persona sigue ahí, continúa en bucle
       if (personaDetectada && estadoGlobalReceta === "") {
         video2.currentTime = 0;
         video2.play().catch(e => console.error("Error Video 02 bucle:", e));
         isVideo2Playing = true;
       } else {
+        // Si no hay personas detectadas, se espera al final y NO vuelve a empezar
         isVideo2Playing = false;
         video2.style.display = 'none';
       }
     });
 
-    function detenerVideosAtencionLector() {
+    // =========================================================
+    // 2. DISPARADOR DE RECETA (SIMULA ESCANEO DE CÓDIGO DE BARRAS)
+    // =========================================================
+    function activarRecetaSimulada(recetaID) {
+      if (!recetaID || !videosRecetaTabletMap[recetaID]) return;
+      estadoGlobalReceta = recetaID;
+      isRecipePlaying = true;
+
+      // Actualizar estilo visual de los botones de recetas
+      recipeBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-receta') === recetaID);
+      });
+
+      // Mostrar toast de escaneo
+      scanStatusToast.textContent = `RECETA ${recetaID} ESCANEADA`;
+      scanStatusToast.classList.add('show');
+      setTimeout(() => scanStatusToast.classList.remove('show'), 2500);
+
+      // --- A) ACCIÓN EN MITAD INFERIOR (LECTOR TV ROTADO) ---
       if (isVideo1Playing) {
         video1.pause();
         video1.style.display = 'none';
@@ -535,30 +575,8 @@
         video2.style.display = 'none';
         isVideo2Playing = false;
       }
-    }
 
-    // =========================================================
-    // 2. DISPARADOR DE RECETA (SIMULA ESCANEO DE CÓDIGO DE BARRAS)
-    // =========================================================
-    function activarRecetaSimulada(recetaID) {
-      if (!recetaID || !videosRecetaTabletMap[recetaID]) return;
-      estadoGlobalReceta = recetaID;
-      isRecipePlaying = true;
-
-      // Actualizar estilo visual de los botones
-      recipeBtns.forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('data-receta') === recetaID);
-      });
-
-      // Mostrar toast de escaneo
-      scanStatusToast.textContent = `RECETA ${recetaID} ESCANEADA`;
-      scanStatusToast.classList.add('show');
-      setTimeout(() => scanStatusToast.classList.remove('show'), 2500);
-
-      // --- A) ACCIÓN EN MITAD INFERIOR (LECTOR TV) ---
-      detenerVideosAtencionLector();
-
-      // Ocultar cualquier otra receta en Lector TV
+      // Ocultar cualquier otra receta en Lector TV y reproducir la seleccionada
       Object.keys(videosRecetaLector).forEach(key => {
         const v = videosRecetaLector[key];
         if (key === recetaID) {
@@ -599,7 +617,6 @@
     });
 
     function verificarFinReceta() {
-      // Cuando la receta termina en ambos o en el TV principal
       estadoGlobalReceta = "";
       isRecipePlaying = false;
       recipeBtns.forEach(btn => btn.classList.remove('active'));
@@ -613,7 +630,8 @@
         isVideo2Playing = true;
       } else {
         recipeButtonsOverlay.classList.remove('visible');
-        detenerVideosAtencionLector();
+        isVideo2Playing = false;
+        video2.style.display = 'none';
       }
     }
 
@@ -627,8 +645,16 @@
     });
 
     // =========================================================
-    // 3. FLIP Y CONTROL DE DETECCIÓN TÉCNICA (TABLET 03)
+    // 3. BOTÓN PERSONA Y FLIP TÉCNICO
     // =========================================================
+    // Alternador de presencia con el botón de personita
+    btnTogglePresence.addEventListener('click', (e) => {
+      e.stopPropagation();
+      manualPresenceForced = !manualPresenceForced;
+      const hayAlguien = manualPresenceForced || (currentFacesCount > 0);
+      actualizarEstadoPresencia(hayAlguien);
+    });
+
     btnFlip.addEventListener('click', (e) => {
       e.stopPropagation();
       card.classList.remove('is-flipped');
@@ -650,22 +676,6 @@
         clickCountTop = 0;
       } else {
         clickTimeoutTop = setTimeout(() => { clickCountTop = 0; }, 400);
-      }
-    });
-
-    // Alternador manual de presencia (en caso de no tener webcam)
-    btnTogglePresence.addEventListener('click', (e) => {
-      e.stopPropagation();
-      manualPresenceForced = !manualPresenceForced;
-      
-      if (manualPresenceForced) {
-        btnTogglePresence.classList.add('active');
-        btnTogglePresence.textContent = '👤 Presencia: FORZADA (Activa)';
-        actualizarEstadoPresencia(true);
-      } else {
-        btnTogglePresence.classList.remove('active');
-        btnTogglePresence.textContent = '👤 Presencia: Auto (Cámara)';
-        actualizarEstadoPresencia(currentFacesCount > 0);
       }
     });
 
@@ -734,7 +744,7 @@
         camera.start().catch(err => {
           console.warn("Cámara no disponible o bloqueada:", err);
           const loadingEl = document.getElementById('loading-cam');
-          if (loadingEl) loadingEl.innerText = "CÁMARA INACTIVA (USA EL BOTÓN PRESENCIA)";
+          if (loadingEl) loadingEl.innerText = "CÁMARA INACTIVA (USA EL BOTÓN 👤)";
         });
       } catch (e) {
         console.warn("MediaPipe no pudo iniciarse:", e);
