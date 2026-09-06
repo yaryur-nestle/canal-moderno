@@ -135,15 +135,16 @@
             100% { box-shadow: 0 0 0 0 rgba(42, 161, 42, 0); }
         }
 
-        .status-online-mustard {
-            border: 3px solid #E1AD01 !important;
-            box-shadow: 0 0 10px rgba(225, 255, 0, 0.6), inset 0 0 5px rgba(225, 255, 0, 0.4) !important;
-            animation: pulseMustardOnline 1.5s infinite !important;
+        .status-online-mustard,
+        .status-online-yellow {
+            border: 3px solid rgb(255, 255, 0) !important;
+            box-shadow: 0 0 10px rgba(255, 255, 0, 0.8), inset 0 0 5px rgba(255, 255, 0, 0.5) !important;
+            animation: pulseYellowOnline 1.5s infinite !important;
         }
-        @keyframes pulseMustardOnline {
-            0% { box-shadow: 0 0 0 0 rgba(225, 255, 0, 0.7); }
-            70% { box-shadow: 0 0 0 12px rgba(225, 255, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(225, 255, 0, 0); }
+        @keyframes pulseYellowOnline {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 0, 0.8); }
+            70% { box-shadow: 0 0 0 12px rgba(255, 255, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 0, 0); }
         }
 
         .status-active {
@@ -168,13 +169,14 @@
             animation: heartbeatMarkerStroke 1.2s infinite ease-in-out !important;
         }
 
-        @keyframes heartbeatMarkerStrokeMustard {
-            0% { fill: #E1AD01 !important; stroke: #000000 !important; stroke-width: 3px !important; }
-            50% { fill: #f5c518 !important; stroke: #000000 !important; stroke-width: 6px !important; }
-            100% { fill: #E1AD01 !important; stroke: #000000 !important; stroke-width: 3px !important; }
+        @keyframes heartbeatMarkerStrokeYellow {
+            0% { fill: #FFFF00 !important; stroke: #000000 !important; stroke-width: 3px !important; }
+            50% { fill: #FFFF77 !important; stroke: #000000 !important; stroke-width: 6px !important; }
+            100% { fill: #FFFF00 !important; stroke: #000000 !important; stroke-width: 3px !important; }
         }
-        .marker-pulse-mustard {
-            animation: heartbeatMarkerStrokeMustard 1.2s infinite ease-in-out !important;
+        .marker-pulse-mustard,
+        .marker-pulse-yellow {
+            animation: heartbeatMarkerStrokeYellow 1.2s infinite ease-in-out !important;
         }
 
         .panel-footer-logo { margin-top: auto; padding-top: 25px; text-align: center; }
@@ -746,13 +748,13 @@
                         let newClassName = '';
 
                         if (isOnline) {
-                            let baseOnlineColor = isGarzon ? '#E1AD01' : '#2aa12a';
+                            let baseOnlineColor = isGarzon ? '#FFFF00' : '#2aa12a';
                             if (hasPeople) {
                                 newColor = baseOnlineColor;
                                 newLineColor = '#000000'; // Borde negro rodeando el punto
                                 newLineWidth = 4; // Borde más grueso
                                 newRadius = 12; // Punto más grande
-                                newClassName = isGarzon ? 'marker-pulse-mustard' : 'marker-pulse'; // Animación con borde negro
+                                newClassName = isGarzon ? 'marker-pulse-yellow' : 'marker-pulse'; // Animación con borde negro
                             } else {
                                 newColor = baseOnlineColor; 
                                 newLineColor = '#ffffff';
@@ -806,14 +808,14 @@
                     let isGarzon = config.tabletId === 2;
                     
                     // Reset classes
-                    img.classList.remove('status-online', 'status-online-mustard', 'status-active');
+                    img.classList.remove('status-online', 'status-online-mustard', 'status-online-yellow', 'status-active');
                     
                     if (isOnline) {
                         if (liveTabletCounts[config.tabletId] > 0) {
                             img.classList.add('status-active'); // Negro grueso
                         } else {
                             if (isGarzon) {
-                                img.classList.add('status-online-mustard'); // Amarillo mostaza
+                                img.classList.add('status-online-yellow'); // Amarillo puro (255, 255, 0)
                             } else {
                                 img.classList.add('status-online'); // Verde
                             }
