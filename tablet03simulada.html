@@ -36,7 +36,11 @@
 
     #top-half {
       height: 25vh;
-      border-bottom: 2px solid rgba(0, 255, 255, 0.4);
+      border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #000;
     }
 
     #bottom-half {
@@ -51,16 +55,16 @@
     /* Botón de Presencia (Emoji o Número de Personas) */
     .person-toggle-btn {
       position: absolute;
-      bottom: 10px;
-      right: 10px;
+      bottom: 8px;
+      right: 8px;
       z-index: 100;
-      width: 42px;
-      height: 42px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: rgba(0, 0, 0, 0.65);
       color: #00FFFF;
       border: 2px solid rgba(0, 255, 255, 0.6);
-      font-size: 1.25rem;
+      font-size: 1.1rem;
       font-family: Arial, sans-serif;
       font-weight: bold;
       cursor: pointer;
@@ -88,10 +92,15 @@
        MITAD SUPERIOR: TABLET 03
        ========================================================= */
     .scene-tablet {
-      width: 100%;
-      height: 100%;
-      perspective: 1000px;
       position: relative;
+      height: 100%;
+      aspect-ratio: 21.5 / 13.5;
+      width: min(100vw, calc(25vh * (21.5 / 13.5)));
+      max-width: 100vw;
+      perspective: 1000px;
+      background-color: #000;
+      box-shadow: 0 0 35px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
     }
 
     .card {
@@ -100,6 +109,7 @@
       position: relative;
       transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       transform-style: preserve-3d;
+      border-radius: 8px;
     }
     .card.is-flipped { transform: rotateY(180deg); }
 
@@ -109,6 +119,8 @@
       height: 100%;
       backface-visibility: hidden;
       background-color: #000;
+      border-radius: 8px;
+      overflow: hidden;
     }
 
     .face-front {
@@ -147,10 +159,10 @@
       transform: translateX(-50%);
       z-index: 80;
       display: flex;
-      gap: 8px;
-      background: rgba(0, 0, 0, 0.8);
-      padding: 6px 14px;
-      border-radius: 25px;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.85);
+      padding: 4px 10px;
+      border-radius: 20px;
       border: 1px solid #00FFFF;
       box-shadow: 0 0 15px rgba(0, 255, 255, 0.35);
       backdrop-filter: blur(10px);
@@ -167,13 +179,13 @@
       background: rgba(0, 255, 255, 0.15);
       color: #00FFFF;
       border: 1px solid #00FFFF;
-      padding: 5px 12px;
-      border-radius: 14px;
+      padding: 4px 8px;
+      border-radius: 12px;
       font-family: inherit;
-      font-size: 0.75rem;
+      font-size: 0.68rem;
       font-weight: bold;
       cursor: pointer;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       transition: all 0.25s ease;
       white-space: nowrap;
     }
@@ -235,14 +247,14 @@
 
     .flip-btn {
       position: absolute;
-      bottom: 10px;
-      left: 10px;
+      bottom: 8px;
+      left: 8px;
       z-index: 50;
       background: rgba(0, 255, 255, 0.15);
       border: 1px solid #00FFFF;
       color: #00FFFF;
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       cursor: pointer;
       display: flex;
@@ -336,51 +348,52 @@
        MITAD SUPERIOR: TABLET 03 (MUEBLE)
        ========================================================= -->
   <div id="top-half" class="split-pane">
-    
-    <!-- Botón de Presencia en la esquina inferior derecha (solo emoji 👤) -->
-    <button id="btn-toggle-presence" class="person-toggle-btn" title="Simular / Alternar Presencia de Persona">
-      👤
-    </button>
+    <div class="scene-tablet">
+      <!-- Botón de Presencia en la esquina inferior derecha (solo emoji 👤) -->
+      <button id="btn-toggle-presence" class="person-toggle-btn" title="Simular / Alternar Presencia de Persona">
+        👤
+      </button>
 
-    <div id="card" class="card">
-      <!-- Frente de la Tablet -->
-      <div class="face face-front">
-        <!-- Video interactivo de receta en Tablet -->
-        <div id="overlayRecetaTablet">
-          <video id="videoRecetaTablet" preload="auto" playsinline></video>
+      <div id="card" class="card">
+        <!-- Frente de la Tablet -->
+        <div class="face face-front">
+          <!-- Video interactivo de receta en Tablet -->
+          <div id="overlayRecetaTablet">
+            <video id="videoRecetaTablet" preload="auto" playsinline></video>
+          </div>
+
+          <!-- 4 Botones superpuestos de recetas -->
+          <div id="recipe-selection-overlay">
+            <button class="recipe-btn" data-receta="01">RECETA 01</button>
+            <button class="recipe-btn" data-receta="02">RECETA 02</button>
+            <button class="recipe-btn" data-receta="03">RECETA 03</button>
+            <button class="recipe-btn" data-receta="04">RECETA 04</button>
+          </div>
         </div>
 
-        <!-- 4 Botones superpuestos de recetas -->
-        <div id="recipe-selection-overlay">
-          <button class="recipe-btn" data-receta="01">RECETA 01</button>
-          <button class="recipe-btn" data-receta="02">RECETA 02</button>
-          <button class="recipe-btn" data-receta="03">RECETA 03</button>
-          <button class="recipe-btn" data-receta="04">RECETA 04</button>
+        <!-- Reverso: Feed técnico MediaPipe y métricas -->
+        <div class="face face-back">
+          <div id="loading-cam">SISTEMA INICIANDO...</div>
+          <div class="diag-panel left">
+            <div id="face-counter" class="diag-box">ACTUAL: 0</div>
+            <div id="total-counter" class="diag-box">HISTÓRICO: 0</div>
+          </div>
+          <div class="diag-panel right">
+            <div id="time-counter" class="diag-box">TIEMPO: 0.0s</div>
+            <div id="avg-counter" class="diag-box">PROMEDIO: 0.0s</div>
+          </div>
+          <video id="videoCamera" autoplay playsinline muted></video>
+          <canvas id="canvasMesh"></canvas>
         </div>
       </div>
 
-      <!-- Reverso: Feed técnico MediaPipe y métricas -->
-      <div class="face face-back">
-        <div id="loading-cam">SISTEMA INICIANDO...</div>
-        <div class="diag-panel left">
-          <div id="face-counter" class="diag-box">ACTUAL: 0</div>
-          <div id="total-counter" class="diag-box">HISTÓRICO: 0</div>
-        </div>
-        <div class="diag-panel right">
-          <div id="time-counter" class="diag-box">TIEMPO: 0.0s</div>
-          <div id="avg-counter" class="diag-box">PROMEDIO: 0.0s</div>
-        </div>
-        <video id="videoCamera" autoplay playsinline muted></video>
-        <canvas id="canvasMesh"></canvas>
-      </div>
+      <!-- Botón para regresar al frente al girar tarjeta -->
+      <button id="flip-btn" class="flip-btn" title="Regresar al Frente">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 11 21 7 17 3"></polyline><line x1="21" y1="7" x2="9" y2="7"></line><polyline points="7 13 3 17 7 21"></polyline><line x1="3" y1="17" x2="15" y2="17"></line>
+        </svg>
+      </button>
     </div>
-
-    <!-- Botón para regresar al frente al girar tarjeta -->
-    <button id="flip-btn" class="flip-btn" title="Regresar al Frente">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="17 11 21 7 17 3"></polyline><line x1="21" y1="7" x2="9" y2="7"></line><polyline points="7 13 3 17 7 21"></polyline><line x1="3" y1="17" x2="15" y2="17"></line>
-      </svg>
-    </button>
   </div>
 
   <!-- =========================================================

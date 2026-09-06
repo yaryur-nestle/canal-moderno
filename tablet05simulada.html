@@ -12,19 +12,31 @@
       background: transparent; border: none; outline: none; cursor: pointer;
     }
 
-    .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; display: block; } 
+    .scene { 
+      position: relative; 
+      aspect-ratio: 21.5 / 13.5;
+      width: min(100vw, calc(100vh * (21.5 / 13.5))); 
+      height: min(100vh, calc(100vw * (13.5 / 21.5))); 
+      max-width: 100vw;
+      max-height: 100vh;
+      perspective: 1000px; 
+      display: block; 
+      background-color: #000;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+    } 
     
-    .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
+    .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; border-radius: 12px; }
     .card.is-flipped { transform: rotateY(180deg); }
-    .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: #000; }
+    .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: #000; border-radius: 12px; overflow: hidden; }
     
     .face-front { background-image: url('TABLET 05.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
     .face-back { transform: rotateY(180deg); }
     
     .flip-btn { 
-      position: absolute; bottom: 12%; right: 5%; z-index: 50; 
+      position: absolute; bottom: 15px; left: 15px; z-index: 50; 
       background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; 
-      width: 50px; height: 50px; border-radius: 50%; cursor: pointer; 
+      width: 46px; height: 46px; border-radius: 50%; cursor: pointer; 
       display: flex; justify-content: center; align-items: center; 
       backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); 
       transition: all 0.3s ease; opacity: 0; pointer-events: none; 
