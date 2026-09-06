@@ -919,12 +919,11 @@
         let lastFaceMeshFrameTime = 0;
         const camera = new window.Camera(videoCamera, { 
           onFrame: async () => { 
-            // Si hay una receta reproduciéndose, pausar por completo la inferencia para 0 lag en video
-            if (isRecipePlaying) return; 
-
-            // Throttling inteligente a ~11 FPS (libera más del 65% de GPU en idle/navegación)
             const now = performance.now();
-            if (now - lastFaceMeshFrameTime < 90) return;
+            // Muestreo adaptativo: durante la reproducción de una receta muestreamos a ~4 FPS (250ms),
+            // lo que permite mantener el video a 60 FPS fluidos mientras se sigue registrando todo el tráfico de personas
+            const frameInterval = isRecipePlaying ? 250 : 90;
+            if (now - lastFaceMeshFrameTime < frameInterval) return;
             lastFaceMeshFrameTime = now;
 
             await faceMesh.send({image: videoCamera}); 

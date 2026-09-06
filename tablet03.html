@@ -38,7 +38,7 @@
         justify-content: center; align-items: center; z-index: 50; 
     }
     
-    #videoReceta { 
+    .video-receta { 
         position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
         object-fit: contain; 
         background-color: #000;
@@ -87,7 +87,10 @@
     <div id="card" class="card">
       <div class="face face-front">
         <div id="overlayReceta">
-            <video id="videoReceta" preload="auto" muted playsinline style="background-color: #000;"></video>
+            <video id="videoReceta1" class="video-receta" src="VIDEO_1RECETA.mp4" preload="auto" muted playsinline></video>
+            <video id="videoReceta2" class="video-receta" src="VIDEO_2RECETA.mp4" preload="auto" muted playsinline></video>
+            <video id="videoReceta3" class="video-receta" src="VIDEO_3RECETA.mp4" preload="auto" muted playsinline></video>
+            <video id="videoReceta4" class="video-receta" src="VIDEO_4RECETA.mp4" preload="auto" muted playsinline></video>
         </div>
       </div>
       
@@ -232,7 +235,12 @@
     const canvasElement = document.getElementById('canvas');
     const canvasCtx = canvasElement.getContext('2d');
     const overlayReceta = document.getElementById('overlayReceta');
-    const videoReceta = document.getElementById('videoReceta');
+    const videosReceta = {
+      "01": document.getElementById('videoReceta1'),
+      "02": document.getElementById('videoReceta2'),
+      "03": document.getElementById('videoReceta3'),
+      "04": document.getElementById('videoReceta4')
+    };
 
     let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0; 
     let currentFacesCount = 0;
@@ -250,8 +258,12 @@
 
     // Al terminar el video localmente, simplemente marcamos el flag en falso.
     // La TV RECETAS será quien actualice Firebase enviando "" a recetaActiva.
-    videoReceta.addEventListener('ended', () => {
-        isVideoPlaying = false;
+    Object.values(videosReceta).forEach(v => {
+      if (v) {
+        v.addEventListener('ended', () => {
+          isVideoPlaying = false;
+        });
+      }
     });
 
     onValue(estadoActualRef, (snapshot) => {
@@ -270,34 +282,31 @@
       }
     });
 
-    const videoMap = {
-        "01": "VIDEO_1RECETA.mp4",
-        "02": "VIDEO_2RECETA.mp4",
-        "03": "VIDEO_3RECETA.mp4",
-        "04": "VIDEO_4RECETA.mp4"
-    };
-
     function procesarEstadoReceta(recetaActiva) {
-      if (recetaActiva && videoMap[recetaActiva]) {
+      if (recetaActiva && videosReceta[recetaActiva]) {
         overlayReceta.style.display = 'flex';
-        videoReceta.style.display = 'block';
-
-        const targetVideo = videoMap[recetaActiva];
-
-        if (videoReceta.getAttribute('src') !== targetVideo) {
-            videoReceta.src = targetVideo;
-        }
-        
-        videoReceta.pause(); 
-        videoReceta.currentTime = 0; 
-        videoReceta.play().catch(e => console.log("Reproducción automática pendiente:", e));
-        
-        isVideoPlaying = true; 
+        Object.keys(videosReceta).forEach(key => {
+          const v = videosReceta[key];
+          if (!v) return;
+          if (key === recetaActiva) {
+            v.style.display = 'block';
+            v.currentTime = 0;
+            v.play().catch(e => console.log("Reproducción automática pendiente:", e));
+          } else {
+            v.pause();
+            v.style.display = 'none';
+          }
+        });
+        isVideoPlaying = true;
       } else {
         // Cuando la TV manda limpiar la receta ("")
         overlayReceta.style.display = 'none';
-        videoReceta.style.display = 'none';
-        videoReceta.pause();
+        Object.values(videosReceta).forEach(v => {
+          if (v) {
+            v.pause();
+            v.style.display = 'none';
+          }
+        });
         isVideoPlaying = false;
       }
     }
@@ -384,9 +393,11 @@
       let lastFrameTime = 0;
       const camera = new window.Camera(videoElement, { 
         onFrame: async () => { 
-          if (isVideoPlaying) return; 
           const now = performance.now();
-          if (now - lastFrameTime < 90) return;
+          // Muestreo adaptativo: durante la reproducción de una receta muestreamos a ~4 FPS (250ms),
+          // suficiente para registrar y enviar todas las métricas de tráfico a Firebase sin sobrecargar la GPU del video.
+          const frameInterval = isVideoPlaying ? 250 : 90;
+          if (now - lastFrameTime < frameInterval) return;
           lastFrameTime = now;
           await faceMesh.send({image: videoElement}); 
         }, 
