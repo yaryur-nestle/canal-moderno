@@ -49,6 +49,157 @@
       transform: scale(1.08);
     }
 
+    /* === BOTÓN INDICADOR DE SINCRONIZACIÓN CON LECTORCAM === */
+    .btn-firebase-sync {
+      position: fixed;
+      top: 15px;
+      left: 62px;
+      z-index: 10000;
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      color: #aaa;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      transition: all 0.25s ease;
+      outline: none;
+      font-size: 0.75rem;
+      font-weight: bold;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      letter-spacing: 0.5px;
+    }
+    .btn-firebase-sync .sync-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #888;
+      box-shadow: 0 0 6px #888;
+      transition: all 0.25s ease;
+    }
+    .btn-firebase-sync.connected {
+      border-color: rgba(0, 255, 136, 0.6);
+      color: #00FF88;
+    }
+    .btn-firebase-sync.connected .sync-dot {
+      background: #00FF88;
+      box-shadow: 0 0 10px #00FF88;
+    }
+    .btn-firebase-sync.syncing {
+      border-color: rgba(255, 200, 0, 0.6);
+      color: #FFC800;
+    }
+    .btn-firebase-sync.syncing .sync-dot {
+      background: #FFC800;
+      box-shadow: 0 0 10px #FFC800;
+    }
+    .btn-firebase-sync:hover {
+      background: rgba(0, 0, 0, 0.9);
+      transform: scale(1.04);
+    }
+
+    /* === MODAL DE AUTENTICACIÓN FIREBASE === */
+    .modal-firebase {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      z-index: 20000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-firebase.show {
+      display: flex;
+    }
+    .modal-firebase-box {
+      background: rgba(18, 20, 28, 0.95);
+      border: 1.5px solid #00FFFF;
+      border-radius: 14px;
+      padding: 24px 28px;
+      width: 90%;
+      max-width: 380px;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.35);
+      text-align: center;
+      color: #fff;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .modal-firebase-box h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: #00FFFF;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+    .modal-firebase-box p {
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+    .modal-firebase-box input {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(0, 255, 255, 0.4);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .modal-firebase-box input:focus {
+      border-color: #00FFFF;
+      box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+    }
+    .modal-firebase-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    .modal-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .modal-btn-cancel {
+      background: transparent;
+      border: 1px solid #666;
+      color: #ccc;
+    }
+    .modal-btn-cancel:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .modal-btn-submit {
+      background: #00FFFF;
+      border: none;
+      color: #000;
+    }
+    .modal-btn-submit:hover {
+      background: #33ffff;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.8);
+    }
+    .fb-error-msg {
+      color: #ff5555;
+      font-size: 0.8rem;
+      margin-top: 10px;
+      display: none;
+    }
+
     /* === CONTENEDOR DIVIDIDO (SPLIT SCREEN 25/75) === */
     .split-pane {
       position: relative;
@@ -398,6 +549,29 @@
     </svg>
   </button>
 
+  <!-- Botón de estado / sincronización con LectorCam (Firebase) -->
+  <button id="btn-firebase-sync" class="btn-firebase-sync" title="Sincronización con LectorCam vía Firebase">
+    <span class="sync-dot"></span>
+    <span class="sync-text">Conectar LectorCam</span>
+  </button>
+
+  <!-- Modal de conexión Firebase (si no está autenticado) -->
+  <div id="modal-firebase-auth" class="modal-firebase">
+    <div class="modal-firebase-box">
+      <h3>SINCRONIZAR CON LECTORCAM</h3>
+      <p>Conecta el simulador a Firebase para recibir lecturas de <code>lectorcam.html</code> en tiempo real:</p>
+      <form id="firebase-login-form">
+        <input type="email" id="fb-email" placeholder="Correo Electrónico" required autocomplete="email">
+        <input type="password" id="fb-password" placeholder="Contraseña" required autocomplete="current-password">
+        <div class="modal-firebase-actions">
+          <button type="button" id="btn-cancel-auth" class="modal-btn modal-btn-cancel">Cancelar</button>
+          <button type="submit" id="btn-submit-auth" class="modal-btn modal-btn-submit">Conectar</button>
+        </div>
+        <div id="fb-error-msg" class="fb-error-msg">Error: Verifica tus credenciales.</div>
+      </form>
+    </div>
+  </div>
+
   <!-- =========================================================
        MITAD SUPERIOR: TABLET 03 (MUEBLE)
        ========================================================= -->
@@ -488,7 +662,29 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    // =========================================================
+    // CONFIGURACIÓN FIREBASE (AISLADA EN RUTA SIMULADA)
+    // =========================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
+      authDomain: "canal-moderno-2655e.firebaseapp.com",
+      databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
+      projectId: "canal-moderno-2655e",
+      storageBucket: "canal-moderno-2655e.firebasestorage.app",
+      messagingSenderId: "947512040134",
+      appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const estadoSimuladaRef = ref(db, 'muebles/tablet_03_simulada/estado_actual');
+
     // =========================================================
     // FULLSCREEN REACTIVO (BOTÓN SUPERIOR IZQUIERDO)
     // =========================================================
@@ -574,6 +770,9 @@
     let estadoGlobalReceta = ""; // "", "01", "02", "03", "04"
     let personaDetectada = false;
 
+    let isFirebaseConnected = false;
+    let recetaIniciadaLocalmente = false;
+
     // Actualiza el aspecto del botón de personita (verde = detectada / presionado; muestra número si detecta cámara)
     function actualizarVisualBotonPresencia(countCamara) {
       if (!btnTogglePresence) return;
@@ -595,6 +794,14 @@
     function actualizarEstadoPresencia(hayPersonas, countCamara = 0) {
       personaDetectada = hayPersonas;
       actualizarVisualBotonPresencia(countCamara);
+
+      // Sincronizar presencia hacia la ruta simulada en Firebase (para que lectorcam se entere)
+      if (isFirebaseConnected) {
+        update(ref(db, 'muebles/tablet_03_simulada/estado_actual'), {
+          hayPersonas: hayPersonas,
+          conteoActual: countCamara
+        }).catch(() => {});
+      }
 
       // Reacción de Lector TV si no hay ninguna receta reproduciéndose
       if (estadoGlobalReceta === "" && !isRecipePlaying) {
@@ -648,9 +855,10 @@
     // =========================================================
     // 2. DISPARADOR Y DESACTIVADOR DE RECETA (SIMULA ESCANEO DE CÓDIGO DE BARRAS)
     // =========================================================
-    function desactivarRecetaSimulada() {
+    function desactivarRecetaSimulada(syncToFirebase = true) {
       estadoGlobalReceta = "";
       isRecipePlaying = false;
+      recetaIniciadaLocalmente = false;
       recipeBtns.forEach(btn => btn.classList.remove('active'));
 
       // Detener y resetear videos en Tablet 03
@@ -683,19 +891,27 @@
         isVideo2Playing = false;
         video2.style.display = 'none';
       }
+
+      // Sincronizar hacia Firebase si corresponde
+      if (syncToFirebase && isFirebaseConnected) {
+        set(ref(db, 'muebles/tablet_03_simulada/estado_actual/recetaActiva'), "").catch(err => {
+          console.warn("Error al limpiar recetaActiva en Firebase:", err);
+        });
+      }
     }
 
-    function activarRecetaSimulada(recetaID) {
+    function activarRecetaSimulada(recetaID, syncToFirebase = true) {
       if (!recetaID || !videosRecetaTabletMap[recetaID]) return;
 
       // Si la receta tocada ya está activa, se desactiva
       if (estadoGlobalReceta === recetaID && isRecipePlaying) {
-        desactivarRecetaSimulada();
+        desactivarRecetaSimulada(syncToFirebase);
         return;
       }
 
       estadoGlobalReceta = recetaID;
       isRecipePlaying = true;
+      recetaIniciadaLocalmente = syncToFirebase;
 
       // Actualizar estilo visual de los botones de recetas
       recipeBtns.forEach(btn => {
@@ -745,6 +961,13 @@
           vt.style.display = 'none';
         }
       });
+
+      // Sincronizar hacia Firebase si fue iniciada localmente
+      if (syncToFirebase && isFirebaseConnected) {
+        set(ref(db, 'muebles/tablet_03_simulada/estado_actual/recetaActiva'), recetaID).catch(err => {
+          console.warn("Error al emitir recetaActiva a Firebase:", err);
+        });
+      }
     }
 
     // Finalización de la receta en Tablet 03
@@ -768,12 +991,20 @@
     function verificarFinReceta() {
       estadoGlobalReceta = "";
       isRecipePlaying = false;
+      recetaIniciadaLocalmente = false;
       recipeBtns.forEach(btn => btn.classList.remove('active'));
       overlayRecetaTablet.style.display = 'none';
       Object.values(videosRecetaTablet).forEach(vt => {
         vt.pause();
         vt.style.display = 'none';
       });
+
+      // Limpiar en Firebase para que LectorCam y cualquier cliente vuelvan al estado normal
+      if (isFirebaseConnected) {
+        set(ref(db, 'muebles/tablet_03_simulada/estado_actual/recetaActiva'), "").catch(err => {
+          console.warn("Error al limpiar recetaActiva en Firebase al finalizar video:", err);
+        });
+      }
 
       // Reanudar el estado según si hay una persona frente al mueble
       if (personaDetectada) {
@@ -787,12 +1018,12 @@
       }
     }
 
-    // Clic en cualquiera de los 4 botones de recetas
+    // Clic en cualquiera de los 4 botones de recetas (emite a Firebase)
     recipeBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const id = btn.getAttribute('data-receta');
-        activarRecetaSimulada(id);
+        activarRecetaSimulada(id, true);
       });
     });
 
@@ -823,7 +1054,7 @@
     let clickTimeoutTop;
     document.getElementById('top-half').addEventListener('click', (e) => {
       if (card.classList.contains('is-flipped')) return;
-      if (e.target.closest('.recipe-side-container') || e.target.closest('.recipe-btn') || e.target === btnFlip || e.target === btnTogglePresence || e.target === btnFullscreen || e.target.closest('#btn-fullscreen-toggle')) {
+      if (e.target.closest('.recipe-side-container') || e.target.closest('.recipe-btn') || e.target === btnFlip || e.target === btnTogglePresence || e.target === btnFullscreen || e.target.closest('#btn-fullscreen-toggle') || e.target === btnSync || e.target.closest('#btn-firebase-sync') || e.target.closest('.modal-firebase')) {
         return;
       }
 
@@ -838,7 +1069,136 @@
     });
 
     // =========================================================
-    // 4. MEDIAPIPE FACE MESH (VISIÓN COMPUTACIONAL)
+    // 4. SINCRONIZACIÓN FIREBASE CON LECTORCAM (muebles/tablet_03_simulada)
+    // =========================================================
+    const btnSync = document.getElementById('btn-firebase-sync');
+    const modalAuth = document.getElementById('modal-firebase-auth');
+    const formAuth = document.getElementById('firebase-login-form');
+    const inputEmail = document.getElementById('fb-email');
+    const inputPass = document.getElementById('fb-password');
+    const btnCancelAuth = document.getElementById('btn-cancel-auth');
+    const fbErrorMsg = document.getElementById('fb-error-msg');
+
+    function actualizarBadgeSync(conectado) {
+      if (!btnSync) return;
+      if (conectado) {
+        btnSync.className = 'btn-firebase-sync connected';
+        btnSync.title = "LectorCam Conectado (Sincronizado vía Firebase)";
+        btnSync.querySelector('.sync-text').textContent = "LectorCam Listo";
+      } else {
+        btnSync.className = 'btn-firebase-sync';
+        btnSync.title = "Haz clic para conectar LectorCam vía Firebase";
+        btnSync.querySelector('.sync-text').textContent = "Conectar LectorCam";
+      }
+    }
+
+    let escuchaIniciada = false;
+    function conectarEscuchaFirebase() {
+      if (escuchaIniciada) return;
+      escuchaIniciada = true;
+
+      onValue(estadoSimuladaRef, (snapshot) => {
+        const estado = snapshot.val();
+        if (!estado) return;
+
+        const recetaRemota = estado.recetaActiva || "";
+
+        // Si LectorCam (u otro cliente) activó una receta:
+        if (recetaRemota && recetaRemota !== estadoGlobalReceta) {
+          activarRecetaSimulada(recetaRemota, false); // false = no re-escribir a Firebase
+        } 
+        // Si la receta fue limpiada remotamente y no la iniciamos nosotros localmente:
+        else if (!recetaRemota && estadoGlobalReceta !== "" && !recetaIniciadaLocalmente) {
+          desactivarRecetaSimulada(false);
+        }
+      });
+    }
+
+    function intentarAutoLogin() {
+      try {
+        const savedEmail = localStorage.getItem('canal_moderno_email');
+        const savedPass = localStorage.getItem('canal_moderno_pass');
+        if (savedEmail && savedPass) {
+          if (btnSync) {
+            btnSync.className = 'btn-firebase-sync syncing';
+            btnSync.querySelector('.sync-text').textContent = "Conectando...";
+          }
+          signInWithEmailAndPassword(auth, savedEmail, savedPass).catch(() => {
+            actualizarBadgeSync(false);
+          });
+        }
+      } catch (e) {}
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        isFirebaseConnected = true;
+        actualizarBadgeSync(true);
+        conectarEscuchaFirebase();
+      } else {
+        isFirebaseConnected = false;
+        actualizarBadgeSync(false);
+        intentarAutoLogin();
+      }
+    });
+
+    if (btnSync) {
+      btnSync.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isFirebaseConnected) {
+          scanStatusToast.textContent = "LECTORCAM YA CONECTADO";
+          scanStatusToast.classList.add('show');
+          setTimeout(() => scanStatusToast.classList.remove('show'), 2000);
+          return;
+        }
+        try {
+          const savedEmail = localStorage.getItem('canal_moderno_email');
+          if (savedEmail && inputEmail) inputEmail.value = savedEmail;
+        } catch (e) {}
+        if (fbErrorMsg) fbErrorMsg.style.display = 'none';
+        modalAuth.classList.add('show');
+      });
+    }
+
+    if (btnCancelAuth) {
+      btnCancelAuth.addEventListener('click', (e) => {
+        e.stopPropagation();
+        modalAuth.classList.remove('show');
+      });
+    }
+
+    if (formAuth) {
+      formAuth.addEventListener('submit', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const email = inputEmail.value.trim();
+        const pass = inputPass.value;
+        const submitBtn = document.getElementById('btn-submit-auth');
+        if (submitBtn) submitBtn.textContent = 'CONECTANDO...';
+        if (fbErrorMsg) fbErrorMsg.style.display = 'none';
+
+        signInWithEmailAndPassword(auth, email, pass)
+          .then(() => {
+            if (submitBtn) submitBtn.textContent = 'CONECTAR';
+            try {
+              localStorage.setItem('canal_moderno_email', email);
+              localStorage.setItem('canal_moderno_pass', pass);
+            } catch (err) {}
+            modalAuth.classList.remove('show');
+            formAuth.reset();
+          })
+          .catch(err => {
+            if (submitBtn) submitBtn.textContent = 'CONECTAR';
+            if (fbErrorMsg) {
+              fbErrorMsg.textContent = "Error: Verifica tus credenciales.";
+              fbErrorMsg.style.display = 'block';
+            }
+          });
+      });
+    }
+
+    // =========================================================
+    // 5. MEDIAPIPE FACE MESH (VISIÓN COMPUTACIONAL)
     // =========================================================
     function onResults(results) {
       const loadingEl = document.getElementById('loading-cam');

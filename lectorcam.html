@@ -198,7 +198,7 @@
         const db = getDatabase(app);
         const auth = getAuth(app);
         
-        const estadoRef = ref(db, 'muebles/tablet_03/estado_actual');
+        const estadoRef = ref(db, 'muebles/tablet_03_simulada/estado_actual');
 
         const loginScreen = document.getElementById('login-screen');
         const welcomeScreen = document.getElementById('welcome-screen');
@@ -261,6 +261,13 @@
             }
         });
 
+        try {
+            const savedEmail = localStorage.getItem('canal_moderno_email');
+            if (savedEmail && document.getElementById('email')) {
+                document.getElementById('email').value = savedEmail;
+            }
+        } catch(e) {}
+
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -271,7 +278,14 @@
             loginBtn.innerText = 'CARGANDO...';
             
             signInWithEmailAndPassword(auth, email, password)
-                .then(() => { loginBtn.innerText = 'CONECTAR'; loginForm.reset(); })
+                .then(() => { 
+                    loginBtn.innerText = 'CONECTAR'; 
+                    try {
+                        localStorage.setItem('canal_moderno_email', email);
+                        localStorage.setItem('canal_moderno_pass', password);
+                    } catch(err) {}
+                    loginForm.reset(); 
+                })
                 .catch((error) => {
                     loginBtn.innerText = 'CONECTAR';
                     errorMsg.innerText = "Error: Verifica tus credenciales.";
@@ -321,7 +335,7 @@
                 const recetaID = baseDeDatos[scannedValue];
                 
                 // Activamos la receta en la base de datos de manera indefinida
-                set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), recetaID);
+                set(ref(db, 'muebles/tablet_03_simulada/estado_actual/recetaActiva'), recetaID);
                 hacerPitido(); 
                 
                 if (cameraOverlay.style.display === 'flex') {
@@ -500,7 +514,7 @@
         // Asignamos el evento 'ended' a todos los videos de receta para limpiar el estado
         Object.values(videosReceta).forEach(video => {
             video.addEventListener('ended', () => {
-                set(ref(db, 'muebles/tablet_03/estado_actual/recetaActiva'), "");
+                set(ref(db, 'muebles/tablet_03_simulada/estado_actual/recetaActiva'), "");
             });
         });
 
