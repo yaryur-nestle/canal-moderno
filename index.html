@@ -135,6 +135,17 @@
             100% { box-shadow: 0 0 0 0 rgba(42, 161, 42, 0); }
         }
 
+        .status-online-mustard {
+            border: 3px solid #E1AD01 !important;
+            box-shadow: 0 0 10px rgba(225, 173, 1, 0.6), inset 0 0 5px rgba(225, 173, 1, 0.4) !important;
+            animation: pulseMustardOnline 1.5s infinite !important;
+        }
+        @keyframes pulseMustardOnline {
+            0% { box-shadow: 0 0 0 0 rgba(225, 173, 1, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(225, 173, 1, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(225, 173, 1, 0); }
+        }
+
         .status-active {
             border: 4px solid #000000 !important;
             box-shadow: 0 0 12px rgba(0, 0, 0, 0.8), inset 0 0 5px rgba(0, 0, 0, 0.5) !important;
@@ -147,14 +158,23 @@
             100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
         }
 
-        /* === NUEVA CLASE PARA LATIDO DE PUNTOS SVG EN EL MAPA (Borde Verde Grueso) === */
+        /* === CLASES PARA LATIDO DE PUNTOS SVG EN EL MAPA (Borde Negro con Personas) === */
         @keyframes heartbeatMarkerStroke {
-            0% { fill: #2aa12a !important; stroke: #ffffff !important; stroke-width: 2px !important; }
-            50% { fill: #32cd32 !important; stroke: #004d00 !important; stroke-width: 6px !important; }
-            100% { fill: #2aa12a !important; stroke: #ffffff !important; stroke-width: 2px !important; }
+            0% { fill: #2aa12a !important; stroke: #000000 !important; stroke-width: 3px !important; }
+            50% { fill: #32cd32 !important; stroke: #000000 !important; stroke-width: 6px !important; }
+            100% { fill: #2aa12a !important; stroke: #000000 !important; stroke-width: 3px !important; }
         }
         .marker-pulse {
             animation: heartbeatMarkerStroke 1.2s infinite ease-in-out !important;
+        }
+
+        @keyframes heartbeatMarkerStrokeMustard {
+            0% { fill: #E1AD01 !important; stroke: #000000 !important; stroke-width: 3px !important; }
+            50% { fill: #f5c518 !important; stroke: #000000 !important; stroke-width: 6px !important; }
+            100% { fill: #E1AD01 !important; stroke: #000000 !important; stroke-width: 3px !important; }
+        }
+        .marker-pulse-mustard {
+            animation: heartbeatMarkerStrokeMustard 1.2s infinite ease-in-out !important;
         }
 
         .panel-footer-logo { margin-top: auto; padding-top: 25px; text-align: center; }
@@ -627,6 +647,7 @@
                         
                         let isOnline = node.tabletIds.some(tid => liveTabletStatuses[tid] === "ONLINE");
                         let hasPeople = node.tabletIds.some(tid => liveTabletStatuses[tid] === "ONLINE" && liveTabletCounts[tid] > 0);
+                        let isGarzon = (node.id === 4) || node.tabletIds.includes(2);
 
                         // Valores por defecto (Offline o Sin detección)
                         let newColor = '#ff2a2a'; 
@@ -636,14 +657,15 @@
                         let newClassName = '';
 
                         if (isOnline) {
+                            let baseOnlineColor = isGarzon ? '#E1AD01' : '#2aa12a';
                             if (hasPeople) {
-                                newColor = '#2aa12a'; // Verde
-                                newLineColor = '#004d00'; // Borde verde oscuro
+                                newColor = baseOnlineColor;
+                                newLineColor = '#000000'; // Borde negro rodeando el punto
                                 newLineWidth = 4; // Borde más grueso
                                 newRadius = 12; // Punto más grande
-                                newClassName = 'marker-pulse'; // Animación CSS activa
+                                newClassName = isGarzon ? 'marker-pulse-mustard' : 'marker-pulse'; // Animación con borde negro
                             } else {
-                                newColor = '#2aa12a'; 
+                                newColor = baseOnlineColor; 
                                 newLineColor = '#ffffff';
                                 newLineWidth = 2;
                                 newRadius = 8;
@@ -654,9 +676,10 @@
                         let currentColor = point.options.marker?.fillColor || '#ff2a2a';
                         let currentClassName = point.options.className || '';
                         let currentRadius = point.options.marker?.radius || 8;
+                        let currentLineColor = point.options.marker?.lineColor || '#ffffff';
 
                         // Actualizar sólo si hay un cambio real en visuales
-                        if (currentColor !== newColor || currentClassName !== newClassName || currentRadius !== newRadius) {
+                        if (currentColor !== newColor || currentClassName !== newClassName || currentRadius !== newRadius || currentLineColor !== newLineColor) {
                             point.update({
                                 className: newClassName,
                                 marker: {
@@ -664,7 +687,7 @@
                                     lineColor: newLineColor,
                                     lineWidth: newLineWidth,
                                     radius: newRadius,
-                                    states: { hover: { fillColor: newColor, radius: newRadius + 2 } }
+                                    states: { hover: { fillColor: newColor, lineColor: newLineColor, radius: newRadius + 2 } }
                                 }
                             }, false);
                             needsRedraw = true;
@@ -691,15 +714,20 @@
 
                 if (config && config.tabletId) {
                     let isOnline = liveTabletStatuses[config.tabletId] === "ONLINE";
+                    let isGarzon = config.tabletId === 2;
                     
                     // Reset classes
-                    img.classList.remove('status-online', 'status-active');
+                    img.classList.remove('status-online', 'status-online-mustard', 'status-active');
                     
                     if (isOnline) {
                         if (liveTabletCounts[config.tabletId] > 0) {
                             img.classList.add('status-active'); // Negro grueso
                         } else {
-                            img.classList.add('status-online'); // Verde
+                            if (isGarzon) {
+                                img.classList.add('status-online-mustard'); // Amarillo mostaza
+                            } else {
+                                img.classList.add('status-online'); // Verde
+                            }
                         }
                     }
                 }
