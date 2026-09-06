@@ -217,23 +217,6 @@
     const videoElement = document.getElementById('video');
     const canvasElement = document.getElementById('canvas');
     const canvasCtx = canvasElement ? canvasElement.getContext('2d') : null;
-
-    // PRE-RENDERIZADO DEL PUNTO BRILLANTE
-    const glowCanvas = document.createElement('canvas');
-    const glowCtx = glowCanvas.getContext('2d');
-    const glowSize = 16; 
-    const puntoRadius = 2;
-    const centro = glowSize / 2;
-
-    glowCanvas.width = glowSize;
-    glowCanvas.height = glowSize;
-
-    glowCtx.shadowColor = '#00FFFF';
-    glowCtx.shadowBlur = 8;
-    glowCtx.fillStyle = '#00FFFF';
-    glowCtx.beginPath();
-    glowCtx.arc(centro, centro, puntoRadius, 0, 2 * Math.PI);
-    glowCtx.fill();
     
     btnFlip.addEventListener('click', (e) => { 
       e.stopPropagation();
@@ -352,26 +335,18 @@
       }
 
       if (canvasElement && canvasCtx) {
-        canvasCtx.save();
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
         if (card.classList.contains('is-flipped') && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-          canvasCtx.globalCompositeOperation = "lighter";
           const drawFn = window.drawConnectors || (typeof drawConnectors !== 'undefined' ? drawConnectors : null);
           const tess = window.FACEMESH_TESSELATION || (typeof FACEMESH_TESSELATION !== 'undefined' ? FACEMESH_TESSELATION : null);
 
-          for (const landmarks of results.multiFaceLandmarks) {
-            if (drawFn && tess) {
-              drawFn(canvasCtx, landmarks, tess, { color: '#00FF0050', lineWidth: 0.8 });
-            }
-            for (let i = 0; i < landmarks.length; i += 2) {
-              const px = landmarks[i].x * canvasElement.width;
-              const py = landmarks[i].y * canvasElement.height;
-              canvasCtx.drawImage(glowCanvas, px - centro, py - centro);
+          if (drawFn && tess) {
+            for (const landmarks of results.multiFaceLandmarks) {
+              drawFn(canvasCtx, landmarks, tess, { color: '#00FF0080', lineWidth: 1.0 });
             }
           }
         }
-        canvasCtx.restore();
       }
     }
 
