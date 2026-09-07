@@ -6,11 +6,6 @@
   <title>TABLET 07</title>
   <style>
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
-    
-    #init-fullscreen-btn {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; 
-      background: transparent; border: none; outline: none; cursor: pointer;
-    }
 
     #login-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1000; display: flex; justify-content: center; align-items: center; }
     .login-box { border: 1px solid #00FFFF; padding: 40px; background: rgba(0, 255, 255, 0.05); text-align: center; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); border-radius: 8px; backdrop-filter: blur(10px); width: 300px; }
@@ -58,8 +53,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 </head>
 <body>
-
-  <button id="init-fullscreen-btn" title="Activar Pantalla Completa"></button>
 
   <div id="login-screen">
     <div class="login-box">
@@ -126,15 +119,6 @@
     const statusRef = ref(db, 'muebles/tablet_07/status');
     const estadoActualRef = ref(db, 'muebles/tablet_07/estado_actual');
     const connectedRef = ref(db, ".info/connected");
-
-    const initFullscreenBtn = document.getElementById('init-fullscreen-btn');
-    initFullscreenBtn.addEventListener('click', () => {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) elem.requestFullscreen();
-      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-      else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-      initFullscreenBtn.remove();
-    });
 
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');

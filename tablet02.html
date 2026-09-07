@@ -6,12 +6,6 @@
   <title>TABLET 02</title>
   <style>
     body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #000; color: white; font-family: 'Courier New', Courier, monospace; }
-    
-    /* === BOTÓN FULLSCREEN INICIAL DE TABLET 02 === */
-    #init-fullscreen-btn {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; 
-      background: transparent; border: none; outline: none; cursor: pointer;
-    }
 
     /* === ESTILOS DEL LOGIN === */
     #login-screen {
@@ -84,8 +78,6 @@
 </head>
 <body>
 
-  <button id="init-fullscreen-btn" title="Activar Pantalla Completa"></button>
-
   <div id="login-screen">
     <div class="login-box">
       <h2>SISTEMA MUEBLE 02</h2>
@@ -153,16 +145,6 @@
     const statusRef = ref(db, 'muebles/tablet_02/status');
     const estadoActualRef = ref(db, 'muebles/tablet_02/estado_actual');
     const connectedRef = ref(db, ".info/connected");
-
-    // LÓGICA DE PANTALLA COMPLETA INICIAL AÑADIDA AQUÍ
-    const initFullscreenBtn = document.getElementById('init-fullscreen-btn');
-    initFullscreenBtn.addEventListener('click', () => {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) elem.requestFullscreen();
-      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-      else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-      initFullscreenBtn.remove();
-    });
 
     // Elementos del DOM - Auth
     const loginScreen = document.getElementById('login-screen');
