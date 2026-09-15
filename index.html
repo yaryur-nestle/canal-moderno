@@ -587,6 +587,7 @@
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-KROMI.jpg"><img src="logo-KROMI.jpg" alt="KROMI"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-GARZON.jpg"><img src="logo-GARZON.jpg" alt="Garzón"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-YARYUR.png"><img src="logo-YARYUR.png" alt="Inversiones Yar-Yur"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="rio.png"><img src="rio.png" alt="Río"></div><div class="filter-results"></div></div>
                         </div>
                     </div>
 
@@ -733,7 +734,7 @@
             'NIDO_Redvital San Diego': { tabletId: 4, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
             'NIDO_Kromi Market': { tabletId: 5, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
             'MULTIMARCA_Inversiones Yar-Yur': { tabletId: 6, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
-            'SAVOY_Inversiones Yar-Yur': { tabletId: 7, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 }
+            'SAVOY_Río Lomas del Sol': { tabletId: 7, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 }
         };
 
         const configZonas = {
@@ -1114,7 +1115,8 @@
             { id: 2, sucursal: "Redvital San Diego", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2540, lon: -67.9510, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" } ], tabletIds: [4] },
             { id: 3, sucursal: "Redvital La Yaguara", estadoNombre: "Distrito Capital", estadoId: "ve-df", lat: 10.4772, lon: -66.9597, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" }, { src: "RECETAS.png" } ], tabletIds: [1, 3] },
             { id: 4, sucursal: "Garzón Hiperahorro", estadoNombre: "Táchira", estadoId: "ve-ta", lat: 7.7669, lon: -72.2250, logo: "logo-GARZON.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [2] },
-            { id: 5, sucursal: "Inversiones Yar-Yur", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.3793, lon: -66.9742, logo: "logo-YARYUR.png", images: [ { src: "SAVOY.png" }, { src: "MULTIMARCA.png" } ], tabletIds: [7, 6] }
+            { id: 5, sucursal: "Inversiones Yar-Yur", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.3793, lon: -66.9742, logo: "logo-YARYUR.png", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [6] },
+            { id: 6, sucursal: "Río Lomas del Sol", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.4474635, lon: -66.831268, logo: "rio.png", images: [ { src: "SAVOY.png" } ], tabletIds: [7] }
         ];
 
         function iluminarEstados(arr) {
@@ -1244,7 +1246,7 @@
                 { nombre: "NIDO Kromi Market", tablet: "05" },
                 { nombre: "NIDO Redvital San Diego", tablet: "04" },
                 { nombre: "MULTIMARCA Inversiones Yar-Yur", tablet: "06" },
-                { nombre: "SAVOY Inversiones Yar-Yur", tablet: "07" }
+                { nombre: "SAVOY Río Lomas del Sol", tablet: "07" }
             ];
 
             const dbRef = ref(db);
