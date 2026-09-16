@@ -20,12 +20,12 @@
       user-select: none;
     }
 
-    /* === BOTÓN TOGGLE ESCANEO / RECETAS (ESQUINA SUPERIOR IZQUIERDA) === */
+    /* === BOTÓN TOGGLE ESCANEO / RECETAS (ESQUINA INFERIOR IZQUIERDA DE LA TABLET) === */
     .btn-scan-toggle {
-      position: fixed;
-      top: 15px;
-      left: 15px;
-      z-index: 10000;
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      z-index: 100;
       width: 42px;
       height: 42px;
       border-radius: 10px;
@@ -60,7 +60,7 @@
       display: none !important;
       position: fixed;
       top: 15px;
-      left: 62px;
+      left: 15px; /* Ajustado ya que el botón de escaneo se movió */
       z-index: 10000;
       height: 38px;
       padding: 0 12px;
@@ -465,7 +465,7 @@
     .flip-btn {
       position: absolute;
       bottom: 8px;
-      left: 8px;
+      left: 55px; /* Desplazado para no solaparse con el nuevo botón de escaneo */
       z-index: 50;
       background: rgba(0, 255, 255, 0.15);
       border: 1px solid #00FFFF;
@@ -559,20 +559,6 @@
 </head>
 <body>
 
-  <!-- Botón de Escaneo / Mostrar u Ocultar Recetas (Esquina Superior Izquierda) -->
-  <button id="btn-scan-toggle" class="btn-scan-toggle" title="Mostrar / Ocultar Botones de Recetas">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
-      <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-      <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
-      <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-      <line x1="7" y1="8" x2="7" y2="16"></line>
-      <line x1="10" y1="8" x2="10" y2="16"></line>
-      <line x1="14" y1="8" x2="14" y2="16"></line>
-      <line x1="17" y1="8" x2="17" y2="16"></line>
-    </svg>
-  </button>
-
   <!-- Botón de estado / sincronización con LectorCam (Firebase - oculto) -->
   <button id="btn-firebase-sync" class="btn-firebase-sync" style="display: none;" title="Sincronización con LectorCam vía Firebase">
     <span class="sync-dot"></span>
@@ -611,6 +597,20 @@
     </div>
 
     <div class="scene-tablet">
+      <!-- Botón de Escaneo / Mostrar u Ocultar Recetas (AHORA EN ESQUINA INFERIOR IZQUIERDA) -->
+      <button id="btn-scan-toggle" class="btn-scan-toggle" title="Mostrar / Ocultar Botones de Recetas">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+          <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+          <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+          <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+          <line x1="7" y1="8" x2="7" y2="16"></line>
+          <line x1="10" y1="8" x2="10" y2="16"></line>
+          <line x1="14" y1="8" x2="14" y2="16"></line>
+          <line x1="17" y1="8" x2="17" y2="16"></line>
+        </svg>
+      </button>
+
       <!-- Botón de Presencia en la esquina inferior derecha (solo emoji 👤) -->
       <button id="btn-toggle-presence" class="person-toggle-btn" title="Simular / Alternar Presencia de Persona">
         👤
@@ -710,7 +710,7 @@
     const estadoSimuladaRef = ref(db, 'muebles/tablet_03_simulada/estado_actual');
 
     // =========================================================
-    // BOTÓN TOGGLE ESCANEO: MOSTRAR / OCULTAR RECETAS (ESQUINA SUPERIOR IZQUIERDA)
+    // BOTÓN TOGGLE ESCANEO: MOSTRAR / OCULTAR RECETAS (ESQUINA INFERIOR IZQUIERDA)
     // =========================================================
     const btnScanToggle = document.getElementById('btn-scan-toggle');
     const recipeContainers = document.querySelectorAll('.recipe-side-container');
