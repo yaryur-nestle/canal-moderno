@@ -713,7 +713,7 @@
                                                 <div class="cal-grid" id="cal-grid"></div>
                                                 <div class="cal-legend">
                                                     <span><span class="status-dot-legend online"></span> Online</span>
-                                                    <span><span class="status-dot-legend partial"></span> Parcial</span>
+                                                    <span><span class="status-dot-legend partial"></span> Inestable</span>
                                                     <span><span class="status-dot-legend offline"></span> Offline</span>
                                                 </div>
                                             </div>
@@ -1457,8 +1457,8 @@
                 return { status: 'future', horasActivas: 0, totalHoras: 0, title: '' };
             }
 
-            // No evaluar fechas anteriores al inicio del sistema en 2026
-            if (dateObj.getFullYear() < 2026) {
+            // Iniciar a partir del miércoles 7 de octubre de 2026 (antes no había registros de latidos)
+            if (fechaStr < '2026-10-07') {
                 return { status: 'none', horasActivas: 0, totalHoras: 0, title: '' };
             }
 
@@ -1486,7 +1486,7 @@
                     status: 'partial', 
                     horasActivas, 
                     totalHoras: maxEsperadas, 
-                    title: `Conexión parcial (${horasActivas}/${maxEsperadas}h registradas)` 
+                    title: `Conexión inestable (${horasActivas}/${maxEsperadas}h registradas)` 
                 };
             }
         }
@@ -1551,7 +1551,7 @@
                                     const esHoy = (currentViewDate.getFullYear() === now.getFullYear() && currentViewDate.getMonth() === now.getMonth() && currentViewDate.getDate() === now.getDate());
                                     const esFutura = esHoy ? (horaIndex > now.getHours()) : (currentViewDate > now);
                                     
-                                    if (!esFutura) {
+                                    if (!esFutura && fechaStr >= '2026-10-07') {
                                         return [metricText, horaOnline ? 'Conexión: 🟢 Online' : 'Conexión: 🔴 Offline'];
                                     }
                                 } else if (currentViewLevel === 'month') {
@@ -1560,7 +1560,7 @@
                                     const st = getDayUptimeStatus(cellDate);
                                     if (st.status !== 'future' && st.status !== 'none') {
                                         const stText = st.status === 'online' ? `🟢 Online (${st.horasActivas}/${st.totalHoras}h)` :
-                                                       st.status === 'partial' ? `🟡 Parcial (${st.horasActivas}/${st.totalHoras}h)` :
+                                                       st.status === 'partial' ? `🟡 Inestable (${st.horasActivas}/${st.totalHoras}h)` :
                                                        `🔴 Offline`;
                                         return [metricText, `Conexión: ${stText}`];
                                     }
@@ -1586,18 +1586,6 @@
             } 
             else if (currentViewLevel === 'day') {
                 titlePrefix = "DÍA:"; titleSuffix = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                
-                const dayUptime = getDayUptimeStatus(date);
-                if (dayUptime.status !== 'future' && dayUptime.status !== 'none') {
-                    if (dayUptime.status === 'online') {
-                        titleSuffix += ` • 🟢 Online (${dayUptime.horasActivas}/${dayUptime.totalHoras}h)`;
-                    } else if (dayUptime.status === 'partial') {
-                        titleSuffix += ` • 🟡 Parcial (${dayUptime.horasActivas}/${dayUptime.totalHoras}h)`;
-                    } else if (dayUptime.status === 'offline') {
-                        titleSuffix += ` • 🔴 Offline (0/${dayUptime.totalHoras}h)`;
-                    }
-                }
-
                 for(let i=0; i<24; i++) { let d = new Date(date); d.setHours(i); labels.push(formatHourAMPM(d, false)); }
                 dataBuckets = new Array(24).fill(0); countBuckets = new Array(24).fill(0);
             }
@@ -1650,6 +1638,8 @@
             if (currentViewLevel === 'month') isCurrentView = (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear());
             if (currentViewLevel === 'year') isCurrentView = (date.getFullYear() === now.getFullYear());
 
+            let totalPersonasPeriodo = 0;
+
             events.forEach(ev => {
                 const evDate = new Date(ev.timestamp);
                 if (currentViewLevel === 'hour' && (evDate.getFullYear() !== date.getFullYear() || evDate.getMonth() !== date.getMonth() || evDate.getDate() !== date.getDate() || evDate.getHours() !== date.getHours())) return;
@@ -1685,6 +1675,7 @@
                         }
 
                         if (esValido) {
+                            totalPersonasPeriodo++;
                             if (currentMetric === 'count') {
                                 dataBuckets[idx] += 1; 
                             } else {
@@ -1702,7 +1693,8 @@
                 } 
             }
 
-            document.getElementById('chart-subtitle').innerText = `${titlePrefix} ${titleSuffix}`;
+            const strPersonas = totalPersonasPeriodo === 1 ? '1 persona' : `${totalPersonasPeriodo} personas`;
+            document.getElementById('chart-subtitle').innerText = `${titlePrefix} ${titleSuffix} • ${strPersonas}`;
 
             mainChart.data.labels = labels;
             mainChart.data.datasets[0].data = dataBuckets;
@@ -1778,14 +1770,12 @@
                 document.getElementById('view-calendar-day').classList.add('active');
                 btnIn.style.display = 'flex';
                 btnOut.style.display = 'flex';
-                titleEl.innerText = `MES: ${currentViewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase()}`;
                 renderCalMonth();
             }
             else if(viewState === 'CAL_YEAR') {
                 document.getElementById('view-calendar-year').classList.add('active');
                 btnIn.style.display = 'flex';
                 btnOut.style.display = 'flex'; 
-                titleEl.innerText = `AÑO: ${currentViewDate.getFullYear()}`;
                 renderCalYear();
             }
             else if(viewState === 'CAL_DECADE') {
@@ -1841,6 +1831,9 @@
             let daysInMonth = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 0).getDate();
             
             const data = getAggregatedCounts('month', currentViewDate);
+            const totalPersonas = Object.values(data.counts).reduce((a, b) => a + b, 0);
+            const strPersonas = totalPersonas === 1 ? '1 persona' : `${totalPersonas} personas`;
+            document.getElementById('chart-subtitle').innerText = `MES: ${currentViewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })} • ${strPersonas}`;
             const now = new Date();
             
             for(let i = 0; i < firstDay; i++) { grid.innerHTML += `<div class="cal-cell empty"></div>`; }
@@ -1886,6 +1879,9 @@
             grid.innerHTML = '';
             const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
             const data = getAggregatedCounts('year', currentViewDate);
+            const totalPersonas = Object.values(data.counts).reduce((a, b) => a + b, 0);
+            const strPersonas = totalPersonas === 1 ? '1 persona' : `${totalPersonas} personas`;
+            document.getElementById('chart-subtitle').innerText = `AÑO: ${currentViewDate.getFullYear()} • ${strPersonas}`;
             const now = new Date();
 
             months.forEach((m, i) => {
@@ -1915,9 +1911,10 @@
             const grid = document.getElementById('decade-grid');
             grid.innerHTML = '';
             let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
-            document.getElementById('chart-subtitle').innerText = `AÑOS: ${startYear} - ${startYear + 11}`;
-            
             const data = getAggregatedCounts('decade', currentViewDate);
+            const totalPersonas = Object.values(data.counts).reduce((a, b) => a + b, 0);
+            const strPersonas = totalPersonas === 1 ? '1 persona' : `${totalPersonas} personas`;
+            document.getElementById('chart-subtitle').innerText = `AÑOS: ${startYear} - ${startYear + 11} • ${strPersonas}`;
             const now = new Date();
             
             for (let i = 0; i < 12; i++) {
