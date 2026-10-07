@@ -324,9 +324,44 @@
         .cal-container { display: flex; flex-direction: column; width: 100%; height: 100%; padding: 10px 0; }
         .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; color: #999; font-size: 0.85rem; padding-bottom: 10px; }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; flex-grow: 1; gap: 6px; }
-        .cal-cell { display: flex; align-items: center; justify-content: center; border: 1px solid #eaeaea; border-radius: 8px; cursor: pointer; transition: transform 0.2s, filter 0.2s; font-weight: bold; font-size: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
+        .cal-cell { position: relative; display: flex; align-items: center; justify-content: center; border: 1px solid #eaeaea; border-radius: 8px; cursor: pointer; transition: transform 0.2s, filter 0.2s; font-weight: bold; font-size: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
         .cal-cell:hover { filter: brightness(0.95); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05);}
         .cal-cell.empty { background: transparent !important; border: none !important; pointer-events: none; box-shadow: none; }
+
+        /* Indicadores de Conectividad (Uptime) */
+        .status-dot {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .status-dot.online { background-color: #00E676; box-shadow: 0 0 5px #00E676; }
+        .status-dot.partial { background-color: #FFD600; box-shadow: 0 0 5px #FFD600; }
+        .status-dot.offline { background-color: #FF1744; box-shadow: 0 0 5px #FF1744; }
+
+        .cal-legend {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            color: #777;
+            font-weight: 600;
+        }
+        .cal-legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .status-dot-legend {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-dot-legend.online { background-color: #00E676; }
+        .status-dot-legend.partial { background-color: #FFD600; }
+        .status-dot-legend.offline { background-color: #FF1744; }
 
         .year-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 12px; height: 100%; padding: 10px 0;}
         .year-cell { display: flex; align-items: center; justify-content: center; border: 1px solid #eaeaea; border-radius: 12px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: transform 0.2s, filter 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02);}
@@ -673,10 +708,15 @@
                                         <canvas id="main-chart"></canvas>
                                     </div>
                                     <div id="view-calendar-day" class="view-panel">
-                                        <div class="cal-container">
-                                            <div class="cal-header"><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div></div>
-                                            <div class="cal-grid" id="cal-grid"></div>
-                                        </div>
+                                            <div class="cal-container">
+                                                <div class="cal-header"><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div></div>
+                                                <div class="cal-grid" id="cal-grid"></div>
+                                                <div class="cal-legend">
+                                                    <span><span class="status-dot-legend online"></span> Online</span>
+                                                    <span><span class="status-dot-legend partial"></span> Parcial</span>
+                                                    <span><span class="status-dot-legend offline"></span> Offline</span>
+                                                </div>
+                                            </div>
                                     </div>
                                     <div id="view-calendar-year" class="view-panel">
                                         <div class="year-grid" id="year-grid"></div>
@@ -1023,6 +1063,7 @@
         /* --- VARIABLES GLOBALES DEL MONITOR --- */
         let activeFirebaseListeners = [];
         let todosLosEventos = { 1: [], 2: [], 3: [] }; 
+        let datosUptime = {}; // Historial de disponibilidad { "YYYY-MM-DD": { "HH": true } }
         let estadoVisual = { 1: [], 2: [], 3: [] }; 
         let conteosActuales = { 1: 0, 2: 0, 3: 0 };
         let tabletActualEnGrafico = null; 
@@ -1059,6 +1100,7 @@
             activeFirebaseListeners.forEach(unsub => unsub());
             activeFirebaseListeners = [];
             todosLosEventos = { 1: [], 2: [], 3: [] };
+            datosUptime = {};
             estadoVisual = { 1: [], 2: [], 3: [] };
             conteosActuales = { 1: 0, 2: 0, 3: 0 };
             isInitialLoad = true;
@@ -1101,6 +1143,20 @@
                 }
             });
             activeFirebaseListeners.push(unsubEventos);
+
+            // Escuchar el Uptime histórico (latidos horarios de conectividad)
+            const uptimeQuery = ref(db, `muebles/tablet_${numFormat}/uptime`);
+            const unsubUptime = onValue(uptimeQuery, (snapshot) => {
+                datosUptime = snapshot.val() || {};
+                if (!isInitialLoad && tabletActualEnGrafico === zoneId) {
+                    if (viewState === 'CAL_MONTH') {
+                        renderCalMonth();
+                    } else if (viewState.startsWith('CHART_')) {
+                        updateChartDisplay(true);
+                    }
+                }
+            });
+            activeFirebaseListeners.push(unsubUptime);
 
             toggleAppView(1);
         }
@@ -1385,6 +1441,56 @@
             return { bg: `hsl(40, 40%, ${l}%)`, color: textColor }; 
         }
 
+        /* --- CÁLCULO DE DISPONIBILIDAD (UPTIME / CONECTIVIDAD) --- */
+        function getDayUptimeStatus(dateObj) {
+            const anio = dateObj.getFullYear();
+            const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dia = String(dateObj.getDate()).padStart(2, '0');
+            const fechaStr = `${anio}-${mes}-${dia}`;
+
+            const now = new Date();
+            const inicioHoy = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const inicioFecha = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).getTime();
+
+            // Si la fecha es estrictamente en el futuro, no mostrar estado
+            if (inicioFecha > inicioHoy) {
+                return { status: 'future', horasActivas: 0, totalHoras: 0, title: '' };
+            }
+
+            // No evaluar fechas anteriores al inicio del sistema en 2026
+            if (dateObj.getFullYear() < 2026) {
+                return { status: 'none', horasActivas: 0, totalHoras: 0, title: '' };
+            }
+
+            const dayRecord = datosUptime[fechaStr] || {};
+            const horasActivas = Object.keys(dayRecord).length;
+            const esHoy = (inicioFecha === inicioHoy);
+            const maxEsperadas = esHoy ? (now.getHours() + 1) : 24;
+
+            if (horasActivas === 0) {
+                return { 
+                    status: 'offline', 
+                    horasActivas: 0, 
+                    totalHoras: maxEsperadas, 
+                    title: `Offline (0/${maxEsperadas}h registradas)` 
+                };
+            } else if (horasActivas >= maxEsperadas) {
+                return { 
+                    status: 'online', 
+                    horasActivas, 
+                    totalHoras: maxEsperadas, 
+                    title: `Online (${horasActivas}/${maxEsperadas}h registradas)` 
+                };
+            } else {
+                return { 
+                    status: 'partial', 
+                    horasActivas, 
+                    totalHoras: maxEsperadas, 
+                    title: `Conexión parcial (${horasActivas}/${maxEsperadas}h registradas)` 
+                };
+            }
+        }
+
         /* --- FUNCIONES DEL GRÁFICO (Monitor) --- */
         function formatHourAMPM(date, includeMinutes = false) {
             let h = date.getHours(), m = date.getMinutes(), ampm = h >= 12 ? 'pm' : 'am';
@@ -1426,10 +1532,41 @@
                 plugins: { 
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)', titleFont: { size: 14 }, bodyFont: { size: 13 }, padding: 10, displayColors: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.85)', titleFont: { size: 14 }, bodyFont: { size: 13 }, padding: 10, displayColors: false,
                         callbacks: {
                             title: function(c) { return c[0].label; },
-                            label: function(c) { return currentMetric === 'time' ? c.raw + ' segs (promedio)' : (c.raw === 1 ? '1 persona' : c.raw + ' personas'); }
+                            label: function(c) { 
+                                const val = c.raw;
+                                const metricText = currentMetric === 'time' ? val + ' segs (promedio)' : (val === 1 ? '1 persona' : val + ' personas');
+                                
+                                if (currentViewLevel === 'day') {
+                                    const anio = currentViewDate.getFullYear();
+                                    const mes = String(currentViewDate.getMonth() + 1).padStart(2, '0');
+                                    const dia = String(currentViewDate.getDate()).padStart(2, '0');
+                                    const fechaStr = `${anio}-${mes}-${dia}`;
+                                    const horaIndex = c.dataIndex;
+                                    const horaOnline = !!(datosUptime[fechaStr] && datosUptime[fechaStr][horaIndex]);
+                                    
+                                    const now = new Date();
+                                    const esHoy = (currentViewDate.getFullYear() === now.getFullYear() && currentViewDate.getMonth() === now.getMonth() && currentViewDate.getDate() === now.getDate());
+                                    const esFutura = esHoy ? (horaIndex > now.getHours()) : (currentViewDate > now);
+                                    
+                                    if (!esFutura) {
+                                        return [metricText, horaOnline ? 'Conexión: 🟢 Online' : 'Conexión: 🔴 Offline'];
+                                    }
+                                } else if (currentViewLevel === 'month') {
+                                    const dayNum = c.dataIndex + 1;
+                                    const cellDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), dayNum);
+                                    const st = getDayUptimeStatus(cellDate);
+                                    if (st.status !== 'future' && st.status !== 'none') {
+                                        const stText = st.status === 'online' ? `🟢 Online (${st.horasActivas}/${st.totalHoras}h)` :
+                                                       st.status === 'partial' ? `🟡 Parcial (${st.horasActivas}/${st.totalHoras}h)` :
+                                                       `🔴 Offline`;
+                                        return [metricText, `Conexión: ${stText}`];
+                                    }
+                                }
+                                return metricText;
+                            }
                         }
                     }
                 }
@@ -1449,6 +1586,18 @@
             } 
             else if (currentViewLevel === 'day') {
                 titlePrefix = "DÍA:"; titleSuffix = date.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                
+                const dayUptime = getDayUptimeStatus(date);
+                if (dayUptime.status !== 'future' && dayUptime.status !== 'none') {
+                    if (dayUptime.status === 'online') {
+                        titleSuffix += ` • 🟢 Online (${dayUptime.horasActivas}/${dayUptime.totalHoras}h)`;
+                    } else if (dayUptime.status === 'partial') {
+                        titleSuffix += ` • 🟡 Parcial (${dayUptime.horasActivas}/${dayUptime.totalHoras}h)`;
+                    } else if (dayUptime.status === 'offline') {
+                        titleSuffix += ` • 🔴 Offline (0/${dayUptime.totalHoras}h)`;
+                    }
+                }
+
                 for(let i=0; i<24; i++) { let d = new Date(date); d.setHours(i); labels.push(formatHourAMPM(d, false)); }
                 dataBuckets = new Array(24).fill(0); countBuckets = new Array(24).fill(0);
             }
@@ -1699,12 +1848,25 @@
             for(let i = 1; i <= daysInMonth; i++) {
                 let cell = document.createElement('div');
                 cell.className = 'cal-cell';
-                cell.innerText = i;
+                
+                let numSpan = document.createElement('span');
+                numSpan.innerText = i;
+                cell.appendChild(numSpan);
                 
                 const count = data.counts[i] || 0;
                 const style = getHeatmapStyle(count, data.maxCount);
                 cell.style.backgroundColor = style.bg;
                 cell.style.color = style.color;
+
+                const cellDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), i);
+                const uptimeInfo = getDayUptimeStatus(cellDate);
+
+                if (uptimeInfo.status !== 'future' && uptimeInfo.status !== 'none') {
+                    let dot = document.createElement('span');
+                    dot.className = `status-dot ${uptimeInfo.status}`;
+                    dot.title = uptimeInfo.title;
+                    cell.appendChild(dot);
+                }
 
                 if(now.getDate() === i && now.getMonth() === currentViewDate.getMonth() && now.getFullYear() === currentViewDate.getFullYear()) {
                     cell.classList.add('is-current');

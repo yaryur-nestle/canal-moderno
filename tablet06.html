@@ -189,15 +189,40 @@
         });
     });
 
-    // Conexión de Base de Datos (ACTUALIZADO para limpiar estado_actual en desconexión)
-function conectarBD() {
-    onValue(connectedRef, (snap) => {
+    // Conexión de Base de Datos y Heartbeat de Uptime
+    let heartbeatInterval = null;
+    function registrarLatido() {
+      try {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dia = String(d.getDate()).padStart(2, '0');
+        const fechaLocal = `${y}-${m}-${dia}`;
+        const horaLocal = d.getHours();
+        const uptimeHoraRef = ref(db, `muebles/tablet_06/uptime/${fechaLocal}/${horaLocal}`);
+        set(uptimeHoraRef, true).catch(() => {});
+      } catch (e) {
+        console.warn("Heartbeat error:", e);
+      }
+    }
+
+    function conectarBD() {
+      onValue(connectedRef, (snap) => {
         if (snap.val() === true) {
-            onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
-            onDisconnect(estadoActualRef).update({ hayPersonas: false, conteoActual: 0 }); 
+          onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
+          onDisconnect(estadoActualRef).update({ hayPersonas: false, conteoActual: 0 });
+          registrarLatido();
+          if (!heartbeatInterval) {
+            heartbeatInterval = setInterval(registrarLatido, 5 * 60 * 1000);
+          }
+        } else {
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+          }
         }
-    });
-}
+      });
+    }
 
     // Lógica de UI Principal
     const fullscreenBtn = document.getElementById('fullscreen-btn');
