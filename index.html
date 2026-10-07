@@ -431,7 +431,7 @@
         /* Botón VER EN TIEMPO REAL Palpitando */
         #btn-ver-tiempo-real {
             position: absolute;
-            bottom: 20px;
+            bottom: 65px;
             right: 20px;
             background: #b39c6e;
             color: #ffffff;
@@ -445,7 +445,7 @@
             z-index: 100;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
             box-shadow: 0 4px 15px rgba(179, 156, 110, 0.4);
             animation: pulseLiveBtn 2s infinite ease-in-out;
             transition: transform 0.2s, background-color 0.2s;
@@ -455,17 +455,6 @@
             background: #968157;
             transform: translateY(-2px) scale(1.03);
             animation-play-state: paused;
-        }
-        .live-dot-pulse {
-            display: inline-block;
-            color: #00E676;
-            font-size: 1.1rem;
-            line-height: 1;
-            animation: dotBlink 1.2s infinite ease-in-out;
-        }
-        @keyframes dotBlink {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.3; transform: scale(0.8); }
         }
         @keyframes pulseLiveBtn {
             0% {
@@ -800,7 +789,7 @@
                                 <button id="btn-next" class="nav-arrow" disabled><svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></button>
                             </div>
                             
-                            <button id="btn-ver-tiempo-real" onclick="flipToRealTime()"><span class="live-dot-pulse">●</span> VER EN TIEMPO REAL</button>
+                            <button id="btn-ver-tiempo-real" onclick="flipToRealTime()">VER EN TIEMPO REAL</button>
                         </div>
                     </div>
 
@@ -1556,7 +1545,16 @@
         }
 
         /* --- CÁLCULO DE DISPONIBILIDAD (UPTIME / CONECTIVIDAD) --- */
+        function hasTabletUptime() {
+            return !!(datosUptime && Object.keys(datosUptime).length > 0);
+        }
+
         function getDayUptimeStatus(dateObj) {
+            // Si en Firebase no existe el uptime para esta tablet (aún no se ha recargado con el nuevo script), no mostrar nada
+            if (!hasTabletUptime()) {
+                return { status: 'none', horasActivas: 0, totalHoras: 0, title: '' };
+            }
+
             const anio = dateObj.getFullYear();
             const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
             const dia = String(dateObj.getDate()).padStart(2, '0');
@@ -1571,8 +1569,12 @@
                 return { status: 'future', horasActivas: 0, totalHoras: 0, title: '' };
             }
 
-            // Iniciar a partir de la implementación (o si ya existen registros en datosUptime)
-            if (fechaStr < '2026-10-06' && !datosUptime[fechaStr]) {
+            // Encontrar la primera fecha registrada en uptime para esta tablet
+            const fechasRegistradas = Object.keys(datosUptime).sort();
+            const primeraFecha = fechasRegistradas[0];
+
+            // Si el día consultado es anterior a la primera fecha de registro en esta tablet, no mostrar estado
+            if (fechaStr < primeraFecha) {
                 return { status: 'none', horasActivas: 0, totalHoras: 0, title: '' };
             }
 
@@ -1654,10 +1656,17 @@
                                 const metricText = currentMetric === 'time' ? val + ' segs (promedio)' : (val === 1 ? '1 persona' : val + ' personas');
                                 
                                 if (currentViewLevel === 'day') {
+                                    if (!hasTabletUptime()) return metricText;
+
                                     const anio = currentViewDate.getFullYear();
                                     const mes = String(currentViewDate.getMonth() + 1).padStart(2, '0');
                                     const dia = String(currentViewDate.getDate()).padStart(2, '0');
                                     const fechaStr = `${anio}-${mes}-${dia}`;
+
+                                    const fechasRegistradas = Object.keys(datosUptime).sort();
+                                    const primeraFecha = fechasRegistradas[0];
+                                    if (fechaStr < primeraFecha) return metricText;
+
                                     const horaIndex = c.dataIndex;
                                     const horaOnline = !!(datosUptime[fechaStr] && datosUptime[fechaStr][horaIndex]);
                                     
@@ -1665,10 +1674,12 @@
                                     const esHoy = (currentViewDate.getFullYear() === now.getFullYear() && currentViewDate.getMonth() === now.getMonth() && currentViewDate.getDate() === now.getDate());
                                     const esFutura = esHoy ? (horaIndex > now.getHours()) : (currentViewDate > now);
                                     
-                                    if (!esFutura && (fechaStr >= '2026-10-06' || datosUptime[fechaStr])) {
+                                    if (!esFutura) {
                                         return [metricText, horaOnline ? 'Conexión: 🟢 Online' : 'Conexión: 🔴 Offline'];
                                     }
                                 } else if (currentViewLevel === 'month') {
+                                    if (!hasTabletUptime()) return metricText;
+
                                     const dayNum = c.dataIndex + 1;
                                     const cellDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), dayNum);
                                     const st = getDayUptimeStatus(cellDate);
@@ -1935,6 +1946,12 @@
             const totalPersonas = Object.values(data.counts).reduce((a, b) => a + b, 0);
             const strPersonas = totalPersonas === 1 ? '1 persona' : `${totalPersonas} personas`;
             document.getElementById('chart-subtitle').innerText = `MES: ${currentViewDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })} • ${strPersonas}`;
+            
+            const legendEl = document.querySelector('.cal-legend');
+            if (legendEl) {
+                legendEl.style.display = hasTabletUptime() ? 'flex' : 'none';
+            }
+
             const now = new Date();
             
             for(let i = 0; i < firstDay; i++) { grid.innerHTML += `<div class="cal-cell empty"></div>`; }
