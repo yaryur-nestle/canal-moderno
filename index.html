@@ -224,8 +224,48 @@
            VISTA: MONITOR INTERACTIVO
            ========================================= */
         #monitor-view { background-color: #ffffff; }
-        #btn-volver-mapa { position: absolute; top: 15px; left: 15px; padding: 8px 15px; background: rgba(179, 156, 110, 0.9); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; z-index: 1000; transition: background 0.3s; font-size: 0.9rem;}
-        #btn-volver-mapa:hover { background: rgba(150, 129, 87, 1); }
+
+        /* Botón Volver al Mapa (en la cara del Calendario) */
+        #btn-volver-mapa {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            padding: 8px 18px;
+            background: rgba(179, 156, 110, 0.9);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            transition: background 0.3s, transform 0.2s;
+            font-size: 0.9rem;
+        }
+        #btn-volver-mapa:hover {
+            background: rgba(150, 129, 87, 1);
+            transform: translateY(-1px);
+        }
+
+        /* Botón Atrás (en la cara en Tiempo Real) */
+        #btn-atras-monitor {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 8px 18px;
+            background: rgba(179, 156, 110, 0.9);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1000;
+            transition: background 0.3s, transform 0.2s;
+            font-size: 0.9rem;
+        }
+        #btn-atras-monitor:hover {
+            background: rgba(150, 129, 87, 1);
+            transform: translateY(-1px);
+        }
 
         #btn-simular-tablet { 
             position: absolute; 
@@ -251,33 +291,30 @@
             transform: translateY(-1px);
         }
 
-        #btn-atras-monitor {
-            position: absolute;
-            top: 15px;
-            left: 20px;
-            padding: 8px 18px;
-            background: rgba(179, 156, 110, 0.9);
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            z-index: 100;
-            transition: background 0.3s, transform 0.2s;
-            font-size: 0.9rem;
-        }
-        #btn-atras-monitor:hover {
-            background: rgba(150, 129, 87, 1);
-            transform: translateY(-1px);
-        }
-
         .flip-container { perspective: 1500px; width: 100%; height: 100%; }
         .flipper { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.68, -0.15, 0.265, 1.15); }
         .flip-container.flipped .flipper { transform: rotateY(180deg); }
         
         .front, .back { position: absolute; top: 0; left: 0; width: 100%; height: 100%; backface-visibility: hidden; background-color: #ffffff; }
-        .front { pointer-events: auto; }
-        .back { transform: rotateY(180deg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; pointer-events: none;}
+        
+        /* CARA 1: CALENDARIO (FRONT) */
+        .front {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            pointer-events: auto;
+            transform: rotateY(0deg);
+        }
+        
+        /* CARA 2: TIEMPO REAL (BACK) */
+        .back {
+            transform: rotateY(180deg);
+            pointer-events: none;
+            overflow: hidden;
+        }
+
         .flip-container.flipped .front { pointer-events: none; }
         .flip-container.flipped .back { pointer-events: auto; }
 
@@ -391,8 +428,59 @@
         .hint:hover { background-color: #f0f0f0; color: #333; animation-play-state: paused; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(179,156,110,0.4); } 70% { box-shadow: 0 0 0 10px rgba(179,156,110,0); } 100% { box-shadow: 0 0 0 0 rgba(179,156,110,0); } }
 
-        #btn-refresh-live { position: absolute; bottom: 20px; right: 20px; background: #b39c6e; color: white; border: none; padding: 10px 18px; border-radius: 25px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(179,156,110,0.4); transition: transform 0.2s, background 0.2s; z-index: 100; display: none; font-size: 0.9rem; letter-spacing: 0.5px;}
-        #btn-refresh-live:hover { background: #968157; transform: translateY(-2px); }
+        /* Botón VER EN TIEMPO REAL Palpitando */
+        #btn-ver-tiempo-real {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #b39c6e;
+            color: #ffffff;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 25px;
+            font-weight: 800;
+            font-size: 0.88rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            z-index: 100;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(179, 156, 110, 0.4);
+            animation: pulseLiveBtn 2s infinite ease-in-out;
+            transition: transform 0.2s, background-color 0.2s;
+            outline: none;
+        }
+        #btn-ver-tiempo-real:hover {
+            background: #968157;
+            transform: translateY(-2px) scale(1.03);
+            animation-play-state: paused;
+        }
+        .live-dot-pulse {
+            display: inline-block;
+            color: #00E676;
+            font-size: 1.1rem;
+            line-height: 1;
+            animation: dotBlink 1.2s infinite ease-in-out;
+        }
+        @keyframes dotBlink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+        @keyframes pulseLiveBtn {
+            0% {
+                box-shadow: 0 0 0 0 rgba(179, 156, 110, 0.7);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 0 14px rgba(179, 156, 110, 0);
+                transform: scale(1.03);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(179, 156, 110, 0);
+                transform: scale(1);
+            }
+        }
 
         /* Botón Pantalla Completa Reactivo en Esquina Superior Izquierda */
         .btn-fullscreen-toggle {
@@ -420,11 +508,17 @@
             transform: scale(1.08);
         }
 
-        body.not-fullscreen #btn-volver-mapa {
+        body.not-fullscreen #btn-atras-monitor {
             left: 65px;
         }
-        body.is-fullscreen #btn-volver-mapa {
+        body.is-fullscreen #btn-atras-monitor {
             left: 15px;
+        }
+        body.not-fullscreen #btn-volver-mapa {
+            left: 60px;
+        }
+        body.is-fullscreen #btn-volver-mapa {
+            left: 20px;
         }
 
         /* Botón de Ayuda / Semáforo en Esquina Superior Izquierda del Mapa */
@@ -646,46 +740,13 @@
         </div>
 
         <div id="monitor-view" class="spa-view">
-            <button id="btn-volver-mapa">Volver al Mapa</button>
-            <a id="btn-simular-tablet" target="_blank" href="#">Simular Tablet</a>
-
             <div class="flip-container" id="flip-container">
                 <div class="flipper">
                     
+                    <!-- CARA 1: CALENDARIO Y DASHBOARD -->
                     <div class="front">
-                        <img id="monitor-bg" src="" class="base-img" alt="Exhibidor">
-                        
-                        <img src="" class="person-img" id="img-1-1">
-                        <img src="" class="person-img" id="img-1-2">
-                        <img src="" class="person-img" id="img-1-3">
-                        <img src="" class="person-img" id="img-1-4">
-                        <img src="" class="person-img" id="img-1-5">
-
-                        <img src="" class="person-img" id="img-2-1">
-                        <img src="" class="person-img" id="img-2-2">
-                        <img src="" class="person-img" id="img-2-3">
-                        <img src="" class="person-img" id="img-2-4">
-                        <img src="" class="person-img" id="img-2-5">
-
-                        <img src="" class="person-img" id="img-3-1">
-                        <img src="" class="person-img" id="img-3-2">
-                        <img src="" class="person-img" id="img-3-3">
-                        <img src="" class="person-img" id="img-3-4">
-                        <img src="" class="person-img" id="img-3-5">
-
-                        <div class="live-overlay" id="live-overlay" style="display: none;">
-                            <div class="en-vivo-badge">EN VIVO</div>
-                            <div class="live-count" id="live-count">1 persona</div>
-                            <div class="live-timer" id="live-timer">0.0</div>
-                            <div class="live-datetime" id="live-datetime">--</div>
-                        </div>
-
-                        <div class="click-zone full" onclick="flipToChart(2)"></div>
-                    </div>
-
-                    <div class="back">
                         <div class="back-content">
-                            <button id="btn-atras-monitor" onclick="flipToFront()">Atrás</button>
+                            <button id="btn-volver-mapa">Volver al Mapa</button>
 
                             <button id="btn-metric" class="icon-btn metric-toggle" title="Cambiar Métrica">
                                 <svg id="icon-chrono" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A8.962 8.962 0 0012 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
@@ -713,7 +774,7 @@
                                                 <div class="cal-grid" id="cal-grid"></div>
                                                 <div class="cal-legend">
                                                     <span><span class="status-dot-legend online"></span> Online</span>
-                                                    <span><span class="status-dot-legend partial"></span> Inestable</span>
+                                                    <span><span class="status-dot-legend partial"></span> Parcial</span>
                                                     <span><span class="status-dot-legend offline"></span> Offline</span>
                                                 </div>
                                             </div>
@@ -739,9 +800,45 @@
                                 <button id="btn-next" class="nav-arrow" disabled><svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></button>
                             </div>
                             
-                            <button id="btn-refresh-live" onclick="goToCurrentTime()">⟳ EN VIVO</button>
+                            <button id="btn-ver-tiempo-real" onclick="flipToRealTime()"><span class="live-dot-pulse">●</span> VER EN TIEMPO REAL</button>
                         </div>
                     </div>
+
+                    <!-- CARA 2: VISTA INTERACTIVA EN TIEMPO REAL -->
+                    <div class="back">
+                        <button id="btn-atras-monitor" onclick="flipToCalendar()">Atrás</button>
+                        <a id="btn-simular-tablet" target="_blank" href="#">Simular Tablet</a>
+
+                        <img id="monitor-bg" src="" class="base-img" alt="Exhibidor">
+                        
+                        <img src="" class="person-img" id="img-1-1">
+                        <img src="" class="person-img" id="img-1-2">
+                        <img src="" class="person-img" id="img-1-3">
+                        <img src="" class="person-img" id="img-1-4">
+                        <img src="" class="person-img" id="img-1-5">
+
+                        <img src="" class="person-img" id="img-2-1">
+                        <img src="" class="person-img" id="img-2-2">
+                        <img src="" class="person-img" id="img-2-3">
+                        <img src="" class="person-img" id="img-2-4">
+                        <img src="" class="person-img" id="img-2-5">
+
+                        <img src="" class="person-img" id="img-3-1">
+                        <img src="" class="person-img" id="img-3-2">
+                        <img src="" class="person-img" id="img-3-3">
+                        <img src="" class="person-img" id="img-3-4">
+                        <img src="" class="person-img" id="img-3-5">
+
+                        <div class="live-overlay" id="live-overlay" style="display: none;">
+                            <div class="en-vivo-badge">EN VIVO</div>
+                            <div class="live-count" id="live-count">1 persona</div>
+                            <div class="live-timer" id="live-timer">0.0</div>
+                            <div class="live-datetime" id="live-datetime">--</div>
+                        </div>
+
+                        <div class="click-zone full" onclick="flipToCalendar()"></div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -1047,7 +1144,8 @@
 
         document.getElementById('btn-volver-mapa').addEventListener('click', () => {
             toggleAppView(0); 
-            if(document.getElementById('flip-container').classList.contains('flipped')) flipToFront();
+            document.getElementById('flip-container').classList.remove('flipped');
+            tabletActualEnGrafico = null;
             
             clearInterval(overlayTimerInterval);
             clearTimeout(stopTimeout1);
@@ -1055,8 +1153,10 @@
             isOverlayActive = false;
             
             const overlayEl = document.getElementById('live-overlay');
-            overlayEl.style.display = 'none';
-            overlayEl.classList.remove('fade-out-up');
+            if (overlayEl) {
+                overlayEl.style.display = 'none';
+                overlayEl.classList.remove('fade-out-up');
+            }
             document.getElementById('live-timer').classList.remove('recorded');
         });
 
@@ -1115,7 +1215,16 @@
                 simularBtn.href = `tablet${numFormat}simulada.html`;
                 simularBtn.style.display = 'inline-block';
             }
-            document.getElementById('btn-volver-mapa').style.display = 'block';
+
+            // Iniciar en la cara frontal del Calendario
+            document.getElementById('flip-container').classList.remove('flipped');
+            tabletActualEnGrafico = zoneId;
+            viewState = 'CAL_MONTH';
+            currentViewDate = new Date();
+            currentMetric = 'count';
+            document.getElementById('icon-chrono').style.display = 'block';
+            document.getElementById('icon-user').style.display = 'none';
+            updateDashboardView();
 
             const estadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
             const unsubEstado = onValue(estadoQuery, (snapshot) => {
@@ -1716,20 +1825,7 @@
         }
 
         function checkRefreshLiveButton() {
-            const now = new Date();
-            let showBtn = false;
-            if(viewState === 'CHART_HOUR' && (!isSameDay(currentViewDate, now) || currentViewDate.getHours() !== now.getHours())) showBtn = true;
-            if(viewState === 'CHART_DAY' && !isSameDay(currentViewDate, now)) showBtn = true;
-            if(viewState === 'CHART_MONTH' && (currentViewDate.getMonth() !== now.getMonth() || currentViewDate.getFullYear() !== now.getFullYear())) showBtn = true;
-            if(viewState === 'CAL_MONTH' && (currentViewDate.getMonth() !== now.getMonth() || currentViewDate.getFullYear() !== now.getFullYear())) showBtn = true;
-            if(viewState === 'CAL_YEAR' && currentViewDate.getFullYear() !== now.getFullYear()) showBtn = true;
-            if(viewState === 'CHART_YEAR' && currentViewDate.getFullYear() !== now.getFullYear()) showBtn = true;
-            if(viewState === 'CAL_DECADE') {
-                let startYear = Math.floor((currentViewDate.getFullYear() - 2021) / 12) * 12 + 2021;
-                if(now.getFullYear() < startYear || now.getFullYear() > startYear + 11) showBtn = true;
-            }
-            
-            document.getElementById('btn-refresh-live').style.display = showBtn ? 'block' : 'none';
+            // El botón VER EN TIEMPO REAL (#btn-ver-tiempo-real) se mantiene siempre visible y palpitando en el calendario
         }
 
         function updateDashboardView(skipAnim = false) {
@@ -2066,25 +2162,22 @@
         document.getElementById('btn-prev').addEventListener('click', () => changeTime(-1));
         document.getElementById('btn-next').addEventListener('click', () => changeTime(1));
 
-        window.flipToChart = function(zoneId) {
-            tabletActualEnGrafico = zoneId;
-            viewState = 'CAL_MONTH';
-            currentViewDate = new Date(); currentMetric = 'count'; 
-            document.getElementById('icon-chrono').style.display = 'block'; document.getElementById('icon-user').style.display = 'none';
-            document.getElementById('btn-volver-mapa').style.display = 'none'; 
-            const btnSimular = document.getElementById('btn-simular-tablet');
-            if (btnSimular) btnSimular.style.display = 'none';
-            updateDashboardView();
+        window.flipToRealTime = function() {
             document.getElementById('flip-container').classList.add('flipped');
-        }
+        };
+
+        window.flipToCalendar = function() {
+            document.getElementById('flip-container').classList.remove('flipped');
+        };
+
+        window.flipToChart = function(zoneId) {
+            if (zoneId) tabletActualEnGrafico = zoneId;
+            window.flipToCalendar();
+        };
 
         window.flipToFront = function() {
-            document.getElementById('flip-container').classList.remove('flipped');
-            document.getElementById('btn-volver-mapa').style.display = 'block';
-            const btnSimular = document.getElementById('btn-simular-tablet');
-            if (btnSimular) btnSimular.style.display = 'inline-block';
-            setTimeout(() => { tabletActualEnGrafico = null; }, 500); 
-        }
+            window.flipToRealTime();
+        };
 
         /* --- OVERLAY EN VIVO Y SILUETAS --- */
         function renderTimer() {
