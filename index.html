@@ -1146,6 +1146,8 @@
             toggleAppView(0); 
             document.getElementById('flip-container').classList.remove('flipped');
             tabletActualEnGrafico = null;
+            if (renderDebounceTimer) clearTimeout(renderDebounceTimer);
+            renderDebounceTimer = null;
             
             clearInterval(overlayTimerInterval);
             clearTimeout(stopTimeout1);
@@ -1173,7 +1175,7 @@
         let currentViewDate = new Date(); 
         let currentMetric = 'count'; 
 
-        let isOverlayActive = false, overlayStartTime = 0, overlayTimerInterval = null, stopTimeout1 = null, stopTimeout2 = null, isInitialLoad = true;
+        let isOverlayActive = false, overlayStartTime = 0, overlayTimerInterval = null, stopTimeout1 = null, stopTimeout2 = null, isInitialLoad = true, renderDebounceTimer = null;
 
         /* --- CARGADOR DINÁMICO DEL MONITOR --- */
         function cargarMonitor(brandName, sucursalName) {
@@ -1204,8 +1206,8 @@
             estadoVisual = { 1: [], 2: [], 3: [] };
             conteosActuales = { 1: 0, 2: 0, 3: 0 };
             isInitialLoad = true;
-            
-            setTimeout(() => { isInitialLoad = false; updateLiveOverlay(); }, 1500);
+            if (renderDebounceTimer) clearTimeout(renderDebounceTimer);
+            renderDebounceTimer = null;
 
             const zoneId = config.zone;
             const numFormat = config.tabletId.toString().padStart(2, '0');
@@ -1226,6 +1228,15 @@
             document.getElementById('icon-user').style.display = 'none';
             updateDashboardView();
 
+            function debouncedRender() {
+                if (renderDebounceTimer) clearTimeout(renderDebounceTimer);
+                renderDebounceTimer = setTimeout(() => {
+                    if (tabletActualEnGrafico === zoneId) {
+                        updateDashboardView(true);
+                    }
+                }, 50);
+            }
+
             const estadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
             const unsubEstado = onValue(estadoQuery, (snapshot) => {
                 const data = snapshot.val();
@@ -1242,13 +1253,7 @@
                 const data = snapshot.val();
                 if (data && data.timestamp && data.conteoActual !== undefined) {
                     todosLosEventos[zoneId].push(data);
-                    if (!isInitialLoad && tabletActualEnGrafico === zoneId) {
-                        if (viewState.startsWith('CHART_')) {
-                            updateChartDisplay();
-                        } else if (viewState === 'CAL_MONTH') {
-                            renderCalMonth();
-                        }
-                    }
+                    debouncedRender();
                 }
             });
             activeFirebaseListeners.push(unsubEventos);
@@ -1257,15 +1262,15 @@
             const uptimeQuery = ref(db, `muebles/tablet_${numFormat}/uptime`);
             const unsubUptime = onValue(uptimeQuery, (snapshot) => {
                 datosUptime = snapshot.val() || {};
-                if (!isInitialLoad && tabletActualEnGrafico === zoneId) {
-                    if (viewState === 'CAL_MONTH') {
-                        renderCalMonth();
-                    } else if (viewState.startsWith('CHART_')) {
-                        updateChartDisplay(true);
-                    }
-                }
+                debouncedRender();
             });
             activeFirebaseListeners.push(unsubUptime);
+
+            setTimeout(() => { 
+                isInitialLoad = false; 
+                updateLiveOverlay(); 
+                debouncedRender();
+            }, 1000);
 
             toggleAppView(1);
         }
@@ -1566,8 +1571,8 @@
                 return { status: 'future', horasActivas: 0, totalHoras: 0, title: '' };
             }
 
-            // Iniciar a partir del miércoles 7 de octubre de 2026 (antes no había registros de latidos)
-            if (fechaStr < '2026-10-07') {
+            // Iniciar a partir de la implementación (o si ya existen registros en datosUptime)
+            if (fechaStr < '2026-10-06' && !datosUptime[fechaStr]) {
                 return { status: 'none', horasActivas: 0, totalHoras: 0, title: '' };
             }
 
@@ -1660,7 +1665,7 @@
                                     const esHoy = (currentViewDate.getFullYear() === now.getFullYear() && currentViewDate.getMonth() === now.getMonth() && currentViewDate.getDate() === now.getDate());
                                     const esFutura = esHoy ? (horaIndex > now.getHours()) : (currentViewDate > now);
                                     
-                                    if (!esFutura && fechaStr >= '2026-10-07') {
+                                    if (!esFutura && (fechaStr >= '2026-10-06' || datosUptime[fechaStr])) {
                                         return [metricText, horaOnline ? 'Conexión: 🟢 Online' : 'Conexión: 🔴 Offline'];
                                     }
                                 } else if (currentViewLevel === 'month') {
