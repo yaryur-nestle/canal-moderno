@@ -552,6 +552,310 @@
             top: 15px;
         }
 
+        /* Botón de Lista de Sucursales (Flechas Izquierda/Derecha debajo del signo de interrogación) */
+        .btn-switch-sucursales {
+            position: absolute;
+            top: 73px;
+            left: 15px;
+            z-index: 10002;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(179, 156, 110, 0.95);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            outline: none;
+            padding: 0;
+        }
+        .btn-switch-sucursales svg {
+            width: 24px;
+            height: 24px;
+        }
+        .btn-switch-sucursales:hover {
+            background: rgba(150, 129, 87, 1);
+            transform: scale(1.08);
+            box-shadow: 0 5px 16px rgba(179, 156, 110, 0.45);
+        }
+
+        body.not-fullscreen .btn-switch-sucursales {
+            left: 65px;
+            top: 68px;
+        }
+        body.is-fullscreen .btn-switch-sucursales {
+            left: 15px;
+            top: 73px;
+        }
+
+        /* =========================================
+           MODAL FLOTANTE: LISTA DE SUCURSALES
+           ========================================= */
+        .sucursales-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            z-index: 30000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+        }
+        .sucursales-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .sucursales-modal-card {
+            position: relative;
+            width: 95vw;
+            max-width: 1180px;
+            max-height: 90vh;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 2px solid #daccaa;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.45);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 30px 24px;
+            overflow: hidden;
+            animation: zoomInModal 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-close-sucursales {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fdfbf7;
+            border: 2px solid #daccaa;
+            color: #b39c6e;
+            font-size: 26px;
+            line-height: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            outline: none;
+            padding: 0;
+            z-index: 10;
+        }
+        .btn-close-sucursales:hover {
+            background: #ff3333;
+            border-color: #ff3333;
+            color: #ffffff;
+            transform: scale(1.08) rotate(90deg);
+        }
+
+        .sucursales-modal-header {
+            text-align: center;
+            padding-bottom: 14px;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #f2ece1;
+            padding-right: 40px;
+            padding-left: 40px;
+        }
+        .sucursales-modal-header h2 {
+            color: #b39c6e;
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+        }
+
+        .sucursales-summary-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 0.82rem;
+            color: #777777;
+            font-weight: 600;
+        }
+        .sucursales-hint {
+            color: #968157;
+            font-weight: 600;
+            font-size: 0.82rem;
+        }
+        .sucursales-summary-badges {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .sucursales-summary-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #fdfbf7;
+            border: 1px solid #e6dec8;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+        .suc-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .suc-dot.online {
+            background-color: #1ec71e;
+            box-shadow: 0 0 6px rgba(30, 199, 30, 0.7);
+        }
+        .suc-dot.offline {
+            background-color: #daccaa;
+        }
+
+        .sucursales-table-wrapper {
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: auto;
+            flex-grow: 1;
+            padding-right: 4px;
+        }
+
+        .sucursales-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 6px;
+        }
+        .sucursales-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background-color: #b39c6e;
+            color: #ffffff;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 1.1px;
+            padding: 12px 14px;
+            text-align: center;
+            border-radius: 6px;
+            border: 2px solid #b39c6e;
+        }
+        .sucursales-table tbody tr {
+            cursor: pointer;
+        }
+        .sucursales-table tbody td {
+            background-color: #ffffff;
+            padding: 9px 14px;
+            vertical-align: middle;
+            text-align: center;
+            border-radius: 6px;
+            border: 2px solid #daccaa;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.2s ease, transform 0.15s ease;
+        }
+        .sucursales-table tbody tr.row-offline td {
+            border-color: #daccaa;
+        }
+        .sucursales-table tbody tr.row-online td {
+            border-color: #1bb91b;
+            box-shadow: 0 0 8px rgba(27, 185, 27, 0.22);
+            background-color: #f9fff9;
+        }
+        .sucursales-table tbody tr:hover td {
+            background-color: #f6efe0;
+        }
+        .sucursales-table tbody tr.row-online:hover td {
+            background-color: #ebfaeb;
+        }
+        .suc-id-cell {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: #6b5b3e;
+            white-space: nowrap;
+        }
+        .suc-id-pill {
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: #f8f4ec;
+            border: 1px solid #e6dec8;
+            display: inline-block;
+        }
+        .suc-name-cell {
+            text-align: left !important;
+            font-weight: 600;
+            font-size: 0.92rem;
+            color: #2c2c2c;
+        }
+        .suc-name-sub {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #888888;
+            margin-top: 2px;
+        }
+        .suc-logo-cell {
+            width: 120px;
+        }
+        .suc-chain-logo {
+            max-width: 90px;
+            height: 36px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+        .suc-location-cell {
+            font-size: 0.86rem;
+            color: #555555;
+            font-weight: 500;
+        }
+        .suc-brand-cell {
+            width: 95px;
+        }
+        .suc-brand-img {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            border-radius: 6px;
+        }
+        .suc-status-cell {
+            width: 120px;
+        }
+        .suc-status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            min-width: 90px;
+        }
+        .suc-status-badge.offline {
+            background-color: #f7f3eb;
+            color: #968157;
+            border: 1px solid #daccaa;
+        }
+        .suc-status-badge.online {
+            background-color: #e8fbe8;
+            color: #138a13;
+            border: 1px solid #1bb91b;
+            box-shadow: 0 0 8px rgba(27, 185, 27, 0.25);
+        }
+
         /* =========================================
            MODAL FLOTANTE: SEMÁFORO Y ESTADOS
            ========================================= */
@@ -682,6 +986,15 @@
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </button>
+
+                <button id="btn-open-sucursales" class="btn-switch-sucursales" title="Ver Lista de Sucursales">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="17 11 21 7 17 3"></polyline>
+                        <line x1="21" y1="7" x2="9" y2="7"></line>
+                        <polyline points="7 13 3 17 7 21"></polyline>
+                        <line x1="3" y1="17" x2="15" y2="17"></line>
                     </svg>
                 </button>
 
@@ -943,6 +1256,7 @@
 
         function toggleAppView(viewPathInput) {
             cerrarModalSemaforo();
+            cerrarModalSucursales();
             loginView.style.display = 'none';
             welcomeView.style.display = 'none';
             mapView.style.display = 'none';
@@ -1151,6 +1465,7 @@
                     liveTabletStatuses[i] = snapshot.val() || "OFFLINE";
                     updateMapMarkers();
                     actualizarPulsoPanelInfo();
+                    actualizarTablaSucursalesModal();
                 });
             }
         }
@@ -2421,9 +2736,164 @@
             });
         }
 
+        /* --- MODAL FLOTANTE: LISTA DE SUCURSALES --- */
+        const sucursalesModal = document.getElementById('sucursales-modal');
+        const btnOpenSucursales = document.getElementById('btn-open-sucursales');
+        const btnCloseSucursales = document.getElementById('btn-close-sucursales');
+        const sucursalesModalTbody = document.getElementById('sucursales-modal-tbody');
+        const sucursalesCountOnline = document.getElementById('sucursales-count-online');
+        const sucursalesCountOffline = document.getElementById('sucursales-count-offline');
+
+        const listaSucursalesModal = [
+            { id: 1,  code: 'tablet_01', brandKey: 'NIDO',       sucursalKey: 'Redvital La Yaguara',                  sucursal: 'Redvital La Yaguara',                  chainLogo: 'logo-REDVITAL.jpg',     ubicacion: 'Distrito Capital — Caracas (La Yaguara)',             marca: 'NIDO',       img: 'NIDO.png' },
+            { id: 2,  code: 'tablet_02', brandKey: 'MULTIMARCA', sucursalKey: 'Garzón Hiperahorro',                   sucursal: 'Garzón Hiperahorro (Rotaria)',         chainLogo: 'logo-GARZON.jpg',       ubicacion: 'Táchira / Mérida — Av. Rotaria San Cristóbal',       marca: 'MULTIMARCA', img: 'MULTIMARCA.png' },
+            { id: 3,  code: 'tablet_03', brandKey: 'RECETAS',    sucursalKey: 'Redvital La Yaguara',                  sucursal: 'Redvital La Yaguara',                  chainLogo: 'logo-REDVITAL.jpg',     ubicacion: 'Distrito Capital — Caracas (La Yaguara)',             marca: 'RECETAS',    img: 'RECETAS.png' },
+            { id: 4,  code: 'tablet_04', brandKey: 'NIDO',       sucursalKey: 'Redvital San Diego',                   sucursal: 'Redvital San Diego',                   chainLogo: 'logo-REDVITAL.jpg',     ubicacion: 'Carabobo — Valencia (Sector San Diego)',              marca: 'NIDO',       img: 'NIDO.png' },
+            { id: 5,  code: 'tablet_05', brandKey: 'NIDO',       sucursalKey: 'Kromi Market Prebo',                   sucursal: 'Kromi Market Prebo',                   chainLogo: 'logo-KROMI.jpg',        ubicacion: 'Carabobo — Valencia (Av. Prebo)',                     marca: 'NIDO',       img: 'NIDO.png' },
+            { id: 6,  code: 'tablet_06', brandKey: 'MULTIMARCA', sucursalKey: 'Euromercado Las Delicias',             sucursal: 'Euromercado Las Delicias',             chainLogo: 'logo-EUROMERCADO.jpg',  ubicacion: 'Aragua — Maracay (C.C. Las Delicias)',                marca: 'MULTIMARCA', img: 'MULTIMARCA.png' },
+            { id: 7,  code: 'tablet_07', brandKey: 'SAVOY',      sucursalKey: 'Río Lomas del Sol',                    sucursal: 'Río Market Lomas del Sol',             chainLogo: 'logo-RIO.jpg',          ubicacion: 'Miranda — Caracas (Los Naranjos)',                    marca: 'SAVOY',      img: 'SAVOY.png' },
+            { id: 8,  code: 'tablet_08', brandKey: 'SAVOY',      sucursalKey: 'Fresco Market Caurimare',              sucursal: 'Fresco Market Caurimare',              chainLogo: 'logo-FRESCOMARKET.jpg', ubicacion: 'Miranda — Caracas (Av. Principal Caurimare)',         marca: 'SAVOY',      img: 'SAVOY.png' },
+            { id: 9,  code: 'tablet_09', brandKey: 'SAVOY',      sucursalKey: 'Kromi Market Mañongo',                 sucursal: 'Kromi Market Mañongo',                 chainLogo: 'logo-KROMI.jpg',        ubicacion: 'Carabobo — Valencia (Sector Mañongo)',                marca: 'SAVOY',      img: 'SAVOY.png' },
+            { id: 10, code: 'tablet_10', brandKey: 'SAVOY',      sucursalKey: 'Río El Cigarral',                      sucursal: 'Río Market El Cigarral',               chainLogo: 'logo-RIO.jpg',          ubicacion: 'Miranda — Caracas (Sector El Cigarral)',              marca: 'SAVOY',      img: 'SAVOY.png' },
+            { id: 11, code: 'tablet_11', brandKey: 'SAVOY',      sucursalKey: 'Río El Recreo',                        sucursal: 'Río Market El Recreo',                 chainLogo: 'logo-RIO.jpg',          ubicacion: 'Distrito Capital — Caracas (C.C. El Recreo)',         marca: 'SAVOY',      img: 'SAVOY.png' },
+            { id: 12, code: 'tablet_12', brandKey: 'SAVOY',      sucursalKey: 'Supermercado Baratta',                 sucursal: 'Supermercado Baratta (Ferrero Tamayo)',chainLogo: 'logo-BARATTA.jpg',      ubicacion: 'Táchira / Mérida — Av. Ferrero Tamayo',               marca: 'SAVOY',      img: 'SAVOY.png' },
+            { id: 13, code: 'tablet_13', brandKey: 'SAVOY',      sucursalKey: 'Kromi Market Prebo',                   sucursal: 'Kromi Market Prebo',                   chainLogo: 'logo-KROMI.jpg',        ubicacion: 'Carabobo — Valencia (Av. Prebo)',                     marca: 'SAVOY',      img: 'SAVOY.png' },
+            { id: 14, code: 'tablet_14', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (El Parral)',      sucursal: 'Inversiones Yar-Yur (El Parral)',      chainLogo: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png' },
+            { id: 15, code: 'tablet_15', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (El Bosque)',      sucursal: 'Inversiones Yar-Yur (El Bosque)',      chainLogo: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png' },
+            { id: 16, code: 'tablet_16', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (Las Chimeneas)',  sucursal: 'Inversiones Yar-Yur (Las Chimeneas)',  chainLogo: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png' }
+        ];
+
+        function renderTablaSucursalesModal() {
+            if (!sucursalesModalTbody) return;
+            sucursalesModalTbody.innerHTML = '';
+
+            listaSucursalesModal.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.id = `modal-row-${item.code}`;
+                tr.className = 'row-offline';
+                tr.title = `Ir al calendario mensual de ${item.sucursal} (${item.marca})`;
+
+                tr.innerHTML = `
+                    <td class="col-id">
+                        <span class="id-pill">${item.code}</span>
+                    </td>
+                    <td class="col-sucursal">
+                        ${item.sucursal}
+                    </td>
+                    <td class="col-chain-logo">
+                        <div class="chain-logo-wrap">
+                            <img src="${item.chainLogo}" alt="${item.sucursal}" class="chain-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                            <span class="brand-fallback" style="display:none;">${item.sucursal}</span>
+                        </div>
+                    </td>
+                    <td class="col-ubicacion">
+                        ${item.ubicacion}
+                    </td>
+                    <td class="col-marca">
+                        <div class="brand-img-wrap">
+                            <img src="${item.img}" alt="${item.marca}" class="brand-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                            <span class="brand-fallback" style="display:none;">${item.marca}</span>
+                        </div>
+                    </td>
+                    <td class="col-status">
+                        <span id="modal-status-badge-${item.code}" class="status-badge">
+                            <span class="status-badge-dot"></span>
+                            <span class="status-text">Offline</span>
+                        </span>
+                    </td>
+                `;
+
+                tr.addEventListener('click', () => {
+                    cerrarModalSucursales();
+                    cargarMonitor(item.brandKey, item.sucursalKey);
+                });
+
+                sucursalesModalTbody.appendChild(tr);
+            });
+
+            actualizarTablaSucursalesModal();
+        }
+
+        function actualizarTablaSucursalesModal() {
+            let onlineTotal = 0;
+            let offlineTotal = 0;
+
+            listaSucursalesModal.forEach(item => {
+                const isOnline = liveTabletStatuses[item.id] === 'ONLINE';
+                if (isOnline) onlineTotal++;
+                else offlineTotal++;
+
+                const row = document.getElementById(`modal-row-${item.code}`);
+                const badge = document.getElementById(`modal-status-badge-${item.code}`);
+                if (row) {
+                    if (isOnline) {
+                        row.classList.remove('row-offline');
+                        row.classList.add('row-online');
+                    } else {
+                        row.classList.remove('row-online');
+                        row.classList.add('row-offline');
+                    }
+                }
+                if (badge) {
+                    const txt = badge.querySelector('.status-text');
+                    if (txt) txt.textContent = isOnline ? 'Online' : 'Offline';
+                }
+            });
+
+            if (sucursalesCountOnline) sucursalesCountOnline.textContent = `${onlineTotal} Online`;
+            if (sucursalesCountOffline) sucursalesCountOffline.textContent = `${offlineTotal} Offline`;
+        }
+
+        function abrirModalSucursales() {
+            if (!sucursalesModal) return;
+            actualizarTablaSucursalesModal();
+            sucursalesModal.style.display = 'flex';
+            void sucursalesModal.offsetWidth;
+            sucursalesModal.classList.add('active');
+        }
+
+        function cerrarModalSucursales() {
+            if (!sucursalesModal) return;
+            sucursalesModal.classList.remove('active');
+            setTimeout(() => {
+                if (!sucursalesModal.classList.contains('active')) {
+                    sucursalesModal.style.display = 'none';
+                }
+            }, 300);
+        }
+
+        renderTablaSucursalesModal();
+
+        if (btnOpenSucursales) {
+            btnOpenSucursales.addEventListener('click', (e) => {
+                e.stopPropagation();
+                abrirModalSucursales();
+            });
+        }
+
+        if (btnCloseSucursales) {
+            btnCloseSucursales.addEventListener('click', (e) => {
+                e.stopPropagation();
+                cerrarModalSucursales();
+            });
+        }
+
+        if (sucursalesModal) {
+            sucursalesModal.addEventListener('click', (e) => {
+                if (e.target === sucursalesModal) {
+                    cerrarModalSucursales();
+                }
+            });
+        }
+
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && semaforoModal && semaforoModal.classList.contains('active')) {
-                cerrarModalSemaforo();
+            if (e.key === 'Escape') {
+                if (semaforoModal && semaforoModal.classList.contains('active')) {
+                    cerrarModalSemaforo();
+                }
+                if (sucursalesModal && sucursalesModal.classList.contains('active')) {
+                    cerrarModalSucursales();
+                }
             }
         });
 
@@ -2434,6 +2904,41 @@
         <button id="btn-close-semaforo" class="btn-close-semaforo" title="Cerrar">&times;</button>
         <div class="semaforo-modal-content">
             <img src="Semaforo.png" alt="Explicación del Semáforo y Estados" class="semaforo-img">
+        </div>
+    </div>
+
+    <!-- Modal Flotante: Lista de Sucursales Integrada -->
+    <div id="sucursales-modal" class="sucursales-modal" style="display: none;">
+        <div class="sucursales-modal-card">
+            <button id="btn-close-sucursales" class="btn-close-sucursales" title="Cerrar">&times;</button>
+            <div class="sucursales-modal-header">
+                <div class="sucursales-brand-subtitle">Yar-Yur System &bull; Canal Moderno</div>
+                <h2 class="sucursales-main-title">Yar-Yur System Canal Moderno Lista de Sucursales</h2>
+                <div class="sucursales-status-summary">
+                    <div class="summary-chip">
+                        <span class="dot dot-online"></span>
+                        <span id="sucursales-count-online">0 Online</span>
+                    </div>
+                    <div class="summary-chip">
+                        <span class="dot dot-offline"></span>
+                        <span id="sucursales-count-offline">16 Offline</span>
+                    </div>
+                </div>
+            </div>
+            <div class="sucursales-table-scroll">
+                <table class="sucursales-table">
+                    <thead>
+                        <tr>
+                            <th>ID Sistema</th>
+                            <th colspan="2">Cadena / Sucursal</th>
+                            <th>Estado / Ciudad</th>
+                            <th>Marca</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sucursales-modal-tbody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
