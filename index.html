@@ -696,6 +696,7 @@
                             <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="RECETAS.png"><img src="RECETAS.png" alt="RECETAS"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="MULTIMARCA.png"><img src="MULTIMARCA.png" alt="Multimarca"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="SAVOY.png"><img src="SAVOY.png" alt="Savoy"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="MAGGI.png"><img src="MAGGI.png" alt="Maggi"></div><div class="filter-results"></div></div>
                         </div>
                     </div>
                     <div class="accordion-item">
@@ -703,9 +704,12 @@
                         <div class="accordion-content">
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-REDVITAL.jpg"><img src="logo-REDVITAL.jpg" alt="REDVITAL"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-KROMI.jpg"><img src="logo-KROMI.jpg" alt="KROMI"></div><div class="filter-results"></div></div>
-                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-GARZON.jpg"><img src="logo-GARZON.jpg" alt="Garzón"></div><div class="filter-results"></div></div>
-                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-YARYUR.png"><img src="logo-YARYUR.png" alt="Inversiones Yar-Yur"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="rio.png"><img src="rio.png" alt="Río"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-FRESCO.jpg"><img src="logo-FRESCO.jpg" alt="Fresco Market"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-GARZON.jpg"><img src="logo-GARZON.jpg" alt="Garzón"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-EUROMERCADO.jpg"><img src="logo-EUROMERCADO.jpg" alt="Euromercado"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-BARATTA.jpg"><img src="logo-BARATTA.jpg" alt="Supermercado Baratta"></div><div class="filter-results"></div></div>
+                            <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-YARYUR.png"><img src="logo-YARYUR.png" alt="Inversiones Yar-Yur"></div><div class="filter-results"></div></div>
                         </div>
                     </div>
 
@@ -852,15 +856,27 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        /* --- REGISTRO MAESTRO DE EXHIBICIONES --- */
+        /* --- REGISTRO MAESTRO DE LAS 16 EXHIBICIONES --- */
         const monitorRegistry = {
+            // 7 exhibiciones originales (Tablets 01 a 07)
             'NIDO_Redvital La Yaguara': { tabletId: 1, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
             'MULTIMARCA_Garzón Hiperahorro': { tabletId: 2, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
             'RECETAS_Redvital La Yaguara': { tabletId: 3, bgImage: 'RECETAS_MONITOR.jpg', zone: 2 },
             'NIDO_Redvital San Diego': { tabletId: 4, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
-            'NIDO_Kromi Market': { tabletId: 5, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
-            'MULTIMARCA_Inversiones Yar-Yur': { tabletId: 6, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
-            'SAVOY_Río Lomas del Sol': { tabletId: 7, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 }
+            'NIDO_Kromi Market Prebo': { tabletId: 5, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
+            'MULTIMARCA_Euromercado Las Delicias': { tabletId: 6, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
+            'SAVOY_Río Lomas del Sol': { tabletId: 7, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
+
+            // 9 exhibiciones nuevas (Tablets 08 a 16)
+            'SAVOY_Fresco Market Caurimare': { tabletId: 8, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
+            'SAVOY_Kromi Market Mañongo': { tabletId: 9, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
+            'SAVOY_Río El Cigarral': { tabletId: 10, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
+            'SAVOY_Río El Recreo': { tabletId: 11, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
+            'SAVOY_Supermercado Baratta': { tabletId: 12, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
+            'SAVOY_Kromi Market Prebo': { tabletId: 13, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
+            'MAGGI_Inversiones Yar-Yur (El Parral)': { tabletId: 14, bgImage: 'MAGGI_MONITOR.jpg', zone: 2 },
+            'MAGGI_Inversiones Yar-Yur (El Bosque)': { tabletId: 15, bgImage: 'MAGGI_MONITOR.jpg', zone: 2 },
+            'MAGGI_Inversiones Yar-Yur (Las Chimeneas)': { tabletId: 16, bgImage: 'MAGGI_MONITOR.jpg', zone: 2 }
         };
 
         const configZonas = {
@@ -976,9 +992,13 @@
             toggleAppView(0);
         });
 
-        /* --- ESTADO GLOBAL DE MAPA EN VIVO --- */
-        let liveTabletCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
-        let liveTabletStatuses = { 1: "OFFLINE", 2: "OFFLINE", 3: "OFFLINE", 4: "OFFLINE", 5: "OFFLINE", 6: "OFFLINE", 7: "OFFLINE" };
+        /* --- ESTADO GLOBAL DE MAPA EN VIVO (16 EXHIBICIONES) --- */
+        let liveTabletCounts = {};
+        let liveTabletStatuses = {};
+        for (let i = 1; i <= 16; i++) {
+            liveTabletCounts[i] = 0;
+            liveTabletStatuses[i] = "OFFLINE";
+        }
         let isGlobalListenerInit = false;
 
         function updateMapMarkers() {
@@ -992,7 +1012,7 @@
                         
                         let isOnline = node.tabletIds.some(tid => liveTabletStatuses[tid] === "ONLINE");
                         let hasPeople = node.tabletIds.some(tid => liveTabletStatuses[tid] === "ONLINE" && liveTabletCounts[tid] > 0);
-                        let isGarzon = (node.id === 4) || node.tabletIds.includes(2);
+                        let isGarzon = node.tabletIds.includes(2);
 
                         // Valores por defecto (Offline o Sin detección)
                         let newColor = '#ff2a2a'; 
@@ -1050,11 +1070,13 @@
             const imagenes = document.querySelectorAll('#panel-images img');
 
             imagenes.forEach(img => {
-                let filename = img.getAttribute('data-src');
-                if(!filename) return;
-                
-                let brandName = filename.split('/').pop().replace('.png','').replace('.jpg','');
-                let registryKey = `${brandName}_${sucursalActual}`;
+                let registryKey = img.getAttribute('data-registry-key');
+                if (!registryKey) {
+                    let filename = img.getAttribute('data-src');
+                    if (!filename) return;
+                    let brandName = filename.split('/').pop().replace('.png','').replace('.jpg','');
+                    registryKey = `${brandName}_${sucursalActual}`;
+                }
                 let config = monitorRegistry[registryKey];
 
                 if (config && config.tabletId) {
@@ -1080,7 +1102,7 @@
         }
 
         function initGlobalMapListeners() {
-            for (let i = 1; i <= 7; i++) {
+            for (let i = 1; i <= 16; i++) {
                 let numFormat = i.toString().padStart(2, '0');
                 
                 // 1. Escuchar la cantidad de personas
@@ -1270,12 +1292,43 @@
         const hamburgerBtn = document.getElementById('hamburger-btn'), closeInfoBtn = document.getElementById('close-info-btn');
 
         const retailNodes = [
-            { id: 1, sucursal: "Kromi Market", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2225, lon: -68.0160, logo: "logo-KROMI.jpg", images: [ { src: "NIDO.png" } ], tabletIds: [5] },
+            // Carabobo (4 exhibiciones en 3 sedes: Kromi Prebo [NIDO + SAVOY], Kromi Mañongo [SAVOY], Redvital San Diego [NIDO])
+            { id: 1, sucursal: "Kromi Market Prebo", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2225, lon: -68.0160, logo: "logo-KROMI.jpg", images: [ { src: "NIDO.png" }, { src: "SAVOY.png" } ], tabletIds: [5, 13] },
             { id: 2, sucursal: "Redvital San Diego", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2540, lon: -67.9510, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" } ], tabletIds: [4] },
-            { id: 3, sucursal: "Redvital La Yaguara", estadoNombre: "Distrito Capital", estadoId: "ve-df", lat: 10.4772, lon: -66.9597, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" }, { src: "RECETAS.png" } ], tabletIds: [1, 3] },
-            { id: 4, sucursal: "Garzón Hiperahorro", estadoNombre: "Táchira", estadoId: "ve-ta", lat: 7.7669, lon: -72.2250, logo: "logo-GARZON.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [2] },
-            { id: 5, sucursal: "Inversiones Yar-Yur", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.3793, lon: -66.9742, logo: "logo-YARYUR.png", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [6] },
-            { id: 6, sucursal: "Río Lomas del Sol", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.4474635, lon: -66.831268, logo: "rio.png", images: [ { src: "SAVOY.png" } ], tabletIds: [7] }
+            { id: 3, sucursal: "Kromi Market Mañongo", estadoNombre: "Carabobo", estadoId: "ve-ca", lat: 10.2464, lon: -68.0019, logo: "logo-KROMI.jpg", images: [ { src: "SAVOY.png" } ], tabletIds: [9] },
+
+            // Distrito Capital (3 exhibiciones en 2 sedes: Redvital La Yaguara [NIDO + RECETAS], Río El Recreo [SAVOY])
+            { id: 4, sucursal: "Redvital La Yaguara", estadoNombre: "Distrito Capital", estadoId: "ve-df", lat: 10.4772, lon: -66.9597, logo: "logo-REDVITAL.jpg", images: [ { src: "NIDO.png" }, { src: "RECETAS.png" } ], tabletIds: [1, 3] },
+            { id: 5, sucursal: "Río El Recreo", estadoNombre: "Distrito Capital", estadoId: "ve-df", lat: 10.4913, lon: -66.8767, logo: "rio.png", images: [ { src: "SAVOY.png" } ], tabletIds: [11] },
+
+            // Miranda - Área Metropolitana de Caracas (3 exhibiciones en 3 sedes: Río Lomas del Sol [SAVOY], Río El Cigarral [SAVOY], Fresco Market Caurimare [SAVOY])
+            { id: 6, sucursal: "Río Lomas del Sol", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.4474635, lon: -66.831268, logo: "rio.png", images: [ { src: "SAVOY.png" } ], tabletIds: [7] },
+            { id: 7, sucursal: "Río El Cigarral", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.4331, lon: -66.8386, logo: "rio.png", images: [ { src: "SAVOY.png" } ], tabletIds: [10] },
+            { id: 8, sucursal: "Fresco Market Caurimare", estadoNombre: "Miranda", estadoId: "ve-mi", lat: 10.4705, lon: -66.8228, logo: "logo-FRESCO.jpg", images: [ { src: "SAVOY.png" } ], tabletIds: [8] },
+
+            // Aragua (1 exhibición: Euromercado Las Delicias Maracay [MULTIMARCA])
+            { id: 9, sucursal: "Euromercado Las Delicias", estadoNombre: "Aragua", estadoId: "ve-ar", lat: 10.2736, lon: -67.5786, logo: "logo-EUROMERCADO.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [6] },
+
+            // Región Los Andes (2 exhibiciones en 2 sedes: Garzón Hiperahorro [MULTIMARCA], Supermercado Baratta [SAVOY])
+            { id: 10, sucursal: "Garzón Hiperahorro", estadoNombre: "Táchira", estadoId: "ve-ta", lat: 7.7669, lon: -72.2250, logo: "logo-GARZON.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [2] },
+            { id: 11, sucursal: "Supermercado Baratta", estadoNombre: "Táchira", estadoId: "ve-ta", lat: 7.7753, lon: -72.2147, logo: "logo-BARATTA.jpg", images: [ { src: "SAVOY.png" } ], tabletIds: [12] },
+
+            // Miranda - San Antonio de Los Altos (3 exhibiciones MAGGI con ubicación por definir asignadas temporalmente a Inversiones Yar-Yur)
+            {
+                id: 12,
+                sucursal: "Inversiones Yar-Yur",
+                estadoNombre: "Miranda",
+                estadoId: "ve-mi",
+                lat: 10.3793,
+                lon: -66.9742,
+                logo: "logo-YARYUR.png",
+                images: [
+                    { src: "MAGGI.png", sucursalKey: "Inversiones Yar-Yur (El Parral)", label: "El Chacal - Parral" },
+                    { src: "MAGGI.png", sucursalKey: "Inversiones Yar-Yur (El Bosque)", label: "Granja - Bosque" },
+                    { src: "MAGGI.png", sucursalKey: "Inversiones Yar-Yur (Las Chimeneas)", label: "Las Chimeneas Mañongo" }
+                ],
+                tabletIds: [14, 15, 16]
+            }
         ];
 
         function iluminarEstados(arr) {
@@ -1306,17 +1359,28 @@
             panelImages.innerHTML = ''; 
             
             images.forEach(img => {
+                const targetSucursal = img.sucursalKey || sucursal;
+                const brandName = img.src.replace('.png','').replace('.jpg','');
+                const registryKey = `${brandName}_${targetSucursal}`;
                 const enlace = document.createElement('a');
                 enlace.href = "javascript:void(0);";
+                enlace.style.textDecoration = "none";
                 enlace.addEventListener('click', () => {
-                    let brandName = img.src.replace('.png','').replace('.jpg','');
-                    cargarMonitor(brandName, sucursal);
+                    cargarMonitor(brandName, targetSucursal);
                 });
                 const imagen = document.createElement('img'); 
                 imagen.src = img.src;
                 imagen.setAttribute('data-src', img.src); 
+                imagen.setAttribute('data-registry-key', registryKey);
+                if (img.label) imagen.title = img.label;
                 
                 enlace.appendChild(imagen); 
+                if (img.label) {
+                    const caption = document.createElement('div');
+                    caption.style.cssText = 'font-size: 12px; font-weight: 700; color: #666; margin-top: 4px;';
+                    caption.textContent = img.label;
+                    enlace.appendChild(caption);
+                }
                 panelImages.appendChild(enlace);
             });
             
@@ -1347,17 +1411,19 @@
 
                 retailNodes.forEach(node => {
                     if (type === 'marca') {
-                        const matchedImg = node.images.find(img => img.src === val);
-                        if (matchedImg) {
+                        const matchedImgs = node.images.filter(img => img.src === val);
+                        matchedImgs.forEach(matchedImg => {
                             estadosAEncender.add(node.estadoId);
                             let brandName = matchedImg.src.replace('.png', '').replace('.jpg', '');
-                            matchingLinks.push({ title: node.sucursal, callback: () => cargarMonitor(brandName, node.sucursal) });
-                        }
+                            let targetSucursal = matchedImg.sucursalKey || node.sucursal;
+                            matchingLinks.push({ title: targetSucursal, callback: () => cargarMonitor(brandName, targetSucursal) });
+                        });
                     } else if (type === 'sucursal' && node.logo === val) {
                         estadosAEncender.add(node.estadoId);
                         node.images.forEach(img => {
                             let brandName = img.src.replace('.png', '').replace('.jpg', '');
-                            matchingLinks.push({ title: `${node.sucursal} (${brandName})`, callback: () => cargarMonitor(brandName, node.sucursal) });
+                            let targetSucursal = img.sucursalKey || node.sucursal;
+                            matchingLinks.push({ title: `${targetSucursal} (${brandName})`, callback: () => cargarMonitor(brandName, targetSucursal) });
                         });
                     }
                 });
@@ -1402,10 +1468,19 @@
                 { nombre: "NIDO Redvital La Yaguara", tablet: "01" },
                 { nombre: "MULTIMARCA Garzon", tablet: "02" },
                 { nombre: "RECETAS Redvital La Yaguara", tablet: "03" },
-                { nombre: "NIDO Kromi Market", tablet: "05" },
                 { nombre: "NIDO Redvital San Diego", tablet: "04" },
-                { nombre: "MULTIMARCA Inversiones Yar-Yur", tablet: "06" },
-                { nombre: "SAVOY Río Lomas del Sol", tablet: "07" }
+                { nombre: "NIDO Kromi Prebo", tablet: "05" },
+                { nombre: "MULTIMARCA Euromercado", tablet: "06" },
+                { nombre: "SAVOY Río Lomas del Sol", tablet: "07" },
+                { nombre: "SAVOY Fresco Caurimare", tablet: "08" },
+                { nombre: "SAVOY Kromi Mañongo", tablet: "09" },
+                { nombre: "SAVOY Río El Cigarral", tablet: "10" },
+                { nombre: "SAVOY Río El Recreo", tablet: "11" },
+                { nombre: "SAVOY Baratta", tablet: "12" },
+                { nombre: "SAVOY Kromi Prebo", tablet: "13" },
+                { nombre: "MAGGI Yar-Yur El Parral", tablet: "14" },
+                { nombre: "MAGGI Yar-Yur El Bosque", tablet: "15" },
+                { nombre: "MAGGI Yar-Yur Las Chimeneas", tablet: "16" }
             ];
 
             const dbRef = ref(db);
