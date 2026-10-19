@@ -1005,6 +1005,27 @@
         }
         let isGlobalListenerInit = false;
 
+        function ordenarCapasMarcadores() {
+            if (!chartInstance) return;
+            const series = chartInstance.get('sucursales-series');
+            if (!series || !series.points) return;
+
+            // Prioridad 0: Offline (rojo) - abajo
+            // Prioridad 1: Online sin actividad (verde / amarillo) - en medio
+            // Prioridad 2: Online con actividad (borde negro) - arriba del todo
+            const puntosOrdenados = series.points.slice().sort((a, b) => {
+                const prioA = a.visualPriority || 0;
+                const prioB = b.visualPriority || 0;
+                return prioA - prioB;
+            });
+
+            puntosOrdenados.forEach((p) => {
+                if (p.graphic && typeof p.graphic.toFront === 'function') {
+                    p.graphic.toFront();
+                }
+            });
+        }
+
         function updateMapMarkers() {
             if (!chartInstance) return;
             const series = chartInstance.get('sucursales-series');
@@ -1018,12 +1039,13 @@
                         let hasPeople = node.tabletIds.some(tid => liveTabletStatuses[tid] === "ONLINE" && liveTabletCounts[tid] > 0);
                         let isGarzon = node.tabletIds.includes(2);
 
-                        // Valores por defecto (Offline o Sin detección)
+                        // Valores por defecto (Offline o Sin detección) -> Prioridad 0 (abajo)
                         let newColor = '#ff2a2a'; 
                         let newLineColor = '#ffffff';
                         let newLineWidth = 2;
                         let newRadius = 8;
                         let newClassName = '';
+                        let newPriority = 0;
 
                         if (isOnline) {
                             let baseOnlineColor = isGarzon ? '#FFFF00' : '#2aa12a';
@@ -1033,14 +1055,18 @@
                                 newLineWidth = 4; // Borde más grueso
                                 newRadius = 12; // Punto más grande
                                 newClassName = isGarzon ? 'marker-pulse-yellow' : 'marker-pulse'; // Animación con borde negro
+                                newPriority = 2; // Prioridad máxima (encima de todos)
                             } else {
                                 newColor = baseOnlineColor; 
                                 newLineColor = '#ffffff';
                                 newLineWidth = 2;
                                 newRadius = 8;
                                 newClassName = '';
+                                newPriority = 1; // Prioridad media (encima de los rojos)
                             }
                         }
+
+                        point.visualPriority = newPriority;
 
                         let currentColor = point.options.marker?.fillColor || '#ff2a2a';
                         let currentClassName = point.options.className || '';
@@ -1064,6 +1090,7 @@
                     }
                 });
                 if (needsRedraw) chartInstance.redraw();
+                ordenarCapasMarcadores();
             }
         }
 
@@ -1450,7 +1477,7 @@
         const mapData = Highcharts.maps['countries/ve/ve-all'];
         const baseData = mapData.features.map((feature, index) => [feature.properties['hc-key'], index]);
         chartInstance = Highcharts.mapChart('map', {
-            chart: { map: 'countries/ve/ve-all', backgroundColor: 'transparent', events: { click: () => cerrarPanelesYResetear() } },
+            chart: { map: 'countries/ve/ve-all', backgroundColor: 'transparent', events: { click: () => cerrarPanelesYResetear(), render: () => ordenarCapasMarcadores() } },
             title: { text: null }, credits: { enabled: false }, legend: { enabled: false }, mapNavigation: { enabled: true, buttonOptions: { verticalAlign: 'bottom' } },
             xAxis: { events: { afterSetExtremes: function (e) { document.getElementById('capa-superior').style.opacity = (e.min !== undefined && e.max - e.min < (e.dataMax - e.dataMin) * 0.99) ? '0.1' : '1'; }}},
             plotOptions: { series: { states: { inactive: { opacity: 1 } }, point: { events: { click: function () {
@@ -1460,7 +1487,7 @@
             tooltip: { enabled: false },
             series: [
                 { id: 'capa-estados', data: baseData, name: 'Estado', color: '#daccaa', borderColor: '#ffffff', borderWidth: 1, states: { hover: { enabled: false } }, dataLabels: { enabled: false } },
-                { id: 'sucursales-series', type: 'mappoint', name: 'Sucursales', data: retailNodes, cursor: 'pointer', marker: { symbol: 'circle', radius: 8, fillColor: '#ff2a2a', lineColor: '#ffffff', lineWidth: 2, states: { hover: { radius: 12, fillColor: '#ff2a2a' } } } }
+                { id: 'sucursales-series', type: 'mappoint', name: 'Sucursales', data: retailNodes, stickyTracking: false, cursor: 'pointer', marker: { symbol: 'circle', radius: 8, fillColor: '#ff2a2a', lineColor: '#ffffff', lineWidth: 2, states: { hover: { radius: 12, fillColor: '#ff2a2a' } } } }
             ]
         });
 
