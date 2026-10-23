@@ -1548,6 +1548,7 @@
             document.getElementById('flip-container').classList.remove('flipped');
             tabletActualEnGrafico = null;
             currentMonitorTabletId = null;
+            syncCurrentHourPulseLoop();
             if (renderDebounceTimer) clearTimeout(renderDebounceTimer);
             renderDebounceTimer = null;
             
@@ -1577,7 +1578,9 @@
         let conteosActuales = { 1: 0, 2: 0, 3: 0 };
         let tabletActualEnGrafico = null; 
         let currentMonitorTabletId = null;
-        let currentDayHoursOnline = new Array(24).fill(false);
+        let currentDayHoursOnline = new Array(24).fill('future');
+        let lastComputedDayHour = -1;
+        let dayPulseRafId = null;
         
         let viewState = 'CAL_MONTH'; 
         let currentViewLevel = 'month';
@@ -2107,18 +2110,54 @@
             }
 
             const now = new Date();
-            const esHoy = (anio === now.getFullYear() && dateObj.getMonth() === now.getMonth() && dateObj.getDate() === now.getDate());
+            const inicioHoy = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const inicioFecha = new Date(anio, dateObj.getMonth(), dateObj.getDate()).getTime();
+            const esHoy = (inicioFecha === inicioHoy);
+            const esFechaFutura = (inicioFecha > inicioHoy);
             const horaActual = now.getHours();
+            lastComputedDayHour = horaActual;
             const tabletOnlineAhora = !!(currentMonitorTabletId && liveTabletStatuses[currentMonitorTabletId] === 'ONLINE');
 
-            const result = new Array(24).fill(false);
+            const result = new Array(24).fill('future');
             for (let h = 0; h < 24; h++) {
-                const tieneUptime = !!dayUptime[h];
-                const tieneBarraOEvento = horasConEvento[h] || ((dataBuckets[h] || 0) > 0);
-                const onlineEnHoraActual = esHoy && h === horaActual && tabletOnlineAhora;
-                result[h] = tieneUptime || tieneBarraOEvento || onlineEnHoraActual;
+                if (esFechaFutura || (esHoy && h > horaActual)) {
+                    result[h] = 'future'; // Horas futuras: fondo blanco (sin color)
+                } else if (esHoy && h === horaActual) {
+                    result[h] = tabletOnlineAhora ? 'current-online' : 'current-offline'; // Hora en curso: pulso
+                } else {
+                    const tieneUptime = !!dayUptime[h];
+                    const tieneBarraOEvento = horasConEvento[h] || ((dataBuckets[h] || 0) > 0);
+                    result[h] = (tieneUptime || tieneBarraOEvento) ? 'online' : 'offline'; // Horas pasadas: fijo
+                }
             }
             return result;
+        }
+
+        function syncCurrentHourPulseLoop() {
+            const shouldAnimate = (activeAppView === 1 && viewState === 'CHART_DAY' && isSameDay(currentViewDate, new Date()));
+            if (!shouldAnimate) {
+                if (dayPulseRafId) {
+                    cancelAnimationFrame(dayPulseRafId);
+                    dayPulseRafId = null;
+                }
+                return;
+            }
+            if (!dayPulseRafId) {
+                const tick = () => {
+                    if (activeAppView !== 1 || viewState !== 'CHART_DAY' || !isSameDay(currentViewDate, new Date())) {
+                        dayPulseRafId = null;
+                        return;
+                    }
+                    if (new Date().getHours() !== lastComputedDayHour) {
+                        currentDayHoursOnline = getDayHoursOnlineArray(currentViewDate, mainChart.data.datasets[0]?.data || []);
+                    }
+                    if (!Chart.animator || !Chart.animator.running(mainChart)) {
+                        mainChart.draw();
+                    }
+                    dayPulseRafId = requestAnimationFrame(tick);
+                };
+                dayPulseRafId = requestAnimationFrame(tick);
+            }
         }
 
         const dayUptimeBackgroundPlugin = {
@@ -2154,15 +2193,31 @@
 
                 let runStart = 0;
                 while (runStart < totalBars) {
-                    const isOnline = !!(currentDayHoursOnline && currentDayHoursOnline[runStart]);
+                    const state = (currentDayHoursOnline && currentDayHoursOnline[runStart]) || 'future';
                     let runEnd = runStart;
-                    while (runEnd + 1 < totalBars && (!!(currentDayHoursOnline && currentDayHoursOnline[runEnd + 1])) === isOnline) {
+                    while (runEnd + 1 < totalBars && ((currentDayHoursOnline && currentDayHoursOnline[runEnd + 1]) || 'future') === state) {
                         runEnd++;
                     }
-                    const xStart = getSlotLeft(runStart);
-                    const xEnd = getSlotRight(runEnd);
-                    ctx.fillStyle = isOnline ? onlineBgColor : offlineBgColor;
-                    ctx.fillRect(xStart, top, xEnd - xStart, height);
+
+                    if (state === 'online' || state === 'offline') {
+                        const xStart = getSlotLeft(runStart);
+                        const xEnd = getSlotRight(runEnd);
+                        ctx.fillStyle = state === 'online' ? onlineBgColor : offlineBgColor;
+                        ctx.fillRect(xStart, top, xEnd - xStart, height);
+                    } else if (state === 'current-online' || state === 'current-offline') {
+                        // Parpadeo lento de pulso entre blanco (sin fondo, alpha 0) y el color pastel correspondiente (alpha 1)
+                        const periodMs = 2600;
+                        const phase = ((performance.now() % periodMs) / periodMs) * Math.PI * 2;
+                        const alpha = (Math.sin(phase) + 1) / 2;
+                        const xStart = getSlotLeft(runStart);
+                        const xEnd = getSlotRight(runEnd);
+                        ctx.fillStyle = state === 'current-online'
+                            ? `rgba(212, 245, 220, ${alpha.toFixed(3)})`
+                            : `rgba(250, 212, 212, ${alpha.toFixed(3)})`;
+                        ctx.fillRect(xStart, top, xEnd - xStart, height);
+                    }
+                    // Si state === 'future', no se dibuja nada (queda en blanco / sin fondo de color)
+
                     runStart = runEnd + 1;
                 }
 
@@ -2214,8 +2269,13 @@
                                 
                                 if (currentViewLevel === 'day') {
                                     const horaIndex = c.dataIndex;
-                                    const horaOnline = !!(currentDayHoursOnline && currentDayHoursOnline[horaIndex]);
-                                    return [metricText, horaOnline ? 'Conexión: 🟢 Online' : 'Conexión: 🔴 Offline'];
+                                    const state = (currentDayHoursOnline && currentDayHoursOnline[horaIndex]) || 'future';
+                                    if (state === 'online' || state === 'current-online') {
+                                        return [metricText, 'Conexión: 🟢 Online'];
+                                    } else if (state === 'offline' || state === 'current-offline') {
+                                        return [metricText, 'Conexión: 🔴 Offline'];
+                                    }
+                                    return metricText;
                                 } else if (currentViewLevel === 'month') {
                                     if (!hasTabletUptime()) return metricText;
 
@@ -2363,6 +2423,7 @@
             if (currentViewLevel === 'day') {
                 currentDayHoursOnline = getDayHoursOnlineArray(date, dataBuckets);
             }
+            syncCurrentHourPulseLoop();
 
             mainChart.data.labels = labels;
             mainChart.data.datasets[0].data = dataBuckets;
@@ -2465,6 +2526,7 @@
             
             document.getElementById('btn-next').disabled = isCurrent;
             checkRefreshLiveButton();
+            syncCurrentHourPulseLoop();
         }
 
         /* --- INTERACCIONES DE ZOOM --- */
