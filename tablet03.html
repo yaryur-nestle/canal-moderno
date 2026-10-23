@@ -22,23 +22,37 @@
     .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
     .card.is-flipped { transform: rotateY(180deg); }
     .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-color: #000; }
-    
+
     .face-front { background-image: url('TABLET 03 h.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
     .face-back { transform: rotateY(180deg); }
+
+    /* Video tvrota.mp4 a pantalla completa sin efecto espejo */
+    .video-tvrota {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background-color: #000;
+        transform: none;
+        display: none;
+        z-index: 40;
+    }
 
     #overlayReceta {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         background-color: rgba(0, 0, 0, 0.6); display: none; 
         justify-content: center; align-items: center; z-index: 50; 
     }
-    
+
     .video-receta { 
         position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
         object-fit: contain; 
         background-color: #000;
         transform: none; display: none; z-index: 55; 
     }
-    
+
     video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
     canvas { z-index: 10; }
     .panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 10px; padding: 20px; }
@@ -50,7 +64,7 @@
     #time-counter { background: rgba(255, 255, 0, 0.15); color: #FFFF00; border-color: #FFFF00; }
     #avg-counter { background: rgba(255, 0, 255, 0.15); color: #FF00FF; border-color: #FF00FF; }
     #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 40; background: rgba(0,0,0,0.9); padding: 20px; border: 1px solid #00FFFF; color: #00FFFF; font-weight: bold; font-size: 1.2rem; }
-    
+
     .flip-btn { position: absolute; bottom: 12%; right: 5%; z-index: 50; background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); transition: all 0.3s ease; opacity: 0; pointer-events: none; }
     .card.is-flipped ~ .flip-btn { opacity: 1; pointer-events: auto; }
     .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
@@ -78,6 +92,9 @@
 
     <div id="card" class="card">
       <div class="face face-front">
+        <!-- Video interactivo al detectar personas -->
+        <video id="videoTvRota" class="video-tvrota" src="tvrota.mp4" preload="auto" muted playsinline></video>
+
         <div id="overlayReceta">
             <video id="videoReceta1" class="video-receta" src="VIDEO_1RECETA.mp4" preload="auto" muted playsinline></video>
             <video id="videoReceta2" class="video-receta" src="VIDEO_2RECETA.mp4" preload="auto" muted playsinline></video>
@@ -85,7 +102,7 @@
             <video id="videoReceta4" class="video-receta" src="VIDEO_4RECETA.mp4" preload="auto" muted playsinline></video>
         </div>
       </div>
-      
+
       <div class="face face-back">
         <div id="loading">SISTEMA INICIANDO...</div>
         <div class="panel left">
@@ -100,7 +117,7 @@
         <canvas id="canvas"></canvas>
       </div>
     </div>
-    
+
     <button id="flip-btn" class="flip-btn" title="Regresar al Frente">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="17 11 21 7 17 3"></polyline><line x1="21" y1="7" x2="9" y2="7"></line><polyline points="7 13 3 17 7 21"></polyline><line x1="3" y1="17" x2="15" y2="17"></line>
@@ -131,7 +148,7 @@
     const statusRef = ref(db, 'muebles/tablet_03/status');
     const estadoActualRef = ref(db, 'muebles/tablet_03/estado_actual'); 
     const connectedRef = ref(db, ".info/connected");
- 
+
     const loginScreen = document.getElementById('login-screen');
     const appScreen = document.getElementById('app-screen');
     const loginForm = document.getElementById('login-form');
@@ -154,10 +171,10 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const loginBtn = document.getElementById('login-btn');
-      
+
       errorMsg.style.display = 'none';
       loginBtn.innerText = 'CARGANDO...';
-      
+
       signInWithEmailAndPassword(auth, email, password)
         .then(() => { loginBtn.innerText = 'AUTENTICAR'; loginForm.reset(); })
         .catch((error) => {
@@ -216,7 +233,6 @@
     const card = document.getElementById('card');
     btnFlip.addEventListener('click', () => { card.classList.remove('is-flipped'); });
 
-
 /*    
     let clickCount = 0;
     let clickTimeout;
@@ -238,11 +254,11 @@
       }
     });
 */
-    
 
     const videoElement = document.getElementById('video');
     const canvasElement = document.getElementById('canvas');
     const canvasCtx = canvasElement.getContext('2d');
+    const videoTvRota = document.getElementById('videoTvRota');
     const overlayReceta = document.getElementById('overlayReceta');
     const videosReceta = {
       "01": document.getElementById('videoReceta1'),
@@ -260,13 +276,28 @@
     let hayPersonasActual = false;
 
     let isVideoPlaying = false;
+    let tvRotaActiva = false;
     let estadoRecetaPendiente = "";
-    
+
     let ultimaRecetaProcesada = null;
     let ultimoTimestampScan = null; 
 
-    // Al terminar el video localmente, simplemente marcamos el flag en falso.
-    // La TV RECETAS será quien actualice Firebase enviando "" a recetaActiva.
+    // Control de fin de reproducción para tvrota.mp4
+    videoTvRota.addEventListener('ended', () => {
+      if (currentFacesCount > 0) {
+        // Si sigue habiendo personas, se repite inmediatamente
+        videoTvRota.loop = true;
+        videoTvRota.currentTime = 0;
+        videoTvRota.play().catch(e => console.log("Error al repetir tvrota:", e));
+      } else {
+        // Si ya no hay personas, termina el video y se oculta para mostrar el fondo
+        videoTvRota.style.display = 'none';
+        videoTvRota.currentTime = 0;
+        tvRotaActiva = false;
+      }
+    });
+
+    // Al terminar el video de receta localmente, simplemente marcamos el flag en falso.
     Object.values(videosReceta).forEach(v => {
       if (v) {
         v.addEventListener('ended', () => {
@@ -286,7 +317,7 @@
           ultimaRecetaProcesada = nuevaReceta;
           ultimoTimestampScan = nuevoTimestamp;
           estadoRecetaPendiente = nuevaReceta;
-          
+
           procesarEstadoReceta(estadoRecetaPendiente);
       }
     });
@@ -308,7 +339,6 @@
         });
         isVideoPlaying = true;
       } else {
-        // Cuando la TV manda limpiar la receta ("")
         overlayReceta.style.display = 'none';
         Object.values(videosReceta).forEach(v => {
           if (v) {
@@ -323,7 +353,7 @@
     function onResults(results) {
       const loadingEl = document.getElementById('loading');
       if(loadingEl) loadingEl.style.display = 'none';
-      
+
       if (results.image) { 
         canvasElement.width = results.image.width; 
         canvasElement.height = results.image.height; 
@@ -334,10 +364,28 @@
       currentFacesCount = rostrosActuales;
 
       const personasDetectadas = rostrosActuales > 0;
-      
+
+      // Control de reproducción y bucle para tvrota.mp4
+      if (personasDetectadas) {
+        videoTvRota.loop = true;
+        if (!tvRotaActiva) {
+          tvRotaActiva = true;
+          videoTvRota.style.display = 'block';
+          videoTvRota.currentTime = 0;
+          videoTvRota.play().catch(e => console.log("Error al iniciar tvrota:", e));
+        } else if (videoTvRota.paused) {
+          videoTvRota.play().catch(e => console.log("Error al reanudar tvrota:", e));
+        }
+      } else {
+        if (tvRotaActiva) {
+          // Desactivamos el loop para que el video continúe hasta el final y dispare el evento 'ended'
+          videoTvRota.loop = false;
+        }
+      }
+
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
         hayPersonasActual = personasDetectadas;
-        
+
         update(estadoActualRef, {
             hayPersonas: hayPersonasActual,
             conteoActual: rostrosActuales,
@@ -403,9 +451,8 @@
       const camera = new window.Camera(videoElement, { 
         onFrame: async () => { 
           const now = performance.now();
-          // Muestreo adaptativo: durante la reproducción de una receta muestreamos a ~4 FPS (250ms),
-          // suficiente para registrar y enviar todas las métricas de tráfico a Firebase sin sobrecargar la GPU del video.
-          const frameInterval = isVideoPlaying ? 250 : 90;
+          // Muestreo adaptativo mientras se reproduce un video para no sobrecargar la GPU
+          const frameInterval = (isVideoPlaying || tvRotaActiva) ? 250 : 90;
           if (now - lastFrameTime < frameInterval) return;
           lastFrameTime = now;
           await faceMesh.send({image: videoElement}); 
