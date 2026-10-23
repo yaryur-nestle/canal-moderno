@@ -1398,7 +1398,6 @@
                         
                         let isOnline = node.tabletIds.some(tid => liveTabletStatuses[tid] === "ONLINE");
                         let hasPeople = node.tabletIds.some(tid => liveTabletStatuses[tid] === "ONLINE" && liveTabletCounts[tid] > 0);
-                        let isGarzon = node.tabletIds.includes(2);
 
                         // Valores por defecto (Offline o Sin detección) -> Prioridad 0 (abajo)
                         let newColor = '#ff2a2a'; 
@@ -1409,13 +1408,13 @@
                         let newPriority = 0;
 
                         if (isOnline) {
-                            let baseOnlineColor = isGarzon ? '#FFFF00' : '#2aa12a';
+                            let baseOnlineColor = '#2aa12a';
                             if (hasPeople) {
                                 newColor = baseOnlineColor;
                                 newLineColor = '#000000'; // Borde negro rodeando el punto
                                 newLineWidth = 4; // Borde más grueso
                                 newRadius = 12; // Punto más grande
-                                newClassName = isGarzon ? 'marker-pulse-yellow' : 'marker-pulse'; // Animación con borde negro
+                                newClassName = 'marker-pulse'; // Animación con borde negro
                                 newPriority = 2; // Prioridad máxima (encima de todos)
                             } else {
                                 newColor = baseOnlineColor; 
@@ -1473,7 +1472,6 @@
 
                 if (config && config.tabletId) {
                     let isOnline = liveTabletStatuses[config.tabletId] === "ONLINE";
-                    let isGarzon = config.tabletId === 2;
                     
                     // Reset classes
                     img.classList.remove('status-online', 'status-online-mustard', 'status-online-yellow', 'status-active');
@@ -1482,11 +1480,7 @@
                         if (liveTabletCounts[config.tabletId] > 0) {
                             img.classList.add('status-active'); // Negro grueso
                         } else {
-                            if (isGarzon) {
-                                img.classList.add('status-online-yellow'); // Amarillo puro (255, 255, 0)
-                            } else {
-                                img.classList.add('status-online'); // Verde
-                            }
+                            img.classList.add('status-online'); // Verde
                         }
                     }
                 }
@@ -1513,6 +1507,9 @@
                     updateMapMarkers();
                     actualizarPulsoPanelInfo();
                     actualizarTablaSucursalesModal();
+                    if (activeAppView === 1 && currentMonitorTabletId === i && currentViewLevel === 'day') {
+                        updateChartDisplay(true);
+                    }
                 });
             }
         }
@@ -1550,6 +1547,7 @@
             toggleAppView(0); 
             document.getElementById('flip-container').classList.remove('flipped');
             tabletActualEnGrafico = null;
+            currentMonitorTabletId = null;
             if (renderDebounceTimer) clearTimeout(renderDebounceTimer);
             renderDebounceTimer = null;
             
@@ -1578,6 +1576,8 @@
         let estadoVisual = { 1: [], 2: [], 3: [] }; 
         let conteosActuales = { 1: 0, 2: 0, 3: 0 };
         let tabletActualEnGrafico = null; 
+        let currentMonitorTabletId = null;
+        let currentDayHoursOnline = new Array(24).fill(false);
         
         let viewState = 'CAL_MONTH'; 
         let currentViewLevel = 'month';
@@ -1630,6 +1630,7 @@
             // Iniciar en la cara frontal del Calendario
             document.getElementById('flip-container').classList.remove('flipped');
             tabletActualEnGrafico = zoneId;
+            currentMonitorTabletId = config.tabletId;
             viewState = 'CAL_MONTH';
             currentViewDate = new Date();
             currentMetric = 'count';
@@ -2087,13 +2088,96 @@
             return includeMinutes ? `${h}:${m.toString().padStart(2, '0')}${ampm}` : `${h}${ampm}`;
         }
 
+        function getDayHoursOnlineArray(dateObj, dataBuckets = []) {
+            const anio = dateObj.getFullYear();
+            const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dia = String(dateObj.getDate()).padStart(2, '0');
+            const fechaStr = `${anio}-${mes}-${dia}`;
+            const dayUptime = (datosUptime && datosUptime[fechaStr]) ? datosUptime[fechaStr] : {};
+
+            const horasConEvento = new Array(24).fill(false);
+            if (tabletActualEnGrafico && todosLosEventos[tabletActualEnGrafico]) {
+                todosLosEventos[tabletActualEnGrafico].forEach(ev => {
+                    if (!ev || !ev.timestamp) return;
+                    const evDate = new Date(ev.timestamp);
+                    if (evDate.getFullYear() === anio && evDate.getMonth() === dateObj.getMonth() && evDate.getDate() === dateObj.getDate()) {
+                        horasConEvento[evDate.getHours()] = true;
+                    }
+                });
+            }
+
+            const now = new Date();
+            const esHoy = (anio === now.getFullYear() && dateObj.getMonth() === now.getMonth() && dateObj.getDate() === now.getDate());
+            const horaActual = now.getHours();
+            const tabletOnlineAhora = !!(currentMonitorTabletId && liveTabletStatuses[currentMonitorTabletId] === 'ONLINE');
+
+            const result = new Array(24).fill(false);
+            for (let h = 0; h < 24; h++) {
+                const tieneUptime = !!dayUptime[h];
+                const tieneBarraOEvento = horasConEvento[h] || ((dataBuckets[h] || 0) > 0);
+                const onlineEnHoraActual = esHoy && h === horaActual && tabletOnlineAhora;
+                result[h] = tieneUptime || tieneBarraOEvento || onlineEnHoraActual;
+            }
+            return result;
+        }
+
+        const dayUptimeBackgroundPlugin = {
+            id: 'dayUptimeBackground',
+            beforeDraw(chart) {
+                if (currentViewLevel !== 'day') return;
+                const { ctx, chartArea, scales } = chart;
+                if (!chartArea || !scales || !scales.x) return;
+
+                const xScale = scales.x;
+                const totalBars = 24;
+                const top = chartArea.top;
+                const height = chartArea.bottom - chartArea.top;
+                if (height <= 0) return;
+
+                // Colores pasteles claros con diferencia clara entre verde (online) y rojo (offline)
+                const onlineBgColor = '#d4f5dc';  // Verde pastel claro
+                const offlineBgColor = '#fad4d4'; // Rojo pastel claro
+
+                const getSlotLeft = (i) => {
+                    if (i === 0) return chartArea.left;
+                    return Math.round((xScale.getPixelForValue(i - 1) + xScale.getPixelForValue(i)) / 2);
+                };
+                const getSlotRight = (i) => {
+                    if (i === totalBars - 1) return chartArea.right;
+                    return Math.round((xScale.getPixelForValue(i) + xScale.getPixelForValue(i + 1)) / 2);
+                };
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(chartArea.left, top, chartArea.right - chartArea.left, height);
+                ctx.clip();
+
+                let runStart = 0;
+                while (runStart < totalBars) {
+                    const isOnline = !!(currentDayHoursOnline && currentDayHoursOnline[runStart]);
+                    let runEnd = runStart;
+                    while (runEnd + 1 < totalBars && (!!(currentDayHoursOnline && currentDayHoursOnline[runEnd + 1])) === isOnline) {
+                        runEnd++;
+                    }
+                    const xStart = getSlotLeft(runStart);
+                    const xEnd = getSlotRight(runEnd);
+                    ctx.fillStyle = isOnline ? onlineBgColor : offlineBgColor;
+                    ctx.fillRect(xStart, top, xEnd - xStart, height);
+                    runStart = runEnd + 1;
+                }
+
+                ctx.restore();
+            }
+        };
+
         const ctx = document.getElementById('main-chart').getContext('2d');
         const mainChart = new Chart(ctx, {
             type: 'bar',
+            plugins: [dayUptimeBackgroundPlugin],
             data: { labels: [], datasets: [{ label: 'Data', data: [], backgroundColor: '#000', borderRadius: 4 }] },
             options: {
                 responsive: true, maintainAspectRatio: false, animation: { duration: 400, easing: 'easeOutQuart' },
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#f0f0f0' } }, x: { grid: { display: false } } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(0, 0, 0, 0.06)' } }, x: { grid: { display: false } } },
                 interaction: { mode: 'index', intersect: false },
                 onHover: (event, chartElement) => {
                     event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
@@ -2129,27 +2213,9 @@
                                 const metricText = currentMetric === 'time' ? val + ' segs (promedio)' : (val === 1 ? '1 persona' : val + ' personas');
                                 
                                 if (currentViewLevel === 'day') {
-                                    if (!hasTabletUptime()) return metricText;
-
-                                    const anio = currentViewDate.getFullYear();
-                                    const mes = String(currentViewDate.getMonth() + 1).padStart(2, '0');
-                                    const dia = String(currentViewDate.getDate()).padStart(2, '0');
-                                    const fechaStr = `${anio}-${mes}-${dia}`;
-
-                                    const fechasRegistradas = Object.keys(datosUptime).sort();
-                                    const primeraFecha = fechasRegistradas[0];
-                                    if (fechaStr < primeraFecha) return metricText;
-
                                     const horaIndex = c.dataIndex;
-                                    const horaOnline = !!(datosUptime[fechaStr] && datosUptime[fechaStr][horaIndex]);
-                                    
-                                    const now = new Date();
-                                    const esHoy = (currentViewDate.getFullYear() === now.getFullYear() && currentViewDate.getMonth() === now.getMonth() && currentViewDate.getDate() === now.getDate());
-                                    const esFutura = esHoy ? (horaIndex > now.getHours()) : (currentViewDate > now);
-                                    
-                                    if (!esFutura) {
-                                        return [metricText, horaOnline ? 'Conexión: 🟢 Online' : 'Conexión: 🔴 Offline'];
-                                    }
+                                    const horaOnline = !!(currentDayHoursOnline && currentDayHoursOnline[horaIndex]);
+                                    return [metricText, horaOnline ? 'Conexión: 🟢 Online' : 'Conexión: 🔴 Offline'];
                                 } else if (currentViewLevel === 'month') {
                                     if (!hasTabletUptime()) return metricText;
 
@@ -2293,6 +2359,10 @@
 
             const strPersonas = totalPersonasPeriodo === 1 ? '1 persona' : `${totalPersonasPeriodo} personas`;
             document.getElementById('chart-subtitle').innerText = `${titlePrefix} ${titleSuffix} • ${strPersonas}`;
+
+            if (currentViewLevel === 'day') {
+                currentDayHoursOnline = getDayHoursOnlineArray(date, dataBuckets);
+            }
 
             mainChart.data.labels = labels;
             mainChart.data.datasets[0].data = dataBuckets;
