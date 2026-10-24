@@ -15,7 +15,70 @@
         /* =========================================
            NORMALIZACIÓN Y CONTENEDOR 16:9 
            ========================================= */
+        :root {
+            --ui-zoom: 0.8;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+
+        .spa-view {
+            display: none;
+            width: calc(100% / var(--ui-zoom, 0.8));
+            height: calc(100% / var(--ui-zoom, 0.8));
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: scale(var(--ui-zoom, 0.8));
+            transform-origin: top left;
+        }
+
+        /* =========================================
+           BOTONES GLOBALES DE ZOOM IN / ZOOM OUT (80% - 100%)
+           ========================================= */
+        .global-zoom-controls {
+            position: absolute;
+            top: 14px;
+            left: 15px;
+            z-index: 10004;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sucursales-screen-container > .global-zoom-controls,
+        .back-content > .global-zoom-controls {
+            top: 12px;
+            left: 20px;
+        }
+        .btn-ui-zoom {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(179, 156, 110, 0.95);
+            border: 2px solid rgba(255, 255, 255, 0.75);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.25s ease;
+            outline: none;
+            padding: 0;
+        }
+        .btn-ui-zoom svg {
+            width: 21px;
+            height: 21px;
+        }
+        .btn-ui-zoom:hover:not(:disabled) {
+            background: rgba(150, 129, 87, 1);
+            transform: scale(1.08);
+            box-shadow: 0 5px 14px rgba(179, 156, 110, 0.45);
+        }
+        .btn-ui-zoom:disabled {
+            opacity: 0.48;
+            cursor: default;
+            box-shadow: none;
+        }
         
         body, html { 
             width: 100%; 
@@ -37,8 +100,6 @@
             background-color: #ffffff;
             box-shadow: 0 0 30px rgba(0,0,0,0.15); 
         }
-
-        .spa-view { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 
         /* =========================================
            VISTAS: LOGIN & WELCOME
@@ -225,11 +286,11 @@
            ========================================= */
         #monitor-view { background-color: #ffffff; }
 
-        /* Botón Volver al Mapa y Botón Atrás (en la cara del Calendario / Gráfico) */
+        /* Botón Volver al Mapa y Botón Atrás (en la cara del Calendario / Gráfico, debajo de Zoom In / Zoom Out) */
         #btn-volver-mapa,
         #btn-atras-grafico {
             position: absolute;
-            top: 15px;
+            top: 62px;
             left: 20px;
             padding: 8px 18px;
             background: rgba(179, 156, 110, 0.9);
@@ -248,10 +309,10 @@
             transform: translateY(-1px);
         }
 
-        /* Botón Atrás (en la cara en Tiempo Real) */
+        /* Botón Atrás (en la cara en Tiempo Real, debajo de Zoom In / Zoom Out) */
         #btn-atras-monitor {
             position: absolute;
-            top: 15px;
+            top: 64px;
             left: 15px;
             padding: 8px 18px;
             background: rgba(179, 156, 110, 0.9);
@@ -339,7 +400,7 @@
         @keyframes fadeOutUp { 0% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-70%); } }
 
         /* Contenido Trasero */
-        .back-content { background: #ffffff; padding: 20px 30px; border-radius: 15px; width: 95%; max-width: 1200px; box-shadow: 0 5px 25px rgba(0,0,0,0.08); border: 1px solid #eaeaea; text-align: center; position: relative; height: 85vh; display: flex; flex-direction: column; }
+        .back-content { background: #ffffff; padding: 20px 30px; border-radius: 15px; width: 95%; max-width: 1200px; box-shadow: 0 5px 25px rgba(0,0,0,0.08); border: 1px solid #eaeaea; text-align: center; position: relative; height: 85%; display: flex; flex-direction: column; }
         .header-top-row { display: flex; justify-content: center; align-items: center; gap: 14px; margin-bottom: 8px; padding: 0 140px; flex-wrap: wrap; }
         .static-title { color: #888; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: 0; text-align: center; }
         .top-controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 10px; }
@@ -474,8 +535,10 @@
         /* Botón Pantalla Completa Reactivo en Esquina Superior Izquierda */
         .btn-fullscreen-toggle {
             position: fixed;
-            top: 15px;
-            left: 15px;
+            top: calc(15px * var(--ui-zoom, 0.8));
+            left: calc(112px * var(--ui-zoom, 0.8));
+            transform: scale(var(--ui-zoom, 0.8));
+            transform-origin: top left;
             z-index: 10005;
             width: 38px;
             height: 38px;
@@ -494,30 +557,13 @@
         }
         .btn-fullscreen-toggle:hover {
             background: rgba(150, 129, 87, 1);
-            transform: scale(1.08);
+            transform: scale(calc(var(--ui-zoom, 0.8) * 1.08));
         }
 
-        body.not-fullscreen #btn-atras-monitor {
-            left: 65px;
-        }
-        body.is-fullscreen #btn-atras-monitor {
-            left: 15px;
-        }
-        body.not-fullscreen #btn-volver-mapa,
-        body.not-fullscreen #btn-atras-grafico,
-        body.not-fullscreen #btn-volver-mapa-sucursales {
-            left: 60px;
-        }
-        body.is-fullscreen #btn-volver-mapa,
-        body.is-fullscreen #btn-atras-grafico,
-        body.is-fullscreen #btn-volver-mapa-sucursales {
-            left: 20px;
-        }
-
-        /* Botón de Ayuda / Semáforo en Esquina Superior Izquierda del Mapa */
+        /* Botón de Ayuda / Semáforo en Esquina Superior Izquierda del Mapa (debajo de Zoom In / Zoom Out) */
         .btn-help-semaforo {
             position: absolute;
-            top: 15px;
+            top: 66px;
             left: 15px;
             z-index: 10002;
             width: 48px;
@@ -545,19 +591,10 @@
             box-shadow: 0 5px 16px rgba(179, 156, 110, 0.45);
         }
 
-        body.not-fullscreen .btn-help-semaforo {
-            left: 65px;
-            top: 10px;
-        }
-        body.is-fullscreen .btn-help-semaforo {
-            left: 15px;
-            top: 15px;
-        }
-
         /* Botón de Lista de Sucursales (Flechas Izquierda/Derecha debajo del signo de interrogación) */
         .btn-switch-sucursales {
             position: absolute;
-            top: 73px;
+            top: 124px;
             left: 15px;
             z-index: 10002;
             width: 48px;
@@ -585,15 +622,6 @@
             box-shadow: 0 5px 16px rgba(179, 156, 110, 0.45);
         }
 
-        body.not-fullscreen .btn-switch-sucursales {
-            left: 65px;
-            top: 68px;
-        }
-        body.is-fullscreen .btn-switch-sucursales {
-            left: 15px;
-            top: 73px;
-        }
-
         /* =========================================
            VISTA: LISTA DE SUCURSALES (PANTALLA COMPLETA)
            ========================================= */
@@ -611,7 +639,7 @@
             padding: 22px 30px 20px;
             border-radius: 15px;
             width: 96%;
-            max-width: 1280px;
+            max-width: 1360px;
             height: 90%;
             box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
             border: 1px solid #eaeaea;
@@ -623,7 +651,7 @@
 
         #btn-volver-mapa-sucursales {
             position: absolute;
-            top: 18px;
+            top: 62px;
             left: 20px;
             padding: 8px 18px;
             background: rgba(179, 156, 110, 0.9);
@@ -643,11 +671,12 @@
 
         .sucursales-screen-header {
             text-align: center;
-            padding-bottom: 14px;
-            margin-bottom: 12px;
+            padding-bottom: 18px;
+            margin-bottom: 14px;
+            min-height: 76px;
             border-bottom: 2px solid #f2ece1;
-            padding-left: 160px;
-            padding-right: 160px;
+            padding-left: 175px;
+            padding-right: 175px;
         }
         .sucursales-brand-subtitle {
             color: #968157;
@@ -761,11 +790,19 @@
             box-shadow: 0 0 8px rgba(27, 185, 27, 0.22);
             background-color: #f9fff9;
         }
+        .sucursales-table tbody tr.row-active td {
+            border-color: #000000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            background-color: #f7f7f7;
+        }
         .sucursales-table tbody tr:hover td {
             background-color: #f6efe0;
         }
         .sucursales-table tbody tr.row-online:hover td {
             background-color: #ebfaeb;
+        }
+        .sucursales-table tbody tr.row-active:hover td {
+            background-color: #ececec;
         }
 
         .col-id {
@@ -822,7 +859,7 @@
             border-radius: 6px;
         }
         .col-status {
-            width: 125px;
+            width: 140px;
         }
         .status-badge {
             display: inline-flex;
@@ -839,12 +876,19 @@
             background-color: #f7f3eb;
             color: #968157;
             border: 1px solid #daccaa;
+            white-space: nowrap;
         }
         .sucursales-table tbody tr.row-online .status-badge {
             background-color: #e8fbe8;
             color: #138a13;
             border: 1px solid #1bb91b;
             box-shadow: 0 0 8px rgba(27, 185, 27, 0.25);
+        }
+        .sucursales-table tbody tr.row-active .status-badge {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            border: 1px solid #000000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.35);
         }
         .status-badge-dot {
             width: 8px;
@@ -856,6 +900,41 @@
         .sucursales-table tbody tr.row-online .status-badge-dot {
             background-color: #1ec71e;
             box-shadow: 0 0 6px rgba(30, 199, 30, 0.7);
+        }
+        .sucursales-table tbody tr.row-active .status-badge-dot {
+            background-color: #1ec71e;
+            box-shadow: 0 0 6px rgba(30, 199, 30, 0.9);
+        }
+        .col-instalacion {
+            width: 145px;
+            padding: 6px 10px !important;
+            white-space: nowrap;
+        }
+        .instalacion-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 4px;
+        }
+        .instalacion-row {
+            width: 100%;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #5a4b32;
+            background: #f8f4ec;
+            border: 1px solid #e6dec8;
+            border-radius: 4px;
+            padding: 3px 8px;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        .instalacion-row.por-definir {
+            color: #968157;
+            font-weight: 700;
+            background: #fdfbf7;
+            border-style: dashed;
         }
 
         /* =========================================
@@ -950,6 +1029,14 @@
     <div id="aspect-ratio-wrapper">
 
         <div id="login-view" class="spa-view">
+            <div class="global-zoom-controls">
+                <button type="button" class="btn-ui-zoom btn-ui-zoom-in" title="Acercar interfaz (100%)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                </button>
+                <button type="button" class="btn-ui-zoom btn-ui-zoom-out" title="Alejar interfaz (80%)" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                </button>
+            </div>
             <div class="login-box">
                 <h2>Yar-Yur System</h2>
                 <input type="email" id="email-input" placeholder="Correo electrónico">
@@ -960,6 +1047,14 @@
         </div>
 
         <div id="welcome-view" class="spa-view">
+            <div class="global-zoom-controls">
+                <button type="button" class="btn-ui-zoom btn-ui-zoom-in" title="Acercar interfaz (100%)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                </button>
+                <button type="button" class="btn-ui-zoom btn-ui-zoom-out" title="Alejar interfaz (80%)" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                </button>
+            </div>
             <div id="rotate-device-msg">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#b39c6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
@@ -973,6 +1068,14 @@
         </div>
 
         <div id="coming-soon-view" class="spa-view">
+            <div class="global-zoom-controls">
+                <button type="button" class="btn-ui-zoom btn-ui-zoom-in" title="Acercar interfaz (100%)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                </button>
+                <button type="button" class="btn-ui-zoom btn-ui-zoom-out" title="Alejar interfaz (80%)" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                </button>
+            </div>
             <h2>Próximamente</h2>
             <p>Vuelve pronto para consultar esta sucursal...</p>
             <button id="btn-volver-soon">Volver al Mapa</button>
@@ -983,6 +1086,15 @@
                 <div id="map"></div>
                 <img src="CAPA.png" id="capa-superior" alt="Capa Decorativa">
                 
+                <div class="global-zoom-controls">
+                    <button type="button" class="btn-ui-zoom btn-ui-zoom-in" title="Acercar interfaz (100%)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                    </button>
+                    <button type="button" class="btn-ui-zoom btn-ui-zoom-out" title="Alejar interfaz (80%)" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                    </button>
+                </div>
+
                 <button id="btn-help-semaforo" class="btn-help-semaforo" title="Explicación del Semáforo y Estados">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -1056,6 +1168,14 @@
                     <!-- CARA 1: CALENDARIO Y DASHBOARD -->
                     <div class="front">
                         <div class="back-content">
+                            <div class="global-zoom-controls">
+                                <button type="button" class="btn-ui-zoom btn-ui-zoom-in" title="Acercar interfaz (100%)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                                </button>
+                                <button type="button" class="btn-ui-zoom btn-ui-zoom-out" title="Alejar interfaz (80%)" disabled>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                                </button>
+                            </div>
                             <button id="btn-volver-mapa">Volver al Mapa</button>
                             <button id="btn-atras-grafico" style="display: none;">Atrás</button>
 
@@ -1118,6 +1238,14 @@
 
                     <!-- CARA 2: VISTA INTERACTIVA EN TIEMPO REAL -->
                     <div class="back">
+                        <div class="global-zoom-controls">
+                            <button type="button" class="btn-ui-zoom btn-ui-zoom-in" title="Acercar interfaz (100%)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                            </button>
+                            <button type="button" class="btn-ui-zoom btn-ui-zoom-out" title="Alejar interfaz (80%)" disabled>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                            </button>
+                        </div>
                         <button id="btn-atras-monitor" onclick="flipToCalendar()">Atrás</button>
                         <a id="btn-simular-tablet" target="_blank" href="#">Simular Tablet</a>
 
@@ -1158,13 +1286,21 @@
         <!-- VISTA: LISTA DE SUCURSALES (PANTALLA COMPLETA) -->
         <div id="sucursales-view" class="spa-view">
             <div class="sucursales-screen-container">
+                <div class="global-zoom-controls">
+                    <button type="button" class="btn-ui-zoom btn-ui-zoom-in" title="Acercar interfaz (100%)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                    </button>
+                    <button type="button" class="btn-ui-zoom btn-ui-zoom-out" title="Alejar interfaz (80%)" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                    </button>
+                </div>
                 <button id="btn-volver-mapa-sucursales">Volver al Mapa</button>
                 <div class="sucursales-screen-header">
                     <div class="sucursales-brand-subtitle">Yar-Yur System &bull; Canal Moderno</div>
                     <h2 class="sucursales-main-title">Yar-Yur System Canal Moderno Lista de Sucursales</h2>
                 </div>
                 <div class="sucursales-summary-bar">
-                    <span class="sucursales-hint">Selecciona cualquier fila para acceder directamente a su calendario mensual</span>
+                    <span class="sucursales-hint">Selecciona cualquier fila para acceder directamente a su vista en tiempo real</span>
                     <div class="sucursales-status-summary">
                         <div class="summary-chip">
                             <span class="suc-dot online"></span>
@@ -1185,6 +1321,7 @@
                                 <th>Estado / Ciudad</th>
                                 <th>Marca</th>
                                 <th>Status</th>
+                                <th>Instalación</th>
                             </tr>
                         </thead>
                         <tbody id="sucursales-modal-tbody"></tbody>
@@ -1498,6 +1635,7 @@
                     liveTabletCounts[i] = (data && data.conteoActual !== undefined) ? data.conteoActual : 0;
                     updateMapMarkers();
                     actualizarPulsoPanelInfo();
+                    actualizarTablaSucursalesModal();
                 });
 
                 // 2. Escuchar el STATUS (OFFLINE / ONLINE)
@@ -1590,7 +1728,7 @@
         let isOverlayActive = false, overlayStartTime = 0, overlayTimerInterval = null, stopTimeout1 = null, stopTimeout2 = null, isInitialLoad = true, renderDebounceTimer = null;
 
         /* --- CARGADOR DINÁMICO DEL MONITOR --- */
-        function cargarMonitor(brandName, sucursalName) {
+        function cargarMonitor(brandName, sucursalName, startInRealTime = false) {
             const registryKey = `${brandName}_${sucursalName}`;
             const config = monitorRegistry[registryKey];
 
@@ -1630,8 +1768,12 @@
                 simularBtn.style.display = 'inline-block';
             }
 
-            // Iniciar en la cara frontal del Calendario
-            document.getElementById('flip-container').classList.remove('flipped');
+            // Iniciar en la cara solicitada (Tiempo Real desde la lista de sucursales, o Calendario desde el mapa)
+            if (startInRealTime) {
+                document.getElementById('flip-container').classList.add('flipped');
+            } else {
+                document.getElementById('flip-container').classList.remove('flipped');
+            }
             tabletActualEnGrafico = zoneId;
             currentMonitorTabletId = config.tabletId;
             viewState = 'CAL_MONTH';
@@ -2923,22 +3065,22 @@
         const sucursalesCountOffline = document.getElementById('sucursales-count-offline');
 
         const listaSucursalesModal = [
-            { id: 1,  code: 'tablet_01', brandKey: 'NIDO',       sucursalKey: 'Redvital La Yaguara',                  sucursal: 'Redvital La Yaguara',                  chainLogo: 'logo-REDVITAL.jpg',     ubicacion: 'Distrito Capital — Caracas (La Yaguara)',             marca: 'NIDO',       img: 'NIDO.png' },
-            { id: 2,  code: 'tablet_02', brandKey: 'MULTIMARCA', sucursalKey: 'Garzón Hiperahorro',                   sucursal: 'Garzón Hiperahorro (Rotaria)',         chainLogo: 'logo-GARZON.jpg',       ubicacion: 'Táchira / Mérida — Av. Rotaria San Cristóbal',       marca: 'MULTIMARCA', img: 'MULTIMARCA.png' },
-            { id: 3,  code: 'tablet_03', brandKey: 'RECETAS',    sucursalKey: 'Redvital La Yaguara',                  sucursal: 'Redvital La Yaguara',                  chainLogo: 'logo-REDVITAL.jpg',     ubicacion: 'Distrito Capital — Caracas (La Yaguara)',             marca: 'RECETAS',    img: 'RECETAS.png' },
-            { id: 4,  code: 'tablet_04', brandKey: 'NIDO',       sucursalKey: 'Redvital San Diego',                   sucursal: 'Redvital San Diego',                   chainLogo: 'logo-REDVITAL.jpg',     ubicacion: 'Carabobo — Valencia (Sector San Diego)',              marca: 'NIDO',       img: 'NIDO.png' },
-            { id: 5,  code: 'tablet_05', brandKey: 'NIDO',       sucursalKey: 'Kromi Market Prebo',                   sucursal: 'Kromi Market Prebo',                   chainLogo: 'logo-KROMI.jpg',        ubicacion: 'Carabobo — Valencia (Av. Prebo)',                     marca: 'NIDO',       img: 'NIDO.png' },
-            { id: 6,  code: 'tablet_06', brandKey: 'MULTIMARCA', sucursalKey: 'Euromercado Las Delicias',             sucursal: 'Euromercado Las Delicias',             chainLogo: 'logo-EUROMERCADO.jpg',  ubicacion: 'Aragua — Maracay (C.C. Las Delicias)',                marca: 'MULTIMARCA', img: 'MULTIMARCA.png' },
-            { id: 7,  code: 'tablet_07', brandKey: 'SAVOY',      sucursalKey: 'Río Lomas del Sol',                    sucursal: 'Río Market Lomas del Sol',             chainLogo: 'rio.png',               chainLogoAlt: 'logo-RIO.jpg',          ubicacion: 'Miranda — Caracas (Los Naranjos)',                    marca: 'SAVOY',      img: 'SAVOY.png' },
-            { id: 8,  code: 'tablet_08', brandKey: 'SAVOY',      sucursalKey: 'Fresco Market Caurimare',              sucursal: 'Fresco Market Caurimare',              chainLogo: 'logo-FRESCO.jpg',       chainLogoAlt: 'logo-FRESCOMARKET.jpg', ubicacion: 'Miranda — Caracas (Av. Principal Caurimare)',         marca: 'SAVOY',      img: 'SAVOY.png' },
-            { id: 9,  code: 'tablet_09', brandKey: 'SAVOY',      sucursalKey: 'Kromi Market Mañongo',                 sucursal: 'Kromi Market Mañongo',                 chainLogo: 'logo-KROMI.jpg',        ubicacion: 'Carabobo — Valencia (Sector Mañongo)',                marca: 'SAVOY',      img: 'SAVOY.png' },
-            { id: 10, code: 'tablet_10', brandKey: 'SAVOY',      sucursalKey: 'Río El Cigarral',                      sucursal: 'Río Market El Cigarral',               chainLogo: 'rio.png',               chainLogoAlt: 'logo-RIO.jpg',          ubicacion: 'Miranda — Caracas (Sector El Cigarral)',              marca: 'SAVOY',      img: 'SAVOY.png' },
-            { id: 11, code: 'tablet_11', brandKey: 'SAVOY',      sucursalKey: 'Río El Recreo',                        sucursal: 'Río Market El Recreo',                 chainLogo: 'rio.png',               chainLogoAlt: 'logo-RIO.jpg',          ubicacion: 'Distrito Capital — Caracas (C.C. El Recreo)',         marca: 'SAVOY',      img: 'SAVOY.png' },
-            { id: 12, code: 'tablet_12', brandKey: 'SAVOY',      sucursalKey: 'Supermercado Baratta',                 sucursal: 'Supermercado Baratta (Ferrero Tamayo)',chainLogo: 'logo-BARATTA.jpg',      ubicacion: 'Táchira / Mérida — Av. Ferrero Tamayo',               marca: 'SAVOY',      img: 'SAVOY.png' },
-            { id: 13, code: 'tablet_13', brandKey: 'SAVOY',      sucursalKey: 'Kromi Market Prebo',                   sucursal: 'Kromi Market Prebo',                   chainLogo: 'logo-KROMI.jpg',        ubicacion: 'Carabobo — Valencia (Av. Prebo)',                     marca: 'SAVOY',      img: 'SAVOY.png' },
-            { id: 14, code: 'tablet_14', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (El Parral)',      sucursal: 'Inversiones Yar-Yur (El Parral)',      chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png' },
-            { id: 15, code: 'tablet_15', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (El Bosque)',      sucursal: 'Inversiones Yar-Yur (El Bosque)',      chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png' },
-            { id: 16, code: 'tablet_16', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (Las Chimeneas)',  sucursal: 'Inversiones Yar-Yur (Las Chimeneas)',  chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png' }
+            { id: 1,  code: 'tablet_01', brandKey: 'NIDO',       sucursalKey: 'Redvital La Yaguara',                  sucursal: 'Redvital La Yaguara',                  chainLogo: 'logo-REDVITAL.jpg',     ubicacion: 'Distrito Capital — Caracas (La Yaguara)',             marca: 'NIDO',       img: 'NIDO.png',       instalacion: ['18-Jun-2026', '23-Oct-2026'] },
+            { id: 2,  code: 'tablet_02', brandKey: 'MULTIMARCA', sucursalKey: 'Garzón Hiperahorro',                   sucursal: 'Garzón Hiperahorro (Rotaria)',         chainLogo: 'logo-GARZON.jpg',       ubicacion: 'Táchira / Mérida — Av. Rotaria San Cristóbal',       marca: 'MULTIMARCA', img: 'MULTIMARCA.png', instalacion: ['03-Ago-2026', '21-Oct-2026'] },
+            { id: 3,  code: 'tablet_03', brandKey: 'RECETAS',    sucursalKey: 'Redvital La Yaguara',                  sucursal: 'Redvital La Yaguara',                  chainLogo: 'logo-REDVITAL.jpg',     ubicacion: 'Distrito Capital — Caracas (La Yaguara)',             marca: 'RECETAS',    img: 'RECETAS.png',    instalacion: ['18-Jun-2026', '23-Oct-2026'] },
+            { id: 4,  code: 'tablet_04', brandKey: 'NIDO',       sucursalKey: 'Redvital San Diego',                   sucursal: 'Redvital San Diego',                   chainLogo: 'logo-REDVITAL.jpg',     ubicacion: 'Carabobo — Valencia (Sector San Diego)',              marca: 'NIDO',       img: 'NIDO.png',       instalacion: ['08-Jul-2026', 'POR DEFINIR'] },
+            { id: 5,  code: 'tablet_05', brandKey: 'NIDO',       sucursalKey: 'Kromi Market Prebo',                   sucursal: 'Kromi Market Prebo',                   chainLogo: 'logo-KROMI.jpg',        ubicacion: 'Carabobo — Valencia (Av. Prebo)',                     marca: 'NIDO',       img: 'NIDO.png',       instalacion: ['08-Jul-2026', 'POR DEFINIR'] },
+            { id: 6,  code: 'tablet_06', brandKey: 'MULTIMARCA', sucursalKey: 'Euromercado Las Delicias',             sucursal: 'Euromercado Las Delicias',             chainLogo: 'logo-EUROMERCADO.jpg',  ubicacion: 'Aragua — Maracay (C.C. Las Delicias)',                marca: 'MULTIMARCA', img: 'MULTIMARCA.png', instalacion: ['POR DEFINIR'] },
+            { id: 7,  code: 'tablet_07', brandKey: 'SAVOY',      sucursalKey: 'Río Lomas del Sol',                    sucursal: 'Río Market Lomas del Sol',             chainLogo: 'rio.png',               chainLogoAlt: 'logo-RIO.jpg',          ubicacion: 'Miranda — Caracas (Los Naranjos)',                    marca: 'SAVOY',      img: 'SAVOY.png',      instalacion: ['07-Sep-2026', 'POR DEFINIR'] },
+            { id: 8,  code: 'tablet_08', brandKey: 'SAVOY',      sucursalKey: 'Fresco Market Caurimare',              sucursal: 'Fresco Market Caurimare',              chainLogo: 'logo-FRESCO.jpg',       chainLogoAlt: 'logo-FRESCOMARKET.jpg', ubicacion: 'Miranda — Caracas (Av. Principal Caurimare)',         marca: 'SAVOY',      img: 'SAVOY.png',      instalacion: ['POR DEFINIR'] },
+            { id: 9,  code: 'tablet_09', brandKey: 'SAVOY',      sucursalKey: 'Kromi Market Mañongo',                 sucursal: 'Kromi Market Mañongo',                 chainLogo: 'logo-KROMI.jpg',        ubicacion: 'Carabobo — Valencia (Sector Mañongo)',                marca: 'SAVOY',      img: 'SAVOY.png',      instalacion: ['POR DEFINIR'] },
+            { id: 10, code: 'tablet_10', brandKey: 'SAVOY',      sucursalKey: 'Río El Cigarral',                      sucursal: 'Río Market El Cigarral',               chainLogo: 'rio.png',               chainLogoAlt: 'logo-RIO.jpg',          ubicacion: 'Miranda — Caracas (Sector El Cigarral)',              marca: 'SAVOY',      img: 'SAVOY.png',      instalacion: ['POR DEFINIR'] },
+            { id: 11, code: 'tablet_11', brandKey: 'SAVOY',      sucursalKey: 'Río El Recreo',                        sucursal: 'Río Market El Recreo',                 chainLogo: 'rio.png',               chainLogoAlt: 'logo-RIO.jpg',          ubicacion: 'Distrito Capital — Caracas (C.C. El Recreo)',         marca: 'SAVOY',      img: 'SAVOY.png',      instalacion: ['POR DEFINIR'] },
+            { id: 12, code: 'tablet_12', brandKey: 'SAVOY',      sucursalKey: 'Supermercado Baratta',                 sucursal: 'Supermercado Baratta (Ferrero Tamayo)',chainLogo: 'logo-BARATTA.jpg',      ubicacion: 'Táchira / Mérida — Av. Ferrero Tamayo',               marca: 'SAVOY',      img: 'SAVOY.png',      instalacion: ['POR DEFINIR'] },
+            { id: 13, code: 'tablet_13', brandKey: 'SAVOY',      sucursalKey: 'Kromi Market Prebo',                   sucursal: 'Kromi Market Prebo',                   chainLogo: 'logo-KROMI.jpg',        ubicacion: 'Carabobo — Valencia (Av. Prebo)',                     marca: 'SAVOY',      img: 'SAVOY.png',      instalacion: ['POR DEFINIR'] },
+            { id: 14, code: 'tablet_14', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (El Parral)',      sucursal: 'Inversiones Yar-Yur (El Parral)',      chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png',      instalacion: ['POR DEFINIR'] },
+            { id: 15, code: 'tablet_15', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (El Bosque)',      sucursal: 'Inversiones Yar-Yur (El Bosque)',      chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png',      instalacion: ['POR DEFINIR'] },
+            { id: 16, code: 'tablet_16', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (Las Chimeneas)',  sucursal: 'Inversiones Yar-Yur (Las Chimeneas)',  chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png',      instalacion: ['POR DEFINIR'] }
         ];
 
         function renderTablaSucursalesModal() {
@@ -2949,11 +3091,16 @@
                 const tr = document.createElement('tr');
                 tr.id = `modal-row-${item.code}`;
                 tr.className = 'row-offline';
-                tr.title = `Ir al calendario mensual de ${item.sucursal} (${item.marca})`;
+                tr.title = `Ir a la vista en tiempo real de ${item.sucursal} (${item.marca})`;
 
                 const chainOnError = item.chainLogoAlt
                     ? `if(!this.dataset.triedAlt){this.dataset.triedAlt='1';this.src='${item.chainLogoAlt}';}else{this.style.display='none';this.nextElementSibling.style.display='inline-block';}`
                     : `this.style.display='none';this.nextElementSibling.style.display='inline-block';`;
+
+                const instalacionRowsHtml = (item.instalacion || ['POR DEFINIR']).map(val => {
+                    const isPorDefinir = val === 'POR DEFINIR';
+                    return `<div class="instalacion-row${isPorDefinir ? ' por-definir' : ''}">${val}</div>`;
+                }).join('');
 
                 tr.innerHTML = `
                     <td class="col-id">
@@ -2983,10 +3130,15 @@
                             <span class="status-text">Offline</span>
                         </span>
                     </td>
+                    <td class="col-instalacion">
+                        <div class="instalacion-stack">
+                            ${instalacionRowsHtml}
+                        </div>
+                    </td>
                 `;
 
                 tr.addEventListener('click', () => {
-                    cargarMonitor(item.brandKey, item.sucursalKey);
+                    cargarMonitor(item.brandKey, item.sucursalKey, true);
                 });
 
                 sucursalesModalTbody.appendChild(tr);
@@ -3001,23 +3153,35 @@
 
             listaSucursalesModal.forEach(item => {
                 const isOnline = liveTabletStatuses[item.id] === 'ONLINE';
+                const peopleCount = liveTabletCounts[item.id] || 0;
+                const hasPeople = isOnline && peopleCount > 0;
+
                 if (isOnline) onlineTotal++;
                 else offlineTotal++;
 
                 const row = document.getElementById(`modal-row-${item.code}`);
                 const badge = document.getElementById(`modal-status-badge-${item.code}`);
                 if (row) {
-                    if (isOnline) {
-                        row.classList.remove('row-offline');
+                    row.classList.remove('row-offline', 'row-online', 'row-active');
+                    if (hasPeople) {
+                        row.classList.add('row-active');
+                    } else if (isOnline) {
                         row.classList.add('row-online');
                     } else {
-                        row.classList.remove('row-online');
                         row.classList.add('row-offline');
                     }
                 }
                 if (badge) {
                     const txt = badge.querySelector('.status-text');
-                    if (txt) txt.textContent = isOnline ? 'Online' : 'Offline';
+                    if (txt) {
+                        if (hasPeople) {
+                            txt.textContent = peopleCount === 1 ? '1 Persona' : `${peopleCount} Personas`;
+                        } else if (isOnline) {
+                            txt.textContent = 'Online';
+                        } else {
+                            txt.textContent = 'Offline';
+                        }
+                    }
                 }
             });
 
@@ -3026,6 +3190,42 @@
         }
 
         renderTablaSucursalesModal();
+
+        /* --- CONTROL GLOBAL DE ZOOM DE LA INTERFAZ (80% <-> 100%) --- */
+        let currentUiZoom = 0.8;
+
+        function setGlobalUiZoom(newZoom) {
+            currentUiZoom = newZoom;
+            document.documentElement.style.setProperty('--ui-zoom', String(currentUiZoom));
+
+            document.querySelectorAll('.btn-ui-zoom-in').forEach(btn => {
+                btn.disabled = (currentUiZoom >= 1);
+            });
+            document.querySelectorAll('.btn-ui-zoom-out').forEach(btn => {
+                btn.disabled = (currentUiZoom <= 0.8);
+            });
+
+            setTimeout(() => {
+                if (chartInstance) chartInstance.reflow();
+                if (mainChart) mainChart.resize();
+            }, 60);
+        }
+
+        document.querySelectorAll('.btn-ui-zoom-in').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setGlobalUiZoom(1);
+            });
+        });
+
+        document.querySelectorAll('.btn-ui-zoom-out').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setGlobalUiZoom(0.8);
+            });
+        });
+
+        setGlobalUiZoom(0.8);
 
         if (btnOpenSucursales) {
             btnOpenSucursales.addEventListener('click', (e) => {
