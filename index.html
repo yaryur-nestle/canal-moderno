@@ -16,24 +16,24 @@
            NORMALIZACIÓN Y CONTENEDOR 16:9 
            ========================================= */
         :root {
-            --ui-zoom: 0.8;
+            --ui-zoom: 1;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
 
         .spa-view {
             display: none;
-            width: calc(100% / var(--ui-zoom, 0.8));
-            height: calc(100% / var(--ui-zoom, 0.8));
+            width: calc(100% / var(--ui-zoom, 1));
+            height: calc(100% / var(--ui-zoom, 1));
             position: absolute;
             top: 0;
             left: 0;
-            transform: scale(var(--ui-zoom, 0.8));
+            transform: scale(var(--ui-zoom, 1));
             transform-origin: top left;
         }
 
         /* =========================================
-           BOTONES GLOBALES DE ZOOM IN / ZOOM OUT (80% - 100%)
+           BOTONES GLOBALES DE ZOOM IN / ZOOM OUT (20% - 160%)
            ========================================= */
         .global-zoom-controls {
             position: absolute;
@@ -68,6 +68,7 @@
         .btn-ui-zoom svg {
             width: 21px;
             height: 21px;
+            transition: all 0.25s ease;
         }
         .btn-ui-zoom:hover:not(:disabled) {
             background: rgba(150, 129, 87, 1);
@@ -78,6 +79,56 @@
             opacity: 0.48;
             cursor: default;
             box-shadow: none;
+        }
+
+        /* Escala aumentada de los botones de zoom cuando el zoom global es 40% */
+        body[data-ui-zoom="40"] .global-zoom-controls {
+            gap: 16px;
+        }
+        body[data-ui-zoom="40"] .btn-ui-zoom {
+            width: 115px;
+            height: 115px;
+            border-width: 4px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+        }
+        body[data-ui-zoom="40"] .btn-ui-zoom svg {
+            width: 58px;
+            height: 58px;
+        }
+        body[data-ui-zoom="40"] #btn-help-semaforo,
+        body[data-ui-zoom="40"] #btn-open-sucursales,
+        body[data-ui-zoom="40"] #btn-volver-mapa,
+        body[data-ui-zoom="40"] #btn-atras-grafico,
+        body[data-ui-zoom="40"] #btn-volver-mapa-sucursales {
+            top: 145px;
+        }
+        body[data-ui-zoom="40"] .sucursales-screen-header {
+            padding-left: 280px;
+        }
+
+        /* Escala mucho más grande de los botones de zoom cuando el zoom global es 20% */
+        body[data-ui-zoom="20"] .global-zoom-controls {
+            gap: 28px;
+        }
+        body[data-ui-zoom="20"] .btn-ui-zoom {
+            width: 270px;
+            height: 270px;
+            border-width: 7px;
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
+        }
+        body[data-ui-zoom="20"] .btn-ui-zoom svg {
+            width: 136px;
+            height: 136px;
+        }
+        body[data-ui-zoom="20"] #btn-help-semaforo,
+        body[data-ui-zoom="20"] #btn-open-sucursales,
+        body[data-ui-zoom="20"] #btn-volver-mapa,
+        body[data-ui-zoom="20"] #btn-atras-grafico,
+        body[data-ui-zoom="20"] #btn-volver-mapa-sucursales {
+            top: 308px;
+        }
+        body[data-ui-zoom="20"] .sucursales-screen-header {
+            padding-left: 600px;
         }
         
         body, html { 
@@ -330,8 +381,9 @@
             transform: translateY(-1px);
         }
         #btn-rt-ir-mapa {
-            top: 64px;
-            left: 15px;
+            position: static;
+            margin-left: 4px;
+            white-space: nowrap;
         }
         #btn-rt-ir-lista {
             bottom: 15px;
@@ -412,7 +464,7 @@
         @keyframes fadeOutUp { 0% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-70%); } }
 
         /* Contenido Trasero */
-        .back-content { background: #ffffff; padding: 20px 30px; border-radius: 15px; width: 95%; max-width: 1200px; box-shadow: 0 5px 25px rgba(0,0,0,0.08); border: 1px solid #eaeaea; text-align: center; position: relative; height: 85%; display: flex; flex-direction: column; }
+        .back-content { background: #ffffff; padding: 20px 30px 48px 30px; border-radius: 15px; width: 95%; max-width: 1200px; box-shadow: 0 5px 25px rgba(0,0,0,0.08); border: 1px solid #eaeaea; text-align: center; position: relative; height: 85%; display: flex; flex-direction: column; }
         .header-top-row { display: flex; justify-content: center; align-items: center; gap: 14px; margin-bottom: 8px; padding: 0 140px; flex-wrap: wrap; }
         .static-title { color: #888; font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin: 0; text-align: center; }
         .top-controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 10px; }
@@ -504,15 +556,18 @@
         .hint:hover { background-color: #f0f0f0; color: #333; animation-play-state: paused; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(179,156,110,0.4); } 70% { box-shadow: 0 0 0 10px rgba(179,156,110,0); } 100% { box-shadow: 0 0 0 0 rgba(179,156,110,0); } }
 
-        /* Botón VER EN TIEMPO REAL Palpitando */
+        /* Botón VER EN TIEMPO REAL Palpitando (Esquina inferior derecha del calendario) */
         #btn-ver-tiempo-real {
+            position: absolute;
+            bottom: 14px;
+            right: 20px;
             background: #b39c6e;
             color: #ffffff;
             border: none;
-            padding: 6px 16px;
+            padding: 7px 18px;
             border-radius: 20px;
             font-weight: 800;
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             letter-spacing: 0.5px;
             cursor: pointer;
             z-index: 100;
@@ -1054,14 +1109,6 @@
     <div id="aspect-ratio-wrapper">
 
         <div id="login-view" class="spa-view">
-            <div class="global-zoom-controls">
-                <button type="button" class="btn-ui-zoom btn-ui-zoom-in" title="Acercar interfaz (+20%)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                </button>
-                <button type="button" class="btn-ui-zoom btn-ui-zoom-out" title="Alejar interfaz (-20%)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                </button>
-            </div>
             <div class="login-box">
                 <h2>Yar-Yur System</h2>
                 <input type="email" id="email-input" placeholder="Correo electrónico">
@@ -1072,14 +1119,6 @@
         </div>
 
         <div id="welcome-view" class="spa-view">
-            <div class="global-zoom-controls">
-                <button type="button" class="btn-ui-zoom btn-ui-zoom-in" title="Acercar interfaz (+20%)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                </button>
-                <button type="button" class="btn-ui-zoom btn-ui-zoom-out" title="Alejar interfaz (-20%)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                </button>
-            </div>
             <div id="rotate-device-msg">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#b39c6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
@@ -1211,8 +1250,8 @@
 
                             <div class="header-top-row">
                                 <div id="chart-title" class="static-title">YAR-YUR SYSTEM</div>
-                                <button id="btn-ver-tiempo-real" onclick="flipToRealTime()">VER EN TIEMPO REAL</button>
                             </div>
+                            <button id="btn-ver-tiempo-real" onclick="flipToRealTime()">VER EN TIEMPO REAL</button>
 
                             <div class="top-controls">
                                 <button id="btn-zoom-out" class="icon-btn" title="Alejar Vista"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg></button>
@@ -1270,8 +1309,8 @@
                             <button type="button" class="btn-ui-zoom btn-ui-zoom-out" title="Alejar interfaz (-20%)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
                             </button>
+                            <button type="button" id="btn-rt-ir-mapa" class="btn-realtime-nav">Volver al Mapa</button>
                         </div>
-                        <button type="button" id="btn-rt-ir-mapa" class="btn-realtime-nav">Volver al Mapa</button>
                         <a id="btn-simular-tablet" target="_blank" href="#">Simular Tablet</a>
                         <button type="button" id="btn-rt-ir-lista" class="btn-realtime-nav">Ir a la Lista</button>
                         <button type="button" id="btn-rt-ir-calendario" class="btn-realtime-nav">Ir al Calendario</button>
@@ -1324,7 +1363,7 @@
                 <button id="btn-volver-mapa-sucursales">Volver al Mapa</button>
                 <div class="sucursales-screen-header">
                     <div class="sucursales-brand-subtitle">Yar-Yur System &bull; Canal Moderno</div>
-                    <h2 class="sucursales-main-title">Yar-Yur System Canal Moderno Lista de Sucursales</h2>
+                    <h2 class="sucursales-main-title">LISTA DE SUCURSALES</h2>
                 </div>
                 <div class="sucursales-summary-bar">
                     <span class="sucursales-hint">Selecciona cualquier fila para acceder directamente a su vista en tiempo real</span>
@@ -1509,6 +1548,7 @@
 
         document.getElementById('btn-start-system').addEventListener('click', () => {
             systemStarted = true;
+            setGlobalUiZoom(0.6);
             const elem = document.documentElement;
             if (elem.requestFullscreen) { elem.requestFullscreen().catch(() => {}); }
             else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
@@ -1682,6 +1722,9 @@
         /* --- AUTH ESTADO --- */
         onAuthStateChanged(auth, (user) => {
             if (user) { 
+                if (!systemStarted) {
+                    setGlobalUiZoom(1.0);
+                }
                 loginView.style.display = 'none'; 
                 welcomeView.style.display = 'flex';
                 checkDeviceOrientation();
@@ -1694,6 +1737,7 @@
             } 
             else { 
                 systemStarted = false;
+                setGlobalUiZoom(1.0);
                 mapView.style.display = 'none'; 
                 monitorView.style.display = 'none'; 
                 welcomeView.style.display = 'none';
@@ -2636,7 +2680,10 @@
         }
 
         function checkRefreshLiveButton() {
-            // El botón VER EN TIEMPO REAL (#btn-ver-tiempo-real) se mantiene siempre visible y palpitando en el calendario
+            const btnVerTiempoReal = document.getElementById('btn-ver-tiempo-real');
+            if (!btnVerTiempoReal) return;
+            const isCalendarView = viewState.startsWith('CAL_');
+            btnVerTiempoReal.style.display = isCalendarView ? 'inline-flex' : 'none';
         }
 
         function updateDashboardView(skipAnim = false) {
@@ -2646,10 +2693,13 @@
             const titleEl = document.getElementById('chart-subtitle');
             const btnVolverMapa = document.getElementById('btn-volver-mapa');
             const btnAtrasGrafico = document.getElementById('btn-atras-grafico');
+            const btnVerTiempoReal = document.getElementById('btn-ver-tiempo-real');
 
             const isBarChartView = viewState.startsWith('CHART_');
+            const isCalendarView = viewState.startsWith('CAL_');
             if (btnVolverMapa) btnVolverMapa.style.display = isBarChartView ? 'none' : 'block';
             if (btnAtrasGrafico) btnAtrasGrafico.style.display = isBarChartView ? 'block' : 'none';
+            if (btnVerTiempoReal) btnVerTiempoReal.style.display = isCalendarView ? 'inline-flex' : 'none';
 
             if(viewState === 'CHART_HOUR') {
                 document.getElementById('view-chart-container').classList.add('active');
@@ -3267,11 +3317,11 @@
 
         renderTablaSucursalesModal();
 
-        /* --- CONTROL GLOBAL DE ZOOM DE LA INTERFAZ (20% a 160%, pasos de 20%, inicia en 80%) --- */
+        /* --- CONTROL GLOBAL DE ZOOM DE LA INTERFAZ (100% en login/welcome, 60% al iniciar, rango 20% a 160%, pasos de 20%) --- */
         const UI_ZOOM_MIN = 0.2;
         const UI_ZOOM_MAX = 1.6;
         const UI_ZOOM_STEP = 0.2;
-        let currentUiZoom = 0.8;
+        let currentUiZoom = 1.0;
 
         function setGlobalUiZoom(newZoom) {
             const clamped = Math.min(UI_ZOOM_MAX, Math.max(UI_ZOOM_MIN, Math.round(newZoom * 10) / 10));
@@ -3279,6 +3329,8 @@
             document.documentElement.style.setProperty('--ui-zoom', String(currentUiZoom));
 
             const pct = Math.round(currentUiZoom * 100);
+            document.body.setAttribute('data-ui-zoom', String(pct));
+
             document.querySelectorAll('.btn-ui-zoom-in').forEach(btn => {
                 btn.disabled = (currentUiZoom >= UI_ZOOM_MAX);
                 btn.title = `Acercar interfaz (Actual: ${pct}%)`;
@@ -3308,7 +3360,7 @@
             });
         });
 
-        setGlobalUiZoom(0.8);
+        setGlobalUiZoom(1.0);
 
         if (btnOpenSucursales) {
             btnOpenSucursales.addEventListener('click', (e) => {
