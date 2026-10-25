@@ -2067,8 +2067,93 @@
             return null;
         }
 
+        function obtenerLimitesMapaCompleto() {
+            if (!chartInstance) return null;
+            const s = chartInstance.get('capa-estados');
+            if (!s || !s.points) return null;
+            let fullX1 = Infinity, fullX2 = -Infinity, fullY1 = Infinity, fullY2 = -Infinity;
+            s.points.forEach(p => {
+                const b = obtenerLimitesPuntoEstado(p);
+                if (!b) return;
+                if (b.x1 < fullX1) fullX1 = b.x1;
+                if (b.x2 > fullX2) fullX2 = b.x2;
+                if (b.y1 < fullY1) fullY1 = b.y1;
+                if (b.y2 > fullY2) fullY2 = b.y2;
+            });
+            if (!isFinite(fullX1)) return null;
+            return { x1: fullX1, x2: fullX2, y1: fullY1, y2: fullY2 };
+        }
+
+        function obtenerVistaActualMapa(fullBounds) {
+            if (!chartInstance || !fullBounds) return null;
+
+            if (chartInstance.mapView && typeof chartInstance.mapView.pixelsToProjectedUnits === 'function') {
+                const p1 = chartInstance.mapView.pixelsToProjectedUnits({ x: 0, y: 0 });
+                const p2 = chartInstance.mapView.pixelsToProjectedUnits({
+                    x: chartInstance.plotWidth || 800,
+                    y: chartInstance.plotHeight || 500
+                });
+                if (p1 && p2 && isFinite(p1.x) && isFinite(p2.x) && isFinite(p1.y) && isFinite(p2.y)) {
+                    return {
+                        x1: Math.min(p1.x, p2.x),
+                        x2: Math.max(p1.x, p2.x),
+                        y1: Math.min(p1.y, p2.y),
+                        y2: Math.max(p1.y, p2.y)
+                    };
+                }
+            }
+
+            if (chartInstance.xAxis && chartInstance.xAxis[0] && chartInstance.yAxis && chartInstance.yAxis[0]) {
+                const exX = chartInstance.xAxis[0].getExtremes();
+                const exY = chartInstance.yAxis[0].getExtremes();
+                if (exX && exY && isFinite(exX.min) && isFinite(exX.max) && isFinite(exY.min) && isFinite(exY.max)) {
+                    return {
+                        x1: Math.min(exX.min, exX.max),
+                        x2: Math.max(exX.min, exX.max),
+                        y1: Math.min(exY.min, exY.max),
+                        y2: Math.max(exY.min, exY.max)
+                    };
+                }
+            }
+
+            if (chartInstance.mapView && typeof chartInstance.mapView.zoom === 'number' && initialMapViewState && typeof initialMapViewState.zoom === 'number') {
+                const factor = Math.pow(2, chartInstance.mapView.zoom - initialMapViewState.zoom);
+                if (factor > 0 && isFinite(factor)) {
+                    const fullW = fullBounds.x2 - fullBounds.x1;
+                    const fullH = fullBounds.y2 - fullBounds.y1;
+                    const curW = fullW / factor;
+                    const curH = fullH / factor;
+                    const cx = (fullBounds.x1 + fullBounds.x2) / 2;
+                    const cy = (fullBounds.y1 + fullBounds.y2) / 2;
+                    return {
+                        x1: cx - curW / 2,
+                        x2: cx + curW / 2,
+                        y1: cy - curH / 2,
+                        y2: cy + curH / 2
+                    };
+                }
+            }
+
+            return { ...fullBounds };
+        }
+
+        function actualizarOpacidadCapaSuperior() {
+            const capaSup = document.getElementById('capa-superior');
+            if (!capaSup || !chartInstance) return;
+            const fullBounds = obtenerLimitesMapaCompleto();
+            if (!fullBounds) return;
+            const curView = obtenerVistaActualMapa(fullBounds);
+            if (!curView) return;
+            const fullW = fullBounds.x2 - fullBounds.x1;
+            const curW = curView.x2 - curView.x1;
+            capaSup.style.opacity = (curW < fullW * 0.96) ? '0.1' : '1';
+        }
+
         function enfocarEstadosEnMapa(arr) {
             if (!chartInstance) return;
+            // Nunca hacer zoom out automático al limpiar la selección; solo el usuario hace zoom out
+            if (!arr || arr.length === 0) return;
+
             const s = chartInstance.get('capa-estados');
             if (!s || !s.points) return;
 
@@ -2098,46 +2183,102 @@
                 }
             });
 
-            const capaSup = document.getElementById('capa-superior');
+            if (!isFinite(selX1) || !isFinite(fullX1)) return;
 
-            if (arr.length === 0 || !isFinite(selX1) || !isFinite(fullX1)) {
-                if (capaSup) capaSup.style.opacity = '1';
-                if (chartInstance.mapView && typeof chartInstance.mapView.fitToBounds === 'function' && isFinite(fullX1)) {
-                    chartInstance.mapView.fitToBounds({ x1: fullX1, x2: fullX2, y1: fullY1, y2: fullY2 }, undefined, true, { duration: 450 });
-                } else if (chartInstance.xAxis && chartInstance.xAxis[0] && chartInstance.yAxis && chartInstance.yAxis[0]) {
-                    chartInstance.xAxis[0].setExtremes(null, null, false);
-                    chartInstance.yAxis[0].setExtremes(null, null, true, { duration: 450 });
-                }
-                return;
-            }
-
-            if (capaSup) capaSup.style.opacity = '0.1';
+            const fullBounds = { x1: fullX1, x2: fullX2, y1: fullY1, y2: fullY2 };
+            const curView = obtenerVistaActualMapa(fullBounds) || fullBounds;
 
             const fullW = fullX2 - fullX1;
             const fullH = fullY2 - fullY1;
+            const curW = curView.x2 - curView.x1;
+            const curH = curView.y2 - curView.y1;
             const selW = selX2 - selX1;
             const selH = selY2 - selY1;
-            const selCenterX = (selX1 + selX2) / 2;
-            const selCenterY = (selY1 + selY2) / 2;
 
-            // Zoom moderado (~2.3x para un estado individual, o ampliado si abarca varios estados distantes)
-            const targetW = Math.min(fullW * 0.85, Math.max(selW * 1.85, fullW * 0.43));
-            const targetH = Math.min(fullH * 0.85, Math.max(selH * 1.85, fullH * 0.43));
+            // Calcular el cuadro delimitador de los puntos visibles de la selección actual
+            let ptsX1 = Infinity, ptsX2 = -Infinity, ptsY1 = Infinity, ptsY2 = -Infinity;
+            const seriesSuc = chartInstance.get('sucursales-series');
+            if (seriesSuc && seriesSuc.points) {
+                seriesSuc.points.forEach(pt => {
+                    const nodeId = pt.options && pt.options.id;
+                    if (visibleNodeIds && !visibleNodeIds.has(nodeId)) return;
+                    let px = pt.x, py = pt.y;
+                    if ((!isFinite(px) || !isFinite(py)) && chartInstance.mapView && typeof chartInstance.mapView.lonLatToProjectedUnits === 'function' && pt.options && isFinite(pt.options.lon) && isFinite(pt.options.lat)) {
+                        const proj = chartInstance.mapView.lonLatToProjectedUnits({ lon: pt.options.lon, lat: pt.options.lat });
+                        if (proj) { px = proj.x; py = proj.y; }
+                    }
+                    if (isFinite(px) && isFinite(py)) {
+                        if (px < ptsX1) ptsX1 = px;
+                        if (px > ptsX2) ptsX2 = px;
+                        if (py < ptsY1) ptsY1 = py;
+                        if (py > ptsY2) ptsY2 = py;
+                    }
+                });
+            }
 
-            // Compensación horizontal leve si el panel lateral derecho está abierto para centrar en el área libre
+            const ptsW = isFinite(ptsX1) ? (ptsX2 - ptsX1) : selW;
+            const ptsH = isFinite(ptsY1) ? (ptsY2 - ptsY1) : selH;
+
+            // Espacio mínimo requerido para que todos los puntos de la selección entren en pantalla
+            const minRequiredForPointsW = ptsW / 0.55;
+            const minRequiredForPointsH = ptsH / 0.65;
+
+            // Ventana objetivo de zoom-in moderado cuando se parte de una vista más alejada
+            const idealZoomInW = Math.min(fullW * 0.88, Math.max(minRequiredForPointsW, selW * 1.65, fullW * 0.43));
+            const idealZoomInH = Math.min(fullH * 0.88, Math.max(minRequiredForPointsH, selH * 1.65, fullH * 0.43));
+
+            // Verificar si todos los puntos seleccionados caben dentro del nivel de zoom actual
+            const cabenPuntosEnZoomActual = (ptsW <= curW * 0.58) && (ptsH <= curH * 0.68);
+
+            let targetW, targetH;
+            let mantenerOSubirZoom = true;
+
+            if (curW > idealZoomInW * 1.02 || curH > idealZoomInH * 1.02) {
+                // La vista actual está más lejos que el zoom objetivo -> hacer zoom in automático
+                targetW = Math.min(curW, idealZoomInW);
+                targetH = Math.min(curH, idealZoomInH);
+                mantenerOSubirZoom = true;
+            } else if (cabenPuntosEnZoomActual) {
+                // Ya estamos con un zoom igual o más cercano y todos los puntos caben -> mantener zoom actual y solo desplazar
+                targetW = curW;
+                targetH = curH;
+                mantenerOSubirZoom = true;
+            } else {
+                // La nueva selección tiene puntos más dispersos de lo que cabe en la vista actual -> zoom out solo lo necesario para ver todos los puntos
+                targetW = Math.min(fullW * 0.88, Math.max(curW, minRequiredForPointsW, selW * 1.35));
+                targetH = Math.min(fullH * 0.88, Math.max(curH, minRequiredForPointsH, selH * 1.35));
+                mantenerOSubirZoom = false;
+            }
+
+            // Si el zoom actual es muy cercano respecto al estado, centrar directamente sobre los puntos seleccionados
+            const usarCentroPuntos = isFinite(ptsX1) && (targetW < selW * 1.4 || arr.length > 1);
+            const baseCenterX = usarCentroPuntos ? ((ptsX1 + ptsX2) / 2) : ((selX1 + selX2) / 2);
+            const baseCenterY = usarCentroPuntos ? ((ptsY1 + ptsY2) / 2) : ((selY1 + selY2) / 2);
+
             const panelDerechoAbierto = (navPanel && navPanel.classList.contains('active')) || (infoPanel && infoPanel.classList.contains('active'));
             const offsetPanelX = panelDerechoAbierto ? (targetW * 0.08) : 0;
-            const viewCenterX = selCenterX + offsetPanelX;
+            const viewCenterX = baseCenterX + offsetPanelX;
 
             const targetBounds = {
                 x1: viewCenterX - targetW / 2,
                 x2: viewCenterX + targetW / 2,
-                y1: selCenterY - targetH / 2,
-                y2: selCenterY + targetH / 2
+                y1: baseCenterY - targetH / 2,
+                y2: baseCenterY + targetH / 2
             };
 
+            const capaSup = document.getElementById('capa-superior');
+            if (capaSup) capaSup.style.opacity = '0.1';
+
             if (chartInstance.mapView && typeof chartInstance.mapView.fitToBounds === 'function') {
-                chartInstance.mapView.fitToBounds(targetBounds, undefined, true, { duration: 450 });
+                const prevZoom = chartInstance.mapView.zoom;
+                if (mantenerOSubirZoom && typeof prevZoom === 'number' && typeof chartInstance.mapView.setView === 'function') {
+                    chartInstance.mapView.fitToBounds(targetBounds, 0, false);
+                    const computedZoom = chartInstance.mapView.zoom;
+                    const finalZoom = (typeof computedZoom === 'number') ? Math.max(prevZoom, computedZoom) : prevZoom;
+                    chartInstance.mapView.setView(chartInstance.mapView.center, finalZoom, true, { duration: 450 });
+                } else {
+                    chartInstance.mapView.fitToBounds(targetBounds, undefined, true, { duration: 450 });
+                }
             } else if (chartInstance.xAxis && chartInstance.xAxis[0] && chartInstance.yAxis && chartInstance.yAxis[0]) {
                 chartInstance.xAxis[0].setExtremes(targetBounds.x1, targetBounds.x2, false);
                 chartInstance.yAxis[0].setExtremes(targetBounds.y1, targetBounds.y2, true, { duration: 450 });
@@ -2568,6 +2709,7 @@
                     click: () => cerrarPanelesYResetear(),
                     render: () => {
                         ordenarCapasMarcadores();
+                        actualizarOpacidadCapaSuperior();
                         const capaEstados = chartInstance && chartInstance.get('capa-estados');
                         if (capaEstados && capaEstados.points) {
                             capaEstados.points.forEach(pt => {
