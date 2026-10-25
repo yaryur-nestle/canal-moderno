@@ -1621,10 +1621,35 @@
         }
         let isGlobalListenerInit = false;
 
+        let visibleNodeIds = null;
+        let initialMapViewState = null;
+
+        function actualizarVisibilidadMarcadores() {
+            if (!chartInstance) return;
+            const series = chartInstance.get('sucursales-series');
+            if (!series || !series.points) return;
+
+            series.points.forEach((p) => {
+                const nodeId = p.options && p.options.id;
+                const isVis = !visibleNodeIds || visibleNodeIds.has(nodeId);
+                if (p.graphic) {
+                    p.graphic.attr({
+                        visibility: isVis ? 'visible' : 'hidden'
+                    });
+                    p.graphic.css({
+                        display: isVis ? '' : 'none',
+                        pointerEvents: isVis ? 'auto' : 'none'
+                    });
+                }
+            });
+        }
+
         function ordenarCapasMarcadores() {
             if (!chartInstance) return;
             const series = chartInstance.get('sucursales-series');
             if (!series || !series.points) return;
+
+            actualizarVisibilidadMarcadores();
 
             // Prioridad 0: Offline (rojo) - abajo
             // Prioridad 1: Online sin actividad (verde / amarillo) - en medio
@@ -1636,7 +1661,9 @@
             });
 
             puntosOrdenados.forEach((p) => {
-                if (p.graphic && typeof p.graphic.toFront === 'function') {
+                const nodeId = p.options && p.options.id;
+                const isVis = !visibleNodeIds || visibleNodeIds.has(nodeId);
+                if (isVis && p.graphic && typeof p.graphic.toFront === 'function') {
                     p.graphic.toFront();
                 }
             });
@@ -2019,8 +2046,117 @@
             }
         ];
 
-        function iluminarEstados(arr) {
+        function obtenerLimitesPuntoEstado(p) {
+            if (!p) return null;
+            if (p.bounds && typeof p.bounds.x1 === 'number' && typeof p.bounds.x2 === 'number') {
+                return {
+                    x1: Math.min(p.bounds.x1, p.bounds.x2),
+                    x2: Math.max(p.bounds.x1, p.bounds.x2),
+                    y1: Math.min(p.bounds.y1, p.bounds.y2),
+                    y2: Math.max(p.bounds.y1, p.bounds.y2)
+                };
+            }
+            if (typeof p._minX === 'number' && typeof p._maxX === 'number') {
+                return {
+                    x1: Math.min(p._minX, p._maxX),
+                    x2: Math.max(p._minX, p._maxX),
+                    y1: Math.min(p._minY, p._maxY),
+                    y2: Math.max(p._minY, p._maxY)
+                };
+            }
+            return null;
+        }
+
+        function enfocarEstadosEnMapa(arr) {
             if (!chartInstance) return;
+            const s = chartInstance.get('capa-estados');
+            if (!s || !s.points) return;
+
+            if (chartInstance.mapView && !initialMapViewState) {
+                initialMapViewState = {
+                    center: chartInstance.mapView.center ? chartInstance.mapView.center.slice() : null,
+                    zoom: chartInstance.mapView.zoom
+                };
+            }
+
+            let fullX1 = Infinity, fullX2 = -Infinity, fullY1 = Infinity, fullY2 = -Infinity;
+            let selX1 = Infinity, selX2 = -Infinity, selY1 = Infinity, selY2 = -Infinity;
+
+            s.points.forEach(p => {
+                const b = obtenerLimitesPuntoEstado(p);
+                if (!b) return;
+                if (b.x1 < fullX1) fullX1 = b.x1;
+                if (b.x2 > fullX2) fullX2 = b.x2;
+                if (b.y1 < fullY1) fullY1 = b.y1;
+                if (b.y2 > fullY2) fullY2 = b.y2;
+
+                if (arr.includes(p['hc-key'])) {
+                    if (b.x1 < selX1) selX1 = b.x1;
+                    if (b.x2 > selX2) selX2 = b.x2;
+                    if (b.y1 < selY1) selY1 = b.y1;
+                    if (b.y2 > selY2) selY2 = b.y2;
+                }
+            });
+
+            const capaSup = document.getElementById('capa-superior');
+
+            if (arr.length === 0 || !isFinite(selX1) || !isFinite(fullX1)) {
+                if (capaSup) capaSup.style.opacity = '1';
+                if (chartInstance.mapView && typeof chartInstance.mapView.fitToBounds === 'function' && isFinite(fullX1)) {
+                    chartInstance.mapView.fitToBounds({ x1: fullX1, x2: fullX2, y1: fullY1, y2: fullY2 }, undefined, true, { duration: 450 });
+                } else if (chartInstance.xAxis && chartInstance.xAxis[0] && chartInstance.yAxis && chartInstance.yAxis[0]) {
+                    chartInstance.xAxis[0].setExtremes(null, null, false);
+                    chartInstance.yAxis[0].setExtremes(null, null, true, { duration: 450 });
+                }
+                return;
+            }
+
+            if (capaSup) capaSup.style.opacity = '0.1';
+
+            const fullW = fullX2 - fullX1;
+            const fullH = fullY2 - fullY1;
+            const selW = selX2 - selX1;
+            const selH = selY2 - selY1;
+            const selCenterX = (selX1 + selX2) / 2;
+            const selCenterY = (selY1 + selY2) / 2;
+
+            // Zoom moderado (~2.3x para un estado individual, o ampliado si abarca varios estados distantes)
+            const targetW = Math.min(fullW * 0.85, Math.max(selW * 1.85, fullW * 0.43));
+            const targetH = Math.min(fullH * 0.85, Math.max(selH * 1.85, fullH * 0.43));
+
+            // Compensación horizontal leve si el panel lateral derecho está abierto para centrar en el área libre
+            const panelDerechoAbierto = (navPanel && navPanel.classList.contains('active')) || (infoPanel && infoPanel.classList.contains('active'));
+            const offsetPanelX = panelDerechoAbierto ? (targetW * 0.08) : 0;
+            const viewCenterX = selCenterX + offsetPanelX;
+
+            const targetBounds = {
+                x1: viewCenterX - targetW / 2,
+                x2: viewCenterX + targetW / 2,
+                y1: selCenterY - targetH / 2,
+                y2: selCenterY + targetH / 2
+            };
+
+            if (chartInstance.mapView && typeof chartInstance.mapView.fitToBounds === 'function') {
+                chartInstance.mapView.fitToBounds(targetBounds, undefined, true, { duration: 450 });
+            } else if (chartInstance.xAxis && chartInstance.xAxis[0] && chartInstance.yAxis && chartInstance.yAxis[0]) {
+                chartInstance.xAxis[0].setExtremes(targetBounds.x1, targetBounds.x2, false);
+                chartInstance.yAxis[0].setExtremes(targetBounds.y1, targetBounds.y2, true, { duration: 450 });
+            }
+        }
+
+        function iluminarEstados(arr, nodosEspecificosIds = null) {
+            if (!chartInstance) return;
+
+            if (!arr || arr.length === 0) {
+                visibleNodeIds = null;
+            } else if (Array.isArray(nodosEspecificosIds)) {
+                visibleNodeIds = new Set(nodosEspecificosIds);
+            } else {
+                visibleNodeIds = new Set(
+                    retailNodes.filter(n => arr.includes(n.estadoId)).map(n => n.id)
+                );
+            }
+
             const s = chartInstance.get('capa-estados');
             if (s) {
                 s.points.forEach(p => {
@@ -2032,6 +2168,9 @@
                 });
                 chartInstance.redraw();
             }
+
+            ordenarCapasMarcadores();
+            enfocarEstadosEnMapa(arr);
         }
 
         function resetearScrollContenedorMapa() {
@@ -2162,6 +2301,7 @@
 
             btnElement.classList.add('active-filter');
             let estadosAEncender = new Set();
+            let nodosCoincidentes = new Set();
 
             if (type === 'marca') {
                 // Agrupar por sucursal (logo de cadena)
@@ -2169,6 +2309,9 @@
 
                 retailNodes.forEach(node => {
                     const matchedImgs = node.images.filter(img => img.src === val);
+                    if (matchedImgs.length > 0) {
+                        nodosCoincidentes.add(node.id);
+                    }
                     matchedImgs.forEach(matchedImg => {
                         estadosAEncender.add(node.estadoId);
                         const brandName = matchedImg.src.replace('.png', '').replace('.jpg', '');
@@ -2216,7 +2359,7 @@
                 });
 
                 if (logosOrdenados.length > 0) resultsContainer.classList.add('active');
-                iluminarEstados(Array.from(estadosAEncender));
+                iluminarEstados(Array.from(estadosAEncender), Array.from(nodosCoincidentes));
             } else if (type === 'sucursal' || type === 'estado-sucursal') {
                 // Agrupar por marca (imagen de marca)
                 const gruposPorMarca = new Map();
@@ -2226,6 +2369,7 @@
                     if (type === 'estado-sucursal' && filterEstadoId && node.estadoId !== filterEstadoId) return;
 
                     estadosAEncender.add(node.estadoId);
+                    nodosCoincidentes.add(node.id);
                     node.images.forEach(img => {
                         const brandName = img.src.replace('.png', '').replace('.jpg', '');
                         const targetSucursal = img.sucursalKey || node.sucursal;
@@ -2273,9 +2417,9 @@
 
                 if (marcasOrdenadas.length > 0) resultsContainer.classList.add('active');
                 if (type === 'estado-sucursal' && filterEstadoId) {
-                    iluminarEstados([filterEstadoId]);
+                    iluminarEstados([filterEstadoId], Array.from(nodosCoincidentes));
                 } else {
-                    iluminarEstados(Array.from(estadosAEncender));
+                    iluminarEstados(Array.from(estadosAEncender), Array.from(nodosCoincidentes));
                 }
             }
         }
@@ -2438,7 +2582,7 @@
             title: { text: null }, credits: { enabled: false }, legend: { enabled: false }, mapNavigation: { enabled: true, buttonOptions: { verticalAlign: 'bottom' } },
             xAxis: { events: { afterSetExtremes: function (e) { document.getElementById('capa-superior').style.opacity = (e.min !== undefined && e.max - e.min < (e.dataMax - e.dataMin) * 0.99) ? '0.1' : '1'; }}},
             plotOptions: { series: { states: { inactive: { opacity: 1 } }, point: { events: { click: function () {
-                if (this.options && this.options.images) { abrirPanelInfo(this.options.sucursal, this.options.images, this.options.estadoNombre, this.options.logo); iluminarEstados([this.options.estadoId]); } 
+                if (this.options && this.options.images) { abrirPanelInfo(this.options.sucursal, this.options.images, this.options.estadoNombre, this.options.logo); iluminarEstados([this.options.estadoId], [this.options.id]); } 
                 else {
                     const clickedEstadoId = this['hc-key'] || (this.options && this.options['hc-key']);
                     if (clickedEstadoId && estadosConSucursalesSet.has(clickedEstadoId)) {
