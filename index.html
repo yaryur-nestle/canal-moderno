@@ -306,10 +306,25 @@
         .marca-btn img { max-width: 90%; max-height: 90%; object-fit: contain; }
         .sucursal-btn { text-align: center; }
         .sucursal-btn img { max-width: 100%; height: 50px; object-fit: contain; }
-        .filter-results { display: none; flex-direction: column; gap: 8px; padding: 12px 10px; background-color: #fafafa; border-radius: 8px; border-left: 4px solid #b39c6e; margin-top: 10px; }
+        .filter-results { display: none; flex-direction: column; gap: 14px; padding: 12px 10px; background-color: #fafafa; border-radius: 8px; border-left: 4px solid #b39c6e; margin-top: 10px; }
         .filter-results.active { display: flex; }
         .filter-results a { color: #b39c6e; font-weight: 700; text-decoration: none; font-size: 13px; display: block; padding: 4px 0; cursor: pointer;}
         .filter-results a:hover { color: #968157; text-decoration: underline; }
+        .filter-group { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid #ece6d9; }
+        .filter-group:last-child { padding-bottom: 0; border-bottom: none; }
+        .filter-group-header { background-color: #ffffff; border: 1px solid #e6dec8; border-radius: 6px; padding: 8px 10px; display: flex; justify-content: center; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+        .filter-group-header.sucursal-group-header img { max-width: 100%; height: 42px; object-fit: contain; display: block; }
+        .filter-group-header.marca-group-header { width: 115px; height: 115px; margin: 0 auto; padding: 8px; }
+        .filter-group-header.marca-group-header img { max-width: 92%; max-height: 92%; object-fit: contain; display: block; }
+        .filter-group-links { display: flex; flex-direction: column; gap: 4px; padding-top: 2px; }
+
+        /* Filtro de Estados y Sub-lista de Sucursales por Estado */
+        .estado-filter-item { display: flex; flex-direction: column; width: 100%; }
+        .estado-btn { background: #fcfcfc; border: 1px solid #ece6d9; border-left: 4px solid #daccaa; border-radius: 8px; font-size: 16px; font-weight: 600; color: #5a4b32; width: 100%; text-align: left; padding: 11px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.04); }
+        .estado-btn:hover { background: #fdfbf7; color: #b39c6e; border-left-color: #b39c6e; transform: translateY(-1px); }
+        .estado-btn.active-estado { background: #fdfbf7; color: #b39c6e; border-color: #b39c6e; border-left: 4px solid #b39c6e; font-weight: 700; }
+        .estado-sucursales-content { display: none; flex-direction: column; gap: 12px; padding: 12px 4px 6px 10px; border-left: 2px dashed #e0d5be; margin-left: 8px; margin-top: 8px; }
+        .estado-sucursales-content.open { display: flex; }
 
         /* Botón de Excel Integrado al Menú */
         .btn-excel {
@@ -1214,8 +1229,8 @@
 
                 <div id="nav-panel" class="side-panel">
                     <h2 style="color: #333; margin-bottom: 20px; font-size: 20px;">Filtros de Búsqueda</h2>
-                    <div class="accordion-item">
-                        <button class="accordion-btn">Marcas <span>+</span></button>
+                    <div class="accordion-item" id="accordion-marcas">
+                        <button class="accordion-btn" data-accordion="marcas">Marcas <span>+</span></button>
                         <div class="accordion-content">
                             <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="NIDO.png"><img src="NIDO.png" alt="NIDO"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="RECETAS.png"><img src="RECETAS.png" alt="RECETAS"></div><div class="filter-results"></div></div>
@@ -1224,8 +1239,8 @@
                             <div class="filter-wrapper"><div class="filter-img-btn marca-btn" data-type="marca" data-val="MAGGI.png"><img src="MAGGI.png" alt="Maggi"></div><div class="filter-results"></div></div>
                         </div>
                     </div>
-                    <div class="accordion-item">
-                        <button class="accordion-btn">Sucursales <span>+</span></button>
+                    <div class="accordion-item" id="accordion-sucursales">
+                        <button class="accordion-btn" data-accordion="sucursales">Sucursales <span>+</span></button>
                         <div class="accordion-content">
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-REDVITAL.jpg"><img src="logo-REDVITAL.jpg" alt="REDVITAL"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-KROMI.jpg"><img src="logo-KROMI.jpg" alt="KROMI"></div><div class="filter-results"></div></div>
@@ -1236,6 +1251,10 @@
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-BARATTA.jpg"><img src="logo-BARATTA.jpg" alt="Supermercado Baratta"></div><div class="filter-results"></div></div>
                             <div class="filter-wrapper"><div class="filter-img-btn sucursal-btn" data-type="sucursal" data-val="logo-YARYUR.png"><img src="logo-YARYUR.png" alt="Inversiones Yar-Yur"></div><div class="filter-results"></div></div>
                         </div>
+                    </div>
+                    <div class="accordion-item" id="accordion-estados">
+                        <button class="accordion-btn" data-accordion="estados">Estados <span>+</span></button>
+                        <div class="accordion-content" id="estados-accordion-content"></div>
                     </div>
 
                     <div class="accordion-item">
@@ -2016,7 +2035,24 @@
         }
 
         function abrirMenuFiltros() { infoPanel.classList.remove('active'); navPanel.classList.add('active'); hamburgerBtn.style.display = 'flex'; hamburgerBtn.classList.add('open'); }
-        function cerrarPanelesYResetear() { navPanel.classList.remove('active'); infoPanel.classList.remove('active'); hamburgerBtn.classList.remove('open'); hamburgerBtn.style.display = 'flex'; document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter')); document.querySelectorAll('.filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; }); iluminarEstados([]); }
+        function limpiarSeleccionFiltros() {
+            document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
+            document.querySelectorAll('.filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; });
+            document.querySelectorAll('.estado-btn').forEach(b => {
+                b.classList.remove('active-estado');
+                const sp = b.querySelector('span');
+                if (sp) sp.textContent = '+';
+            });
+            document.querySelectorAll('.estado-sucursales-content').forEach(c => c.classList.remove('open'));
+        }
+        function cerrarPanelesYResetear() {
+            navPanel.classList.remove('active');
+            infoPanel.classList.remove('active');
+            hamburgerBtn.classList.remove('open');
+            hamburgerBtn.style.display = 'flex';
+            limpiarSeleccionFiltros();
+            iluminarEstados([]);
+        }
 
         function abrirPanelInfo(sucursal, images, estadoNombre, logo) {
             navPanel.classList.remove('active'); hamburgerBtn.classList.remove('open'); hamburgerBtn.style.display = 'none'; 
@@ -2060,62 +2096,331 @@
         hamburgerBtn.addEventListener('click', () => hamburgerBtn.classList.contains('open') ? cerrarPanelesYResetear() : abrirMenuFiltros());
         closeInfoBtn.addEventListener('click', cerrarPanelesYResetear);
 
+        const ordenLogosSucursales = [
+            'logo-REDVITAL.jpg',
+            'logo-KROMI.jpg',
+            'rio.png',
+            'logo-FRESCO.jpg',
+            'logo-GARZON.jpg',
+            'logo-EUROMERCADO.jpg',
+            'logo-BARATTA.jpg',
+            'logo-YARYUR.png'
+        ];
+
+        const ordenImagenesMarcas = [
+            'NIDO.png',
+            'RECETAS.png',
+            'MULTIMARCA.png',
+            'SAVOY.png',
+            'MAGGI.png'
+        ];
+
+        function activarBotonFiltroImagen(btnElement) {
+            const wasActive = btnElement.classList.contains('active-filter');
+            const type = btnElement.getAttribute('data-type');
+            const val = btnElement.getAttribute('data-val');
+            const filterEstadoId = btnElement.getAttribute('data-estado-id');
+            const resultsContainer = btnElement.nextElementSibling;
+
+            document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
+            document.querySelectorAll('.filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; });
+
+            if (wasActive) {
+                if (type === 'estado-sucursal' && filterEstadoId) {
+                    iluminarEstados([filterEstadoId]);
+                } else {
+                    iluminarEstados([]);
+                }
+                return;
+            }
+
+            btnElement.classList.add('active-filter');
+            let estadosAEncender = new Set();
+
+            if (type === 'marca') {
+                // Agrupar por sucursal (logo de cadena)
+                const gruposPorSucursal = new Map();
+
+                retailNodes.forEach(node => {
+                    const matchedImgs = node.images.filter(img => img.src === val);
+                    matchedImgs.forEach(matchedImg => {
+                        estadosAEncender.add(node.estadoId);
+                        const brandName = matchedImg.src.replace('.png', '').replace('.jpg', '');
+                        const targetSucursal = matchedImg.sucursalKey || node.sucursal;
+                        if (!gruposPorSucursal.has(node.logo)) {
+                            gruposPorSucursal.set(node.logo, []);
+                        }
+                        gruposPorSucursal.get(node.logo).push({
+                            title: `${targetSucursal} (${node.estadoNombre})`,
+                            callback: () => cargarMonitor(brandName, targetSucursal)
+                        });
+                    });
+                });
+
+                const logosOrdenados = Array.from(gruposPorSucursal.keys()).sort((a, b) => {
+                    const idxA = ordenLogosSucursales.indexOf(a);
+                    const idxB = ordenLogosSucursales.indexOf(b);
+                    return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+                });
+
+                logosOrdenados.forEach(logoSrc => {
+                    const items = gruposPorSucursal.get(logoSrc);
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'filter-group';
+
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'filter-group-header sucursal-group-header';
+                    const headerImg = document.createElement('img');
+                    headerImg.src = logoSrc;
+                    headerImg.alt = logoSrc;
+                    headerDiv.appendChild(headerImg);
+                    groupDiv.appendChild(headerDiv);
+
+                    const linksDiv = document.createElement('div');
+                    linksDiv.className = 'filter-group-links';
+                    items.forEach(item => {
+                        const a = document.createElement('a');
+                        a.href = "javascript:void(0);";
+                        a.innerHTML = `&bull; ${item.title}`;
+                        a.addEventListener('click', item.callback);
+                        linksDiv.appendChild(a);
+                    });
+                    groupDiv.appendChild(linksDiv);
+                    resultsContainer.appendChild(groupDiv);
+                });
+
+                if (logosOrdenados.length > 0) resultsContainer.classList.add('active');
+                iluminarEstados(Array.from(estadosAEncender));
+            } else if (type === 'sucursal' || type === 'estado-sucursal') {
+                // Agrupar por marca (imagen de marca)
+                const gruposPorMarca = new Map();
+
+                retailNodes.forEach(node => {
+                    if (node.logo !== val) return;
+                    if (type === 'estado-sucursal' && filterEstadoId && node.estadoId !== filterEstadoId) return;
+
+                    estadosAEncender.add(node.estadoId);
+                    node.images.forEach(img => {
+                        const brandName = img.src.replace('.png', '').replace('.jpg', '');
+                        const targetSucursal = img.sucursalKey || node.sucursal;
+                        if (!gruposPorMarca.has(img.src)) {
+                            gruposPorMarca.set(img.src, []);
+                        }
+                        gruposPorMarca.get(img.src).push({
+                            title: `${targetSucursal} (${node.estadoNombre})`,
+                            callback: () => cargarMonitor(brandName, targetSucursal)
+                        });
+                    });
+                });
+
+                const marcasOrdenadas = Array.from(gruposPorMarca.keys()).sort((a, b) => {
+                    const idxA = ordenImagenesMarcas.indexOf(a);
+                    const idxB = ordenImagenesMarcas.indexOf(b);
+                    return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+                });
+
+                marcasOrdenadas.forEach(marcaSrc => {
+                    const items = gruposPorMarca.get(marcaSrc);
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'filter-group';
+
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'filter-group-header marca-group-header';
+                    const headerImg = document.createElement('img');
+                    headerImg.src = marcaSrc;
+                    headerImg.alt = marcaSrc.replace('.png', '').replace('.jpg', '');
+                    headerDiv.appendChild(headerImg);
+                    groupDiv.appendChild(headerDiv);
+
+                    const linksDiv = document.createElement('div');
+                    linksDiv.className = 'filter-group-links';
+                    items.forEach(item => {
+                        const a = document.createElement('a');
+                        a.href = "javascript:void(0);";
+                        a.innerHTML = `&bull; ${item.title}`;
+                        a.addEventListener('click', item.callback);
+                        linksDiv.appendChild(a);
+                    });
+                    groupDiv.appendChild(linksDiv);
+                    resultsContainer.appendChild(groupDiv);
+                });
+
+                if (marcasOrdenadas.length > 0) resultsContainer.classList.add('active');
+                if (type === 'estado-sucursal' && filterEstadoId) {
+                    iluminarEstados([filterEstadoId]);
+                } else {
+                    iluminarEstados(Array.from(estadosAEncender));
+                }
+            }
+        }
+
+        function seleccionarEstadoEnFiltro(estadoId, abrirMenuDesdeMapa = false) {
+            if (abrirMenuDesdeMapa) {
+                abrirMenuFiltros();
+                document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
+                document.querySelectorAll('.accordion-btn span').forEach(s => s.textContent = '+');
+                const accEstados = document.getElementById('accordion-estados');
+                if (accEstados) {
+                    const content = accEstados.querySelector('.accordion-content');
+                    const span = accEstados.querySelector('.accordion-btn span');
+                    if (content) content.classList.add('open');
+                    if (span) span.textContent = '-';
+                }
+            }
+
+            limpiarSeleccionFiltros();
+
+            const estadoBtn = document.querySelector(`.estado-btn[data-estado-id="${estadoId}"]`);
+            const estadoContent = document.querySelector(`.estado-sucursales-content[data-estado-id="${estadoId}"]`);
+            if (estadoBtn && estadoContent) {
+                estadoBtn.classList.add('active-estado');
+                const span = estadoBtn.querySelector('span');
+                if (span) span.textContent = '-';
+                estadoContent.classList.add('open');
+                if (abrirMenuDesdeMapa) {
+                    setTimeout(() => {
+                        estadoBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 100);
+                }
+            }
+
+            iluminarEstados([estadoId]);
+        }
+
+        function inicializarFiltroEstados() {
+            const container = document.getElementById('estados-accordion-content');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const estadosMap = new Map();
+            retailNodes.forEach(node => {
+                if (!estadosMap.has(node.estadoId)) {
+                    estadosMap.set(node.estadoId, {
+                        estadoId: node.estadoId,
+                        estadoNombre: node.estadoNombre,
+                        logos: new Set()
+                    });
+                }
+                estadosMap.get(node.estadoId).logos.add(node.logo);
+            });
+
+            estadosMap.forEach(({ estadoId, estadoNombre, logos }) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'estado-filter-item';
+                itemDiv.setAttribute('data-estado-id', estadoId);
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'estado-btn';
+                btn.setAttribute('data-estado-id', estadoId);
+                btn.innerHTML = `${estadoNombre} <span>+</span>`;
+
+                const sucursalesContent = document.createElement('div');
+                sucursalesContent.className = 'estado-sucursales-content';
+                sucursalesContent.setAttribute('data-estado-id', estadoId);
+
+                const logosOrdenados = Array.from(logos).sort((a, b) => {
+                    const idxA = ordenLogosSucursales.indexOf(a);
+                    const idxB = ordenLogosSucursales.indexOf(b);
+                    return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+                });
+
+                logosOrdenados.forEach(logoSrc => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'filter-wrapper';
+
+                    const imgBtn = document.createElement('div');
+                    imgBtn.className = 'filter-img-btn sucursal-btn';
+                    imgBtn.setAttribute('data-type', 'estado-sucursal');
+                    imgBtn.setAttribute('data-val', logoSrc);
+                    imgBtn.setAttribute('data-estado-id', estadoId);
+
+                    const img = document.createElement('img');
+                    img.src = logoSrc;
+                    img.alt = estadoNombre;
+                    imgBtn.appendChild(img);
+
+                    const resultsDiv = document.createElement('div');
+                    resultsDiv.className = 'filter-results';
+
+                    imgBtn.addEventListener('click', function() {
+                        activarBotonFiltroImagen(this);
+                    });
+
+                    wrapper.appendChild(imgBtn);
+                    wrapper.appendChild(resultsDiv);
+                    sucursalesContent.appendChild(wrapper);
+                });
+
+                btn.addEventListener('click', () => {
+                    const isOpen = sucursalesContent.classList.contains('open');
+                    if (isOpen) {
+                        limpiarSeleccionFiltros();
+                        iluminarEstados([]);
+                    } else {
+                        seleccionarEstadoEnFiltro(estadoId, false);
+                    }
+                });
+
+                itemDiv.appendChild(btn);
+                itemDiv.appendChild(sucursalesContent);
+                container.appendChild(itemDiv);
+            });
+        }
+
+        inicializarFiltroEstados();
+
         document.querySelectorAll('.accordion-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const content = this.nextElementSibling, span = this.querySelector('span'), isOpen = content.classList.contains('open');
                 document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
                 document.querySelectorAll('.accordion-btn span').forEach(s => s.textContent = '+');
+                limpiarSeleccionFiltros();
+                iluminarEstados([]);
                 if (!isOpen) { content.classList.add('open'); span.textContent = '-'; }
             });
         });
 
-        document.querySelectorAll('.filter-img-btn').forEach(btn => {
+        document.querySelectorAll('#accordion-marcas .filter-img-btn, #accordion-sucursales .filter-img-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
-                document.querySelectorAll('.filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; });
-                this.classList.add('active-filter');
-                
-                const type = this.getAttribute('data-type'), val = this.getAttribute('data-val'), resultsContainer = this.nextElementSibling; 
-                let estadosAEncender = new Set(), matchingLinks = []; 
-
-                retailNodes.forEach(node => {
-                    if (type === 'marca') {
-                        const matchedImgs = node.images.filter(img => img.src === val);
-                        matchedImgs.forEach(matchedImg => {
-                            estadosAEncender.add(node.estadoId);
-                            let brandName = matchedImg.src.replace('.png', '').replace('.jpg', '');
-                            let targetSucursal = matchedImg.sucursalKey || node.sucursal;
-                            matchingLinks.push({ title: targetSucursal, callback: () => cargarMonitor(brandName, targetSucursal) });
-                        });
-                    } else if (type === 'sucursal' && node.logo === val) {
-                        estadosAEncender.add(node.estadoId);
-                        node.images.forEach(img => {
-                            let brandName = img.src.replace('.png', '').replace('.jpg', '');
-                            let targetSucursal = img.sucursalKey || node.sucursal;
-                            matchingLinks.push({ title: `${targetSucursal} (${brandName})`, callback: () => cargarMonitor(brandName, targetSucursal) });
-                        });
-                    }
-                });
-
-                matchingLinks.forEach(item => {
-                    const a = document.createElement('a'); a.href = "javascript:void(0);";
-                    a.innerHTML = `&bull; ${item.title}`; a.addEventListener('click', item.callback);
-                    resultsContainer.appendChild(a);
-                });
-                if (matchingLinks.length > 0) resultsContainer.classList.add('active'); 
-                iluminarEstados(Array.from(estadosAEncender));
+                activarBotonFiltroImagen(this);
             });
         });
 
         const mapData = Highcharts.maps['countries/ve/ve-all'];
+        const estadosConSucursalesSet = new Set(retailNodes.map(n => n.estadoId));
         const baseData = mapData.features.map((feature, index) => [feature.properties['hc-key'], index]);
         chartInstance = Highcharts.mapChart('map', {
-            chart: { map: 'countries/ve/ve-all', backgroundColor: 'transparent', events: { click: () => cerrarPanelesYResetear(), render: () => ordenarCapasMarcadores() } },
+            chart: {
+                map: 'countries/ve/ve-all',
+                backgroundColor: 'transparent',
+                events: {
+                    click: () => cerrarPanelesYResetear(),
+                    render: () => {
+                        ordenarCapasMarcadores();
+                        const capaEstados = chartInstance && chartInstance.get('capa-estados');
+                        if (capaEstados && capaEstados.points) {
+                            capaEstados.points.forEach(pt => {
+                                if (pt.graphic && estadosConSucursalesSet.has(pt['hc-key'])) {
+                                    pt.graphic.css({ cursor: 'pointer' });
+                                }
+                            });
+                        }
+                    }
+                }
+            },
             title: { text: null }, credits: { enabled: false }, legend: { enabled: false }, mapNavigation: { enabled: true, buttonOptions: { verticalAlign: 'bottom' } },
             xAxis: { events: { afterSetExtremes: function (e) { document.getElementById('capa-superior').style.opacity = (e.min !== undefined && e.max - e.min < (e.dataMax - e.dataMin) * 0.99) ? '0.1' : '1'; }}},
             plotOptions: { series: { states: { inactive: { opacity: 1 } }, point: { events: { click: function () {
                 if (this.options && this.options.images) { abrirPanelInfo(this.options.sucursal, this.options.images, this.options.estadoNombre, this.options.logo); iluminarEstados([this.options.estadoId]); } 
-                else cerrarPanelesYResetear(); 
+                else {
+                    const clickedEstadoId = this['hc-key'] || (this.options && this.options['hc-key']);
+                    if (clickedEstadoId && estadosConSucursalesSet.has(clickedEstadoId)) {
+                        seleccionarEstadoEnFiltro(clickedEstadoId, true);
+                    } else {
+                        cerrarPanelesYResetear();
+                    }
+                }
             }}}}},
             tooltip: { enabled: false },
             series: [
