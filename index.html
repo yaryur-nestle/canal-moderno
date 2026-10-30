@@ -1425,7 +1425,7 @@
                         </div>
                         <div class="summary-chip">
                             <span class="suc-dot offline"></span>
-                            <span id="sucursales-count-offline">16 Offline</span>
+                            <span id="sucursales-count-offline">17 Offline</span>
                         </div>
                     </div>
                 </div>
@@ -1467,7 +1467,7 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
-        /* --- REGISTRO MAESTRO DE LAS 16 EXHIBICIONES --- */
+        /* --- REGISTRO MAESTRO DE LAS 17 EXHIBICIONES --- */
         const monitorRegistry = {
             // 7 exhibiciones originales (Tablets 01 a 07)
             'NIDO_Redvital La Yaguara': { tabletId: 1, bgImage: 'NIDO_MONITOR fondo.jpg', zone: 2 },
@@ -1478,7 +1478,7 @@
             'MULTIMARCA_Euromercado Las Delicias': { tabletId: 6, bgImage: 'MULTIMARCA_MONITOR.jpg', zone: 2 },
             'SAVOY_Río Lomas del Sol': { tabletId: 7, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
 
-            // 9 exhibiciones nuevas (Tablets 08 a 16)
+            // 10 exhibiciones nuevas (Tablets 08 a 17)
             'SAVOY_Fresco Market Caurimare': { tabletId: 8, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
             'SAVOY_Kromi Market Mañongo': { tabletId: 9, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
             'SAVOY_Río El Cigarral': { tabletId: 10, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
@@ -1487,7 +1487,8 @@
             'SAVOY_Kromi Market Prebo': { tabletId: 13, bgImage: 'SAVOY_MONITOR.jpg', zone: 2 },
             'MAGGI_Inversiones Yar-Yur (El Parral)': { tabletId: 14, bgImage: 'MAGGI_MONITOR.jpg', zone: 2 },
             'MAGGI_Inversiones Yar-Yur (El Bosque)': { tabletId: 15, bgImage: 'MAGGI_MONITOR.jpg', zone: 2 },
-            'MAGGI_Inversiones Yar-Yur (Las Chimeneas)': { tabletId: 16, bgImage: 'MAGGI_MONITOR.jpg', zone: 2 }
+            'MAGGI_Inversiones Yar-Yur (Las Chimeneas)': { tabletId: 16, bgImage: 'MAGGI_MONITOR.jpg', zone: 2 },
+            'RECETAS_Inversiones Yar-Yur': { tabletId: 17, bgImage: 'RECETAS_MONITOR.jpg', zone: 2 }
         };
 
         const configZonas = {
@@ -1612,10 +1613,10 @@
             toggleAppView(0);
         });
 
-        /* --- ESTADO GLOBAL DE MAPA EN VIVO (16 EXHIBICIONES) --- */
+        /* --- ESTADO GLOBAL DE MAPA EN VIVO (17 EXHIBICIONES) --- */
         let liveTabletCounts = {};
         let liveTabletStatuses = {};
-        for (let i = 1; i <= 16; i++) {
+        for (let i = 1; i <= 17; i++) {
             liveTabletCounts[i] = 0;
             liveTabletStatuses[i] = "OFFLINE";
         }
@@ -1770,7 +1771,7 @@
         }
 
         function initGlobalMapListeners() {
-            for (let i = 1; i <= 16; i++) {
+            for (let i = 1; i <= 17; i++) {
                 let numFormat = i.toString().padStart(2, '0');
                 
                 // 1. Escuchar la cantidad de personas
@@ -2028,7 +2029,7 @@
             { id: 10, sucursal: "Garzón Hiperahorro", estadoNombre: "Táchira", estadoId: "ve-ta", lat: 7.7669, lon: -72.2250, logo: "logo-GARZON.jpg", images: [ { src: "MULTIMARCA.png" } ], tabletIds: [2] },
             { id: 11, sucursal: "Supermercado Baratta", estadoNombre: "Táchira", estadoId: "ve-ta", lat: 7.7753, lon: -72.2147, logo: "logo-BARATTA.jpg", images: [ { src: "SAVOY.png" } ], tabletIds: [12] },
 
-            // Miranda - San Antonio de Los Altos (3 exhibiciones MAGGI con ubicación por definir asignadas temporalmente a Inversiones Yar-Yur)
+            // Miranda - San Antonio de Los Altos (Inversiones Yar-Yur: 3 exhibiciones MAGGI + 1 exhibición RECETAS)
             {
                 id: 12,
                 sucursal: "Inversiones Yar-Yur",
@@ -2040,9 +2041,10 @@
                 images: [
                     { src: "MAGGI.png", sucursalKey: "Inversiones Yar-Yur (El Parral)", label: "El Chacal - Parral" },
                     { src: "MAGGI.png", sucursalKey: "Inversiones Yar-Yur (El Bosque)", label: "Granja - Bosque" },
-                    { src: "MAGGI.png", sucursalKey: "Inversiones Yar-Yur (Las Chimeneas)", label: "Las Chimeneas Mañongo" }
+                    { src: "MAGGI.png", sucursalKey: "Inversiones Yar-Yur (Las Chimeneas)", label: "Las Chimeneas Mañongo" },
+                    { src: "RECETAS.png", sucursalKey: "Inversiones Yar-Yur" }
                 ],
-                tabletIds: [14, 15, 16]
+                tabletIds: [14, 15, 16, 17]
             }
         ];
 
@@ -2766,7 +2768,8 @@
                 { nombre: "SAVOY Kromi Prebo", tablet: "13" },
                 { nombre: "MAGGI Yar-Yur El Parral", tablet: "14" },
                 { nombre: "MAGGI Yar-Yur El Bosque", tablet: "15" },
-                { nombre: "MAGGI Yar-Yur Las Chimeneas", tablet: "16" }
+                { nombre: "MAGGI Yar-Yur Las Chimeneas", tablet: "16" },
+                { nombre: "RECETAS Yar-Yur", tablet: "17" }
             ];
 
             const dbRef = ref(db);
@@ -3859,7 +3862,8 @@
             { id: 13, code: 'tablet_13', brandKey: 'SAVOY',      sucursalKey: 'Kromi Market Prebo',                   sucursal: 'Kromi Market Prebo',                   chainLogo: 'logo-KROMI.jpg',        ubicacion: 'Carabobo — Valencia (Av. Prebo)',                     marca: 'SAVOY',      img: 'SAVOY.png',      instalacion: ['POR DEFINIR'] },
             { id: 14, code: 'tablet_14', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (El Parral)',      sucursal: 'Inversiones Yar-Yur (El Parral)',      chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png',      instalacion: ['POR DEFINIR'] },
             { id: 15, code: 'tablet_15', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (El Bosque)',      sucursal: 'Inversiones Yar-Yur (El Bosque)',      chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png',      instalacion: ['POR DEFINIR'] },
-            { id: 16, code: 'tablet_16', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (Las Chimeneas)',  sucursal: 'Inversiones Yar-Yur (Las Chimeneas)',  chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png',      instalacion: ['POR DEFINIR'] }
+            { id: 16, code: 'tablet_16', brandKey: 'MAGGI',      sucursalKey: 'Inversiones Yar-Yur (Las Chimeneas)',  sucursal: 'Inversiones Yar-Yur (Las Chimeneas)',  chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos (Provisional)',    marca: 'MAGGI',      img: 'MAGGI.png',      instalacion: ['POR DEFINIR'] },
+            { id: 17, code: 'tablet_17', brandKey: 'RECETAS',    sucursalKey: 'Inversiones Yar-Yur',                  sucursal: 'Inversiones Yar-Yur',                  chainLogo: 'logo-YARYUR.png',       chainLogoAlt: 'logo-YARYUR.jpg',       ubicacion: 'Miranda — San Antonio de Los Altos',                  marca: 'RECETAS',    img: 'RECETAS.png',    instalacion: ['POR DEFINIR'] }
         ];
 
         const mesesInstalacionMap = {

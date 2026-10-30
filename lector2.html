@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV 02 RECETAS - YAR-YUR</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+            background-color: #000;
+            overflow: hidden;
+            position: relative;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* === BOTÓN FULLSCREEN INICIAL === */
+        #init-fullscreen-btn {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; 
+            background: transparent; border: none; outline: none; cursor: pointer;
+        }
+
+        /* === ESTILOS DEL LOGIN === */
+        #login-screen {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .login-box {
+            border: 1px solid #00FFFF; padding: 40px; background: rgba(0, 255, 255, 0.05);
+            text-align: center; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            border-radius: 8px; backdrop-filter: blur(10px); width: 300px;
+        }
+        .login-box h2 { color: #00FFFF; margin-top: 0; margin-bottom: 25px; text-shadow: 0 0 5px #00FFFF; letter-spacing: 2px; }
+        .login-box input {
+            display: block; width: 100%; box-sizing: border-box; margin-bottom: 15px;
+            padding: 12px; background: rgba(0, 0, 0, 0.8); border: 1px solid #00FFFF;
+            color: #00FFFF; font-family: inherit; font-size: 1rem; text-align: center;
+        }
+        .login-box input:focus { outline: none; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); background: rgba(0, 255, 255, 0.1); }
+        .login-box button {
+            background: rgba(0, 255, 255, 0.15); border: 1px solid #00FFFF; color: #00FFFF;
+            padding: 12px 20px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1rem;
+            width: 100%; transition: all 0.3s; letter-spacing: 1px;
+        }
+        .login-box button:hover { background: #00FFFF; color: #000; box-shadow: 0 0 15px #00FFFF; }
+        .error-msg { color: #FF0055; margin-top: 15px; font-size: 0.85rem; display: none; text-shadow: 0 0 5px #FF0055; }
+
+        /* === ESTILOS DE LA APP === */
+        #app-screen {
+            display: none; 
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #visorImagen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background-color: #000;
+            z-index: 1; /* Fondo base */
+        }
+
+        /* Contenedores de video superpuestos */
+        .video-player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; 
+            background-color: #000;
+            z-index: 2;
+            display: none;
+        }
+
+        /* Aseguramos que los videos de las recetas queden por encima de los otros videos */
+        #videoReceta1, #videoReceta2, #videoReceta3, #videoReceta4 {
+            z-index: 5;
+        }
+
+        /* === ESTILOS DEL CARTEL DE ERROR ROTADO === */
+        #barcode-display {
+            position: fixed; 
+            top: 50%; /* Centrado verticalmente */
+            left: 80px; /* Más a la izquierda, ajusta este valor si lo quieres más a la orilla */
+            transform: translate(-50%, -50%) rotate(-90deg); /* Traslada su centro y lo rota 90 grados anti-horario */
+            
+            color: #FFFFFF; 
+            font-size: 2.5rem; 
+            font-weight: bold;
+            z-index: 2147483647; 
+            text-shadow: 2px 2px 10px rgba(0,0,0,1), 0 0 20px rgba(255, 0, 85, 0.8);
+            background-color: rgba(0, 0, 0, 0.85); 
+            border: 3px solid #FF0055; /* Borde rojo de error */
+            padding: 15px 40px;
+            border-radius: 15px;
+            pointer-events: none; 
+            text-align: center;
+            white-space: nowrap; /* Evita que el texto se rompa en dos líneas al estar rotado */
+            
+            /* Oculto por defecto */
+            opacity: 0; 
+            transition: opacity 0.3s ease-out; 
+        }
+
+        /* Clase para encender el cartel cuando hay un error */
+        .mostrar-error {
+            opacity: 1 !important;
+        }
+
+        /* === INPUT FANTASMA PARA EL LECTOR DE CÓDIGOS === */
+        #scanner-fantasma {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            opacity: 0;
+        }
+
+        .bg-error { background-color: #ef4444 !important; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .shake { animation: shake 0.4s; }
+    </style>
+</head>
+<body>
+
+    <button id="init-fullscreen-btn" title="Activar Pantalla Completa"></button>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>LECTOR RECETAS 02</h2>
+            <form id="login-form">
+                <input type="email" id="email" placeholder="Correo Electrónico" required autocomplete="email">
+                <input type="password" id="password" placeholder="Contraseña" required autocomplete="current-password">
+                <button type="submit" id="login-btn">CONECTAR</button>
+                <div id="error-msg" class="error-msg">Error de credenciales.</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Contenedor del texto de error (oculto por defecto) -->
+    <div id="barcode-display"></div>
+
+    <!-- Input invisible que capturará la lectura súper rápida -->
+    <input type="text" id="scanner-fantasma" autocomplete="off" autofocus>
+
+    <div id="app-screen">
+        <img id="visorImagen" src="TABLET 03.jpg" alt="Pantalla de inicio">
+        
+        <video id="video1" class="video-player" src="VIDEO_01_reparado.mp4" preload="auto" playsinline></video>
+        <video id="video2" class="video-player" src="VIDEO_02.mp4" preload="auto" playsinline></video>
+        
+        <video id="videoReceta1" class="video-player" src="VIDEO_RECETA1.mp4" preload="auto" playsinline></video>
+        <video id="videoReceta2" class="video-player" src="VIDEO_RECETA2.mp4" preload="auto" playsinline></video>
+        <video id="videoReceta3" class="video-player" src="VIDEO_RECETA3.mp4" preload="auto" playsinline></video>
+        <video id="videoReceta4" class="video-player" src="VIDEO_RECETA4.mp4" preload="auto" playsinline></video>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
+            authDomain: "canal-moderno-2655e.firebaseapp.com",
+            databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
+            projectId: "canal-moderno-2655e",
+            storageBucket: "canal-moderno-2655e.firebasestorage.app",
+            messagingSenderId: "947512040134",
+            appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        
+        // Nodo independiente para Sucursal 17 (Tablet 17 + Televisor 02 en Yar-Yur)
+        const estadoRef = ref(db, 'muebles/tablet_17/estado_actual');
+
+        const initFullscreenBtn = document.getElementById('init-fullscreen-btn');
+        initFullscreenBtn.addEventListener('click', () => {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) elem.requestFullscreen();
+            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+            else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+            initFullscreenBtn.remove();
+        });
+
+        const loginScreen = document.getElementById('login-screen');
+        const appScreen = document.getElementById('app-screen');
+        const loginForm = document.getElementById('login-form');
+        const errorMsg = document.getElementById('error-msg');
+        const barcodeDisplay = document.getElementById('barcode-display'); 
+        const scannerInput = document.getElementById('scanner-fantasma'); 
+        
+        let barcodeTimeout; 
+        
+        // Elementos de Video
+        const video1 = document.getElementById('video1');
+        const video2 = document.getElementById('video2');
+        
+        // Diccionario de videos de Recetas
+        const videosReceta = {
+            "01": document.getElementById('videoReceta1'),
+            "02": document.getElementById('videoReceta2'),
+            "03": document.getElementById('videoReceta3'),
+            "04": document.getElementById('videoReceta4')
+        };
+        
+        // Variables de Estado
+        let personaDetectadaLocalmente = false;
+        let isVideo1Playing = false;
+        let isVideo2Playing = false;
+        let estadoGlobalReceta = ""; 
+        let ultimoEstadoFirebase = null; 
+        let estaEscaneando = false; 
+
+        // ======= DICCIONARIO ORDENADO Y NORMALIZADO ======= //
+        const baseDeDatos = {
+            "7506475104425": "01", 
+            "17506475104422": "01", 
+            "7891000107263": "01", 
+            "7591016155097": "02", 
+            "7591016855096": "02", 
+            "7591016206409": "03", 
+            "7591016406403": "03", 
+            "17591016206406": "03", 
+            "7591016204894": "04"
+        };
+
+        // ======= LÓGICA DE OPTIMIZACIÓN EXTREMA ======= //
+        function detenerTodoParaEscanear() {
+            const todosLosVideos = [video1, video2, ...Object.values(videosReceta)];
+            
+            todosLosVideos.forEach(v => {
+                if (!v.paused) v.pause();
+                v.style.display = 'none';
+            });
+            
+            isVideo1Playing = false;
+            isVideo2Playing = false;
+        }
+
+        document.addEventListener('click', () => {
+            if (appScreen.style.display === 'block') scannerInput.focus();
+        });
+        scannerInput.addEventListener('blur', () => {
+            if (appScreen.style.display === 'block') scannerInput.focus();
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginScreen.style.display = 'none';
+                appScreen.style.display = 'block';
+                scannerInput.focus(); 
+                iniciarSincronizacion();
+            } else {
+                loginScreen.style.display = 'flex';
+                appScreen.style.display = 'none';
+            }
+        });
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+            
+            errorMsg.style.display = 'none';
+            loginBtn.innerText = 'CARGANDO...';
+            
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => { loginBtn.innerText = 'CONECTAR'; loginForm.reset(); })
+                .catch((error) => {
+                    loginBtn.innerText = 'CONECTAR';
+                    errorMsg.innerText = "Error: Verifica tus credenciales.";
+                    errorMsg.style.display = 'block';
+                });
+        });
+
+        // 2. DETECCIÓN DE LA PRIMERA TECLA EN TIEMPO REAL
+        scannerInput.addEventListener('input', () => {
+            
+            // AL INICIAR LECTURA DEL ESCÁNER:
+            if (!estaEscaneando && scannerInput.value.length >= 1) {
+                estaEscaneando = true; 
+                detenerTodoParaEscanear(); 
+                
+                // Limpiamos la receta activa en la base de datos de Tablet 17 instantáneamente
+                update(estadoRef, {
+                    recetaActiva: "",
+                    timestampReceta: null
+                });
+            }
+
+            if (barcodeTimeout) clearTimeout(barcodeTimeout);
+            
+            // Si el código queda a medias (ej. el lector falla a la mitad)
+            barcodeTimeout = setTimeout(() => {
+                scannerInput.value = ""; 
+                estaEscaneando = false; 
+                if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
+            }, 500); 
+        });
+
+        // 3. CAPTURAR EL CÓDIGO COMPLETO AL RECIBIR 'ENTER'
+        scannerInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                
+                const scannedValue = scannerInput.value.trim();
+                scannerInput.value = ''; 
+                
+                if (scannedValue !== "") {
+                    if (barcodeTimeout) clearTimeout(barcodeTimeout);
+
+                    let recetaID = null;
+                    for (const secuencia in baseDeDatos) {
+                        if (scannedValue.includes(secuencia)) {
+                            recetaID = baseDeDatos[secuencia];
+                            break;
+                        }
+                    }
+
+                    if (recetaID) {
+                        detenerTodoParaEscanear();
+                        // LECTURA CORRECTA: Activamos Firebase en muebles/tablet_17/estado_actual
+                        update(estadoRef, {
+                            recetaActiva: recetaID,
+                            timestampReceta: Date.now()
+                        }).then(() => {
+                            estaEscaneando = false;
+                            if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
+                        });
+                    } else {
+                        // LECTURA INCORRECTA O CÓDIGO DESCONOCIDO
+                        lanzarError();
+                        estaEscaneando = false;
+                        if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
+                    }
+                } else {
+                    estaEscaneando = false;
+                    if (ultimoEstadoFirebase) procesarEstadoFirebase(ultimoEstadoFirebase);
+                }
+            }
+        });
+
+        // ====== LÓGICA DE EVENTOS 'ENDED' DE LOS VIDEOS ====== //
+        video1.addEventListener('ended', () => {
+            isVideo1Playing = false;
+            video1.style.display = 'none';
+
+            if (personaDetectadaLocalmente && estadoGlobalReceta === "") {
+                video2.style.display = 'block';
+                video2.currentTime = 0;
+                video2.play().catch(e => console.error("Error reproduciendo Video 02:", e));
+                isVideo2Playing = true;
+            }
+        });
+
+        video2.addEventListener('ended', () => {
+            if (personaDetectadaLocalmente && estadoGlobalReceta === "") {
+                video2.currentTime = 0;
+                video2.play().catch(e => console.error("Error reproduciendo Video 02 en bucle:", e));
+                isVideo2Playing = true;
+            } else {
+                isVideo2Playing = false;
+                video2.style.display = 'none';
+            }
+        });
+
+        Object.values(videosReceta).forEach(video => {
+            video.addEventListener('ended', () => {
+                update(estadoRef, {
+                    recetaActiva: "",
+                    timestampReceta: null
+                });
+            });
+        });
+
+        // ====== CONEXIÓN CON FIREBASE Y MANEJO DE ESTADOS ====== //
+        function iniciarSincronizacion() {
+            onValue(estadoRef, (snapshot) => {
+                const estado = snapshot.val();
+                if (!estado) return;
+
+                ultimoEstadoFirebase = estado; 
+                
+                if (!estaEscaneando) {
+                    procesarEstadoFirebase(estado);
+                }
+            });
+        }
+
+        function procesarEstadoFirebase(estado) {
+            estadoGlobalReceta = estado.recetaActiva || "";
+            const deteccionRemota = estado.hayPersonas;
+
+            if (deteccionRemota && !personaDetectadaLocalmente) {
+                personaDetectadaLocalmente = true;
+                if (!isVideo1Playing && !isVideo2Playing && estadoGlobalReceta === "") {
+                    video1.style.display = 'block';
+                    video1.currentTime = 0;
+                    video1.play().catch(e => console.error("Error reproduciendo Video 01:", e));
+                    isVideo1Playing = true;
+                }
+            } 
+            else if (!deteccionRemota && personaDetectadaLocalmente) {
+                personaDetectadaLocalmente = false;
+            }
+
+            if (estadoGlobalReceta && videosReceta[estadoGlobalReceta]) {
+                
+                if (isVideo1Playing) {
+                    video1.pause();
+                    video1.style.display = 'none';
+                    isVideo1Playing = false;
+                }
+                if (isVideo2Playing) {
+                    video2.pause();
+                    video2.style.display = 'none';
+                    isVideo2Playing = false;
+                }
+
+                Object.keys(videosReceta).forEach(key => {
+                    const v = videosReceta[key];
+                    if (key === estadoGlobalReceta) {
+                        v.style.display = 'block';
+                        if (v.paused) {
+                            v.currentTime = 0;
+                            v.play().catch(e => console.error(`Error reproduciendo Receta ${key}:`, e));
+                        }
+                    } else {
+                        if (!v.paused || v.style.display === 'block') {
+                            v.pause();
+                            v.style.display = 'none';
+                        }
+                    }
+                });
+
+            } else {
+                let recetaVideoEstabaCorriendo = false;
+
+                Object.values(videosReceta).forEach(v => {
+                    if (!v.paused || v.style.display === 'block') {
+                        v.pause();
+                        v.style.display = 'none';
+                        recetaVideoEstabaCorriendo = true;
+                    }
+                });
+                
+                if (recetaVideoEstabaCorriendo && personaDetectadaLocalmente) {
+                    video2.style.display = 'block';
+                    video2.currentTime = 0;
+                    video2.play().catch(e => console.error("Error reanudando Video 02:", e));
+                    isVideo2Playing = true;
+                }
+            }
+        }
+
+        function lanzarError() {
+            // Efecto visual de flash y temblor de la pantalla
+            document.getElementById('app-screen').classList.remove('shake');
+            void document.getElementById('app-screen').offsetWidth;
+            document.body.className = 'bg-error';
+            document.getElementById('app-screen').classList.add('shake');
+            
+            // Mostrar nuestro cartel rotado
+            barcodeDisplay.innerHTML = "¡Vuelve a Intentarlo!";
+            barcodeDisplay.classList.add('mostrar-error');
+            
+            // Apagar flash rojo de la pantalla al segundo
+            setTimeout(() => {
+                document.body.className = '';
+                document.getElementById('app-screen').classList.remove('shake');
+            }, 1000);
+
+            // Ocultar el cartel de error después de 3 segundos
+            setTimeout(() => {
+                barcodeDisplay.classList.remove('mostrar-error');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIMULADOR INTEGRADO: TABLET 17 + LECTOR RECETAS 02</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #000;
+      color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* === BOTÓN TOGGLE ESCANEO / RECETAS (ESQUINA INFERIOR IZQUIERDA DE LA TABLET) === */
+    .btn-scan-toggle {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      z-index: 100;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1.5px solid rgba(0, 255, 255, 0.4);
+      color: #00FFFF;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+      transition: all 0.25s ease;
+      outline: none;
+      padding: 0;
+    }
+    .btn-scan-toggle:hover {
+      background: rgba(0, 255, 255, 0.15);
+      border-color: #00FFFF;
+      box-shadow: 0 0 16px rgba(0, 255, 255, 0.6);
+      transform: scale(1.08);
+    }
+    .btn-scan-toggle.active {
+      background: rgba(0, 255, 136, 0.2);
+      border-color: #00FF88;
+      color: #00FF88;
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.8), inset 0 0 8px rgba(0, 255, 136, 0.3);
+    }
+
+    /* === BOTÓN INDICADOR DE SINCRONIZACIÓN CON LECTORCAM (OCULTO) === */
+    .btn-firebase-sync {
+      display: none !important;
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 10000;
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      color: #aaa;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      transition: all 0.25s ease;
+      outline: none;
+      font-size: 0.75rem;
+      font-weight: bold;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      letter-spacing: 0.5px;
+    }
+    .btn-firebase-sync .sync-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #888;
+      box-shadow: 0 0 6px #888;
+      transition: all 0.25s ease;
+    }
+    .btn-firebase-sync.connected {
+      border-color: rgba(0, 255, 136, 0.6);
+      color: #00FF88;
+    }
+    .btn-firebase-sync.connected .sync-dot {
+      background: #00FF88;
+      box-shadow: 0 0 10px #00FF88;
+    }
+    .btn-firebase-sync.syncing {
+      border-color: rgba(255, 200, 0, 0.6);
+      color: #FFC800;
+    }
+    .btn-firebase-sync.syncing .sync-dot {
+      background: #FFC800;
+      box-shadow: 0 0 10px #FFC800;
+    }
+    .btn-firebase-sync:hover {
+      background: rgba(0, 0, 0, 0.9);
+      transform: scale(1.04);
+    }
+
+    /* === MODAL DE AUTENTICACIÓN FIREBASE === */
+    .modal-firebase {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      z-index: 20000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-firebase.show {
+      display: flex;
+    }
+    .modal-firebase-box {
+      background: rgba(18, 20, 28, 0.95);
+      border: 1.5px solid #00FFFF;
+      border-radius: 14px;
+      padding: 24px 28px;
+      width: 90%;
+      max-width: 380px;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.35);
+      text-align: center;
+      color: #fff;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .modal-firebase-box h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: #00FFFF;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+    .modal-firebase-box p {
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+    .modal-firebase-box input {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(0, 255, 255, 0.4);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .modal-firebase-box input:focus {
+      border-color: #00FFFF;
+      box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+    }
+    .modal-firebase-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    .modal-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .modal-btn-cancel {
+      background: transparent;
+      border: 1px solid #666;
+      color: #ccc;
+    }
+    .modal-btn-cancel:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .modal-btn-submit {
+      background: #00FFFF;
+      border: none;
+      color: #000;
+    }
+    .modal-btn-submit:hover {
+      background: #33ffff;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.8);
+    }
+    .fb-error-msg {
+      color: #ff5555;
+      font-size: 0.8rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* === CONTENEDOR DIVIDIDO (SPLIT SCREEN 25/75) === */
+    .split-pane {
+      position: relative;
+      width: 100vw;
+      overflow: hidden;
+      background-color: #050505;
+    }
+
+    #top-half {
+      height: 25vh;
+      border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #000;
+    }
+
+    #bottom-half {
+      height: 75vh;
+      border-top: 2px solid rgba(0, 255, 255, 0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #000;
+    }
+
+    /* Botón de Presencia (Emoji o Número de Personas) */
+    .person-toggle-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      z-index: 100;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      color: #00FFFF;
+      border: 2px solid rgba(0, 255, 255, 0.6);
+      font-size: 1.1rem;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      transition: all 0.3s ease;
+      outline: none;
+    }
+    .person-toggle-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+    }
+    .person-toggle-btn.active {
+      background: #00FF88 !important;
+      border-color: #00FF88 !important;
+      color: #000 !important;
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.9), inset 0 0 8px rgba(0, 0, 0, 0.3) !important;
+      transform: scale(1.08);
+    }
+
+    /* =========================================================
+       MITAD SUPERIOR: TABLET 17
+       ========================================================= */
+    .scene-tablet {
+      position: relative;
+      height: 100%;
+      aspect-ratio: 21.5 / 13.5;
+      width: min(100vw, calc(25vh * (21.5 / 13.5)));
+      max-width: 100vw;
+      perspective: 1000px;
+      background-color: #000;
+      box-shadow: 0 0 35px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform-style: preserve-3d;
+      border-radius: 8px;
+    }
+    .card.is-flipped { transform: rotateY(180deg); }
+
+    .face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      background-color: #000;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .face-front {
+      background-image: url('TABLET 03 h.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+    .face-back { transform: rotateY(180deg); }
+
+    /* Video superpuesto en Tablet 17 */
+    #overlayRecetaTablet {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+    .video-receta-tablet {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #000;
+      display: none;
+    }
+
+    /* =========================================================
+       BOTONERA LATERAL DE RECETAS (IZQUIERDA Y DERECHA EN ESPACIO SUPERIOR)
+       ========================================================= */
+    .recipe-side-container {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: calc((100vw - min(100vw, calc(25vh * (21.5 / 13.5)))) / 2);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      align-items: center;
+      z-index: 90;
+      pointer-events: none;
+      padding: 4px 8px;
+      box-sizing: border-box;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.92);
+      transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+    }
+    .recipe-side-container.visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: scale(1);
+    }
+    .recipe-side-container.left {
+      left: 0;
+    }
+    .recipe-side-container.right {
+      right: 0;
+    }
+
+    .recipe-btn {
+      position: relative;
+      background: rgba(18, 18, 18, 0.7);
+      border: 1.5px solid rgba(0, 255, 255, 0.4);
+      border-radius: 12px;
+      padding: 4px 6px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 10.5vh;
+      max-height: 110px;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      outline: none;
+    }
+    .recipe-btn img {
+      height: 100%;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.85));
+      transition: transform 0.25s ease;
+      pointer-events: none;
+    }
+    .recipe-btn:hover {
+      background: rgba(0, 255, 255, 0.15);
+      border-color: #00FFFF;
+      box-shadow: 0 0 18px rgba(0, 255, 255, 0.6);
+      transform: scale(1.08);
+    }
+    .recipe-btn:hover img {
+      transform: scale(1.04);
+    }
+    .recipe-btn.active {
+      background: rgba(0, 255, 136, 0.25);
+      border-color: #00FF88;
+      box-shadow: 0 0 22px rgba(0, 255, 136, 0.95), inset 0 0 10px rgba(0, 255, 136, 0.35);
+      transform: scale(1.06);
+      animation: pulse-active-recipe 1.8s infinite;
+    }
+
+    @keyframes pulse-active-recipe {
+      0% { box-shadow: 0 0 10px rgba(0, 255, 136, 0.7); }
+      50% { box-shadow: 0 0 22px rgba(0, 255, 136, 1), 0 0 35px rgba(0, 255, 136, 0.5); }
+      100% { box-shadow: 0 0 10px rgba(0, 255, 136, 0.7); }
+    }
+
+    /* Flip View Técnico (Cámara + Diagnóstico) */
+    video#videoCamera, canvas#canvasMesh {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    canvas#canvasMesh { z-index: 10; }
+    .diag-panel { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 4px; padding: 6px; }
+    .diag-panel.left { top: 0; left: 0; }
+    .diag-panel.right { top: 0; right: 0; align-items: flex-end; }
+    .diag-box {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.72rem;
+      backdrop-filter: blur(8px);
+      border: 1px solid;
+      min-width: 90px;
+      text-shadow: 0 0 5px currentColor;
+    }
+    #face-counter { background: rgba(0, 255, 0, 0.15); color: #00FF00; border-color: #00FF00; }
+    #total-counter { background: rgba(0, 255, 255, 0.15); color: #00FFFF; border-color: #00FFFF; }
+    #time-counter { background: rgba(255, 255, 0, 0.15); color: #FFFF00; border-color: #FFFF00; }
+    #avg-counter { background: rgba(255, 0, 255, 0.15); color: #FF00FF; border-color: #FF00FF; }
+    #loading-cam {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 40;
+      background: rgba(0,0,0,0.85);
+      padding: 6px 14px;
+      border: 1px solid #00FFFF;
+      color: #00FFFF;
+      font-size: 0.8rem;
+      font-weight: bold;
+      border-radius: 6px;
+    }
+
+    .flip-btn {
+      position: absolute;
+      bottom: 8px;
+      left: 55px;
+      z-index: 50;
+      background: rgba(0, 255, 255, 0.15);
+      border: 1px solid #00FFFF;
+      color: #00FFFF;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .card.is-flipped ~ .flip-btn { opacity: 1; pointer-events: auto; }
+    .flip-btn:hover { background: rgba(0, 255, 255, 0.4); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
+
+    /* =========================================================
+       MITAD INFERIOR: LECTOR TV 02 (ROTADO 90° HORARIO, 75vh)
+       ========================================================= */
+    .tv-rotate-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: min(75vh, calc(100vw * 16 / 9));
+      height: calc(min(75vh, calc(100vw * 16 / 9)) * 9 / 16);
+      transform: translate(-50%, -50%) rotate(90deg);
+      background-color: #000;
+      overflow: hidden;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.95);
+      border: 1px solid rgba(0, 255, 255, 0.25);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #visorImagenLector {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #000;
+      z-index: 1;
+    }
+
+    .video-player-tv {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #000;
+      z-index: 10;
+      display: none;
+    }
+
+    #videoReceta1, #videoReceta2, #videoReceta3, #videoReceta4 {
+      z-index: 20;
+    }
+
+    /* Toast de estado de escaneo (no rotado, legible horizontalmente) */
+    #scan-status-toast {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 85;
+      background: rgba(0, 0, 0, 0.85);
+      color: #00FF88;
+      border: 1px solid #00FF88;
+      padding: 6px 14px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    #scan-status-toast.show { opacity: 1; }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- Botón de estado / sincronización con LectorCam (Firebase - oculto) -->
+  <button id="btn-firebase-sync" class="btn-firebase-sync" style="display: none;" title="Sincronización con LectorCam vía Firebase">
+    <span class="sync-dot"></span>
+    <span class="sync-text">Conectar LectorCam</span>
+  </button>
+
+  <!-- Modal de conexión Firebase (si no está autenticado) -->
+  <div id="modal-firebase-auth" class="modal-firebase">
+    <div class="modal-firebase-box">
+      <h3>SINCRONIZAR CON LECTORCAM</h3>
+      <p>Conecta el simulador a Firebase para recibir lecturas en tiempo real:</p>
+      <form id="firebase-login-form">
+        <input type="email" id="fb-email" placeholder="Correo Electrónico" required autocomplete="email">
+        <input type="password" id="fb-password" placeholder="Contraseña" required autocomplete="current-password">
+        <div class="modal-firebase-actions">
+          <button type="button" id="btn-cancel-auth" class="modal-btn modal-btn-cancel">Cancelar</button>
+          <button type="submit" id="btn-submit-auth" class="modal-btn modal-btn-submit">Conectar</button>
+        </div>
+        <div id="fb-error-msg" class="fb-error-msg">Error: Verifica tus credenciales.</div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MITAD SUPERIOR: TABLET 17 (MUEBLE - SIN VIDEO LOCAL AL DETECTAR PERSONA)
+       ========================================================= -->
+  <div id="top-half" class="split-pane">
+    <!-- Columna lateral izquierda de recetas: 01 (arriba) y 02 (abajo) -->
+    <div class="recipe-side-container left">
+      <button class="recipe-btn" data-receta="01" title="Receta 01: Savoy Postres Chocolate Oscuro 55%">
+        <img src="01RECETA.png" alt="Receta 01 - Savoy Postres">
+      </button>
+      <button class="recipe-btn" data-receta="02" title="Receta 02: Leche Condensada Nestlé">
+        <img src="02RECETA.png" alt="Receta 02 - Leche Condensada">
+      </button>
+    </div>
+
+    <div class="scene-tablet">
+      <!-- Botón de Escaneo / Mostrar u Ocultar Recetas (ESQUINA INFERIOR IZQUIERDA) -->
+      <button id="btn-scan-toggle" class="btn-scan-toggle" title="Mostrar / Ocultar Botones de Recetas">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+          <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+          <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+          <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+          <line x1="7" y1="8" x2="7" y2="16"></line>
+          <line x1="10" y1="8" x2="10" y2="16"></line>
+          <line x1="14" y1="8" x2="14" y2="16"></line>
+          <line x1="17" y1="8" x2="17" y2="16"></line>
+        </svg>
+      </button>
+
+      <!-- Botón de Presencia en la esquina inferior derecha (solo emoji 👤) -->
+      <button id="btn-toggle-presence" class="person-toggle-btn" title="Simular / Alternar Presencia de Persona">
+        👤
+      </button>
+
+      <div id="card" class="card">
+        <!-- Frente de la Tablet -->
+        <div class="face face-front">
+          <!-- Video interactivo de receta en Tablet 17 -->
+          <div id="overlayRecetaTablet">
+            <video id="videoRecetaTablet1" class="video-receta-tablet" src="VIDEO_1RECETA.mp4" preload="auto" muted playsinline></video>
+            <video id="videoRecetaTablet2" class="video-receta-tablet" src="VIDEO_2RECETA.mp4" preload="auto" muted playsinline></video>
+            <video id="videoRecetaTablet3" class="video-receta-tablet" src="VIDEO_3RECETA.mp4" preload="auto" muted playsinline></video>
+            <video id="videoRecetaTablet4" class="video-receta-tablet" src="VIDEO_4RECETA.mp4" preload="auto" muted playsinline></video>
+          </div>
+        </div>
+
+        <!-- Reverso: Feed técnico MediaPipe y métricas -->
+        <div class="face face-back">
+          <div id="loading-cam">SISTEMA INICIANDO...</div>
+          <div class="diag-panel left">
+            <div id="face-counter" class="diag-box">ACTUAL: 0</div>
+            <div id="total-counter" class="diag-box">HISTÓRICO: 0</div>
+          </div>
+          <div class="diag-panel right">
+            <div id="time-counter" class="diag-box">TIEMPO: 0.0s</div>
+            <div id="avg-counter" class="diag-box">PROMEDIO: 0.0s</div>
+          </div>
+          <video id="videoCamera" autoplay playsinline muted></video>
+          <canvas id="canvasMesh"></canvas>
+        </div>
+      </div>
+
+      <!-- Botón para regresar al frente al girar tarjeta -->
+      <button id="flip-btn" class="flip-btn" title="Regresar al Frente">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 11 21 7 17 3"></polyline><line x1="21" y1="7" x2="9" y2="7"></line><polyline points="7 13 3 17 7 21"></polyline><line x1="3" y1="17" x2="15" y2="17"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Columna lateral derecha de recetas: 03 (arriba) y 04 (abajo) -->
+    <div class="recipe-side-container right">
+      <button class="recipe-btn" data-receta="03" title="Receta 03: Maggi Sopa Casera Cruzado Criollo">
+        <img src="03RECETA.png" alt="Receta 03 - Maggi Cruzado Criollo">
+      </button>
+      <button class="recipe-btn" data-receta="04" title="Receta 04: Maggi Sopa de Pollo con Fideos">
+        <img src="04RECETA.png" alt="Receta 04 - Maggi Sopa de Pollo">
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MITAD INFERIOR: LECTOR TV 02 (ROTADO 90° HORARIO COMO EN EL MUEBLE)
+       ========================================================= -->
+  <div id="bottom-half" class="split-pane">
+    <div id="scan-status-toast">RECETA SELECCIONADA</div>
+
+    <!-- Contenedor rotado 90 grados en la dirección de las agujas del reloj -->
+    <div class="tv-rotate-container">
+      <!-- Fondo inactivo -->
+      <img id="visorImagenLector" src="TABLET 03.jpg" alt="Pantalla base Lector">
+
+      <!-- Videos de atención (cuando se detecta una persona) -->
+      <video id="video1" class="video-player-tv" src="VIDEO_01_reparado.mp4" preload="auto" playsinline></video>
+      <video id="video2" class="video-player-tv" src="VIDEO_02.mp4" preload="auto" playsinline></video>
+
+      <!-- Videos de las 4 recetas en el TV Lector 02 -->
+      <video id="videoReceta1" class="video-player-tv" src="VIDEO_RECETA1.mp4" preload="auto" playsinline></video>
+      <video id="videoReceta2" class="video-player-tv" src="VIDEO_RECETA2.mp4" preload="auto" playsinline></video>
+      <video id="videoReceta3" class="video-player-tv" src="VIDEO_RECETA3.mp4" preload="auto" playsinline></video>
+      <video id="videoReceta4" class="video-player-tv" src="VIDEO_RECETA4.mp4" preload="auto" playsinline></video>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    // =========================================================
+    // CONFIGURACIÓN FIREBASE (AISLADA EN RUTA SIMULADA DE TABLET 17)
+    // =========================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
+      authDomain: "canal-moderno-2655e.firebaseapp.com",
+      databaseURL: "https://canal-moderno-2655e-default-rtdb.firebaseio.com",
+      projectId: "canal-moderno-2655e",
+      storageBucket: "canal-moderno-2655e.firebasestorage.app",
+      messagingSenderId: "947512040134",
+      appId: "1:947512040134:web:f56ba403a9fcd04f3615c7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const estadoSimuladaRef = ref(db, 'muebles/tablet_17_simulada/estado_actual');
+
+    // =========================================================
+    // BOTÓN TOGGLE ESCANEO: MOSTRAR / OCULTAR RECETAS (ESQUINA INFERIOR IZQUIERDA)
+    // =========================================================
+    const btnScanToggle = document.getElementById('btn-scan-toggle');
+    const recipeContainers = document.querySelectorAll('.recipe-side-container');
+    let recipesVisible = false;
+
+    function toggleRecipeButtons(forzarEstado = null) {
+      recipesVisible = (forzarEstado !== null) ? forzarEstado : !recipesVisible;
+      recipeContainers.forEach(container => {
+        container.classList.toggle('visible', recipesVisible);
+      });
+      if (btnScanToggle) {
+        btnScanToggle.classList.toggle('active', recipesVisible);
+        btnScanToggle.title = recipesVisible ? "Ocultar Botones de Recetas" : "Mostrar Botones de Recetas";
+      }
+    }
+
+    if (btnScanToggle) {
+      btnScanToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleRecipeButtons();
+        if (typeof iniciarCamaraYReconocimiento === 'function') iniciarCamaraYReconocimiento();
+      });
+    }
+
+    // =========================================================
+    // ELEMENTOS: MITAD SUPERIOR (TABLET 17)
+    // =========================================================
+    const card = document.getElementById('card');
+    const btnFlip = document.getElementById('flip-btn');
+    const overlayRecetaTablet = document.getElementById('overlayRecetaTablet');
+    const videosRecetaTablet = {
+      "01": document.getElementById('videoRecetaTablet1'),
+      "02": document.getElementById('videoRecetaTablet2'),
+      "03": document.getElementById('videoRecetaTablet3'),
+      "04": document.getElementById('videoRecetaTablet4')
+    };
+    const recipeBtns = document.querySelectorAll('.recipe-btn');
+    const btnTogglePresence = document.getElementById('btn-toggle-presence');
+
+    const videoCamera = document.getElementById('videoCamera');
+    const canvasMesh = document.getElementById('canvasMesh');
+    const faceElement = document.getElementById('face-counter');
+    const totalElement = document.getElementById('total-counter');
+    const timeElement = document.getElementById('time-counter');
+    const avgElement = document.getElementById('avg-counter');
+
+    // =========================================================
+    // ELEMENTOS: MITAD INFERIOR (LECTOR TV 02)
+    // =========================================================
+    const video1 = document.getElementById('video1');
+    const video2 = document.getElementById('video2');
+    const scanStatusToast = document.getElementById('scan-status-toast');
+
+    const videosRecetaLector = {
+      "01": document.getElementById('videoReceta1'),
+      "02": document.getElementById('videoReceta2'),
+      "03": document.getElementById('videoReceta3'),
+      "04": document.getElementById('videoReceta4')
+    };
+
+    // Diccionario de videos de recetas para Tablet 17
+    const videosRecetaTabletMap = {
+      "01": "VIDEO_1RECETA.mp4",
+      "02": "VIDEO_2RECETA.mp4",
+      "03": "VIDEO_3RECETA.mp4",
+      "04": "VIDEO_4RECETA.mp4"
+    };
+
+    // =========================================================
+    // VARIABLES DE ESTADO Y SINCRONIZACIÓN LOCAL
+    // =========================================================
+    let totalHistorico = 0, tiempoAcumuladoTotal = 0, rostrosActivos = [], inicioSesionActual = null, tiempoSesionActual = 0;
+    let currentFacesCount = 0;
+    let camaraIniciada = false;
+    let manualPresenceForced = false;
+
+    let isVideo1Playing = false;
+    let isVideo2Playing = false;
+    let isRecipePlaying = false;
+    let estadoGlobalReceta = ""; // "", "01", "02", "03", "04"
+    let personaDetectada = false;
+
+    let isFirebaseConnected = false;
+    let recetaIniciadaLocalmente = false;
+
+    function actualizarVisualBotonPresencia(countCamara) {
+      if (!btnTogglePresence) return;
+      if (countCamara > 0) {
+        btnTogglePresence.classList.add('active');
+        btnTogglePresence.textContent = countCamara;
+      } else if (manualPresenceForced) {
+        btnTogglePresence.classList.add('active');
+        btnTogglePresence.textContent = '👤';
+      } else {
+        btnTogglePresence.classList.remove('active');
+        btnTogglePresence.textContent = '👤';
+      }
+    }
+
+    // =========================================================
+    // 1. SINCRONIZACIÓN DE DETECCIÓN DE PERSONAS (TABLET 17 ➔ LECTOR TV 02)
+    // =========================================================
+    function actualizarEstadoPresencia(hayPersonas, countCamara = 0) {
+      personaDetectada = hayPersonas;
+      actualizarVisualBotonPresencia(countCamara);
+
+      if (isFirebaseConnected) {
+        update(ref(db, 'muebles/tablet_17_simulada/estado_actual'), {
+          hayPersonas: hayPersonas,
+          conteoActual: countCamara
+        }).catch(() => {});
+      }
+
+      // La Tablet 17 NO reproduce video al detectar persona; únicamente el Lector TV 02 reacciona:
+      if (estadoGlobalReceta === "" && !isRecipePlaying) {
+        if (personaDetectada) {
+          if (!isVideo1Playing && !isVideo2Playing) {
+            reproducirVideo1Lector();
+          }
+        }
+      }
+    }
+
+    function reproducirVideo1Lector() {
+      if (isRecipePlaying || estadoGlobalReceta !== "") return;
+      isVideo1Playing = true;
+      isVideo2Playing = false;
+      video1.style.display = 'block';
+      video1.currentTime = 0;
+      video1.play().catch(e => console.log("Video 01 pendiente de interacción:", e));
+    }
+
+    video1.addEventListener('ended', () => {
+      isVideo1Playing = false;
+      video1.style.display = 'none';
+
+      if (personaDetectada && estadoGlobalReceta === "") {
+        video2.style.display = 'block';
+        video2.currentTime = 0;
+        video2.play().catch(e => console.error("Error reproduciendo Video 02:", e));
+        isVideo2Playing = true;
+      }
+    });
+
+    video2.addEventListener('ended', () => {
+      if (personaDetectada && estadoGlobalReceta === "") {
+        video2.currentTime = 0;
+        video2.play().catch(e => console.error("Error Video 02 bucle:", e));
+        isVideo2Playing = true;
+      } else {
+        isVideo2Playing = false;
+        video2.style.display = 'none';
+      }
+    });
+
+    // =========================================================
+    // 2. DISPARADOR Y DESACTIVADOR DE RECETA (SIMULA ESCANEO DE CÓDIGO DE BARRAS)
+    // =========================================================
+    function desactivarRecetaSimulada(syncToFirebase = true) {
+      estadoGlobalReceta = "";
+      isRecipePlaying = false;
+      recetaIniciadaLocalmente = false;
+      recipeBtns.forEach(btn => btn.classList.remove('active'));
+
+      // Detener y resetear videos en Tablet 17
+      Object.values(videosRecetaTablet).forEach(vt => {
+        vt.pause();
+        vt.currentTime = 0;
+        vt.style.display = 'none';
+      });
+      overlayRecetaTablet.style.display = 'none';
+
+      // Detener y resetear videos de recetas en Lector TV 02
+      Object.values(videosRecetaLector).forEach(video => {
+        video.pause();
+        video.currentTime = 0;
+        video.style.display = 'none';
+      });
+
+      scanStatusToast.textContent = "RECETA DESACTIVADA";
+      scanStatusToast.classList.add('show');
+      setTimeout(() => scanStatusToast.classList.remove('show'), 2000);
+
+      if (personaDetectada) {
+        video2.style.display = 'block';
+        video2.currentTime = 0;
+        video2.play().catch(e => console.log("Reanudando bucle 2:", e));
+        isVideo2Playing = true;
+      } else {
+        isVideo2Playing = false;
+        video2.style.display = 'none';
+      }
+
+      if (syncToFirebase && isFirebaseConnected) {
+        set(ref(db, 'muebles/tablet_17_simulada/estado_actual/recetaActiva'), "").catch(err => {
+          console.warn("Error al limpiar recetaActiva en Firebase:", err);
+        });
+      }
+    }
+
+    function activarRecetaSimulada(recetaID, syncToFirebase = true) {
+      if (!recetaID || !videosRecetaTabletMap[recetaID]) return;
+
+      if (estadoGlobalReceta === recetaID && isRecipePlaying) {
+        desactivarRecetaSimulada(syncToFirebase);
+        return;
+      }
+
+      estadoGlobalReceta = recetaID;
+      isRecipePlaying = true;
+      recetaIniciadaLocalmente = syncToFirebase;
+
+      recipeBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-receta') === recetaID);
+      });
+
+      scanStatusToast.textContent = `RECETA ${recetaID} ESCANEADA`;
+      scanStatusToast.classList.add('show');
+      setTimeout(() => scanStatusToast.classList.remove('show'), 2500);
+
+      // --- A) ACCIÓN EN MITAD INFERIOR (LECTOR TV 02 ROTADO) ---
+      if (isVideo1Playing) {
+        video1.pause();
+        video1.style.display = 'none';
+        isVideo1Playing = false;
+      }
+      if (isVideo2Playing) {
+        video2.pause();
+        video2.style.display = 'none';
+        isVideo2Playing = false;
+      }
+
+      Object.keys(videosRecetaLector).forEach(key => {
+        const v = videosRecetaLector[key];
+        if (key === recetaID) {
+          v.style.display = 'block';
+          v.currentTime = 0;
+          v.play().catch(e => console.error(`Error TV Receta ${key}:`, e));
+        } else {
+          v.pause();
+          v.style.display = 'none';
+        }
+      });
+
+      // --- B) ACCIÓN EN MITAD SUPERIOR (TABLET 17: PRECARGADO, MUTED, 0MS DELAY) ---
+      overlayRecetaTablet.style.display = 'flex';
+      Object.keys(videosRecetaTablet).forEach(key => {
+        const vt = videosRecetaTablet[key];
+        if (key === recetaID) {
+          vt.style.display = 'block';
+          vt.currentTime = 0;
+          vt.play().catch(e => console.error(`Error Tablet Receta ${key}:`, e));
+        } else {
+          vt.pause();
+          vt.style.display = 'none';
+        }
+      });
+
+      if (syncToFirebase && isFirebaseConnected) {
+        set(ref(db, 'muebles/tablet_17_simulada/estado_actual/recetaActiva'), recetaID).catch(err => {
+          console.warn("Error al emitir recetaActiva a Firebase:", err);
+        });
+      }
+    }
+
+    Object.values(videosRecetaTablet).forEach(vt => {
+      vt.addEventListener('ended', () => {
+        vt.style.display = 'none';
+        vt.pause();
+        verificarFinReceta();
+      });
+    });
+
+    Object.values(videosRecetaLector).forEach(video => {
+      video.addEventListener('ended', () => {
+        video.style.display = 'none';
+        video.pause();
+        verificarFinReceta();
+      });
+    });
+
+    function verificarFinReceta() {
+      estadoGlobalReceta = "";
+      isRecipePlaying = false;
+      recetaIniciadaLocalmente = false;
+      recipeBtns.forEach(btn => btn.classList.remove('active'));
+      overlayRecetaTablet.style.display = 'none';
+      Object.values(videosRecetaTablet).forEach(vt => {
+        vt.pause();
+        vt.style.display = 'none';
+      });
+
+      if (isFirebaseConnected) {
+        set(ref(db, 'muebles/tablet_17_simulada/estado_actual/recetaActiva'), "").catch(err => {
+          console.warn("Error al limpiar recetaActiva en Firebase al finalizar video:", err);
+        });
+      }
+
+      if (personaDetectada) {
+        video2.style.display = 'block';
+        video2.currentTime = 0;
+        video2.play().catch(e => console.log("Reanudando bucle 2:", e));
+        isVideo2Playing = true;
+      } else {
+        isVideo2Playing = false;
+        video2.style.display = 'none';
+      }
+    }
+
+    recipeBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-receta');
+        activarRecetaSimulada(id, true);
+      });
+    });
+
+    // =========================================================
+    // 3. BOTÓN PERSONA Y FLIP TÉCNICO
+    // =========================================================
+    btnTogglePresence.addEventListener('click', (e) => {
+      e.stopPropagation();
+      manualPresenceForced = !manualPresenceForced;
+      const hayAlguien = manualPresenceForced || (currentFacesCount > 0);
+      actualizarEstadoPresencia(hayAlguien, currentFacesCount);
+    });
+
+    const canvasElement = document.getElementById('canvasMesh');
+    const canvasCtx = canvasElement ? canvasElement.getContext('2d') : null;
+
+    btnFlip.addEventListener('click', (e) => {
+      e.stopPropagation();
+      card.classList.remove('is-flipped');
+      if (canvasCtx && canvasElement) {
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      }
+    });
+
+    let clickCountTop = 0;
+    let clickTimeoutTop;
+    document.getElementById('top-half').addEventListener('click', (e) => {
+      if (card.classList.contains('is-flipped')) return;
+      if (e.target.closest('.recipe-side-container') || e.target.closest('.recipe-btn') || e.target === btnFlip || e.target === btnTogglePresence || e.target === btnScanToggle || e.target.closest('#btn-scan-toggle') || e.target === btnSync || e.target.closest('#btn-firebase-sync') || e.target.closest('.modal-firebase')) {
+        return;
+      }
+
+      clickCountTop++;
+      clearTimeout(clickTimeoutTop);
+      if (clickCountTop >= 5) {
+        card.classList.add('is-flipped');
+        clickCountTop = 0;
+      } else {
+        clickTimeoutTop = setTimeout(() => { clickCountTop = 0; }, 500);
+      }
+    });
+
+    // =========================================================
+    // 4. SINCRONIZACIÓN FIREBASE (muebles/tablet_17_simulada)
+    // =========================================================
+    const btnSync = document.getElementById('btn-firebase-sync');
+    const modalAuth = document.getElementById('modal-firebase-auth');
+    const formAuth = document.getElementById('firebase-login-form');
+    const inputEmail = document.getElementById('fb-email');
+    const inputPass = document.getElementById('fb-password');
+    const btnCancelAuth = document.getElementById('btn-cancel-auth');
+    const fbErrorMsg = document.getElementById('fb-error-msg');
+
+    function actualizarBadgeSync(conectado) {
+      if (!btnSync) return;
+      if (conectado) {
+        btnSync.className = 'btn-firebase-sync connected';
+        btnSync.title = "LectorCam Conectado (Sincronizado vía Firebase)";
+        btnSync.querySelector('.sync-text').textContent = "LectorCam Listo";
+      } else {
+        btnSync.className = 'btn-firebase-sync';
+        btnSync.title = "Haz clic para conectar LectorCam vía Firebase";
+        btnSync.querySelector('.sync-text').textContent = "Conectar LectorCam";
+      }
+    }
+
+    let escuchaIniciada = false;
+    function conectarEscuchaFirebase() {
+      if (escuchaIniciada) return;
+      escuchaIniciada = true;
+
+      onValue(estadoSimuladaRef, (snapshot) => {
+        const estado = snapshot.val();
+        if (!estado) return;
+
+        const recetaRemota = estado.recetaActiva || "";
+
+        if (recetaRemota && recetaRemota !== estadoGlobalReceta) {
+          activarRecetaSimulada(recetaRemota, false);
+        } 
+        else if (!recetaRemota && estadoGlobalReceta !== "" && !recetaIniciadaLocalmente) {
+          desactivarRecetaSimulada(false);
+        }
+      });
+    }
+
+    function intentarAutoLogin() {
+      try {
+        const savedEmail = localStorage.getItem('canal_moderno_email');
+        const savedPass = localStorage.getItem('canal_moderno_pass');
+        if (savedEmail && savedPass) {
+          if (btnSync) {
+            btnSync.className = 'btn-firebase-sync syncing';
+            btnSync.querySelector('.sync-text').textContent = "Conectando...";
+          }
+          signInWithEmailAndPassword(auth, savedEmail, savedPass).catch(() => {
+            actualizarBadgeSync(false);
+          });
+        }
+      } catch (e) {}
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        isFirebaseConnected = true;
+        actualizarBadgeSync(true);
+        conectarEscuchaFirebase();
+      } else {
+        isFirebaseConnected = false;
+        actualizarBadgeSync(false);
+        intentarAutoLogin();
+      }
+    });
+
+    if (btnSync) {
+      btnSync.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isFirebaseConnected) {
+          scanStatusToast.textContent = "LECTORCAM YA CONECTADO";
+          scanStatusToast.classList.add('show');
+          setTimeout(() => scanStatusToast.classList.remove('show'), 2000);
+          return;
+        }
+        try {
+          const savedEmail = localStorage.getItem('canal_moderno_email');
+          if (savedEmail && inputEmail) inputEmail.value = savedEmail;
+        } catch (e) {}
+        if (fbErrorMsg) fbErrorMsg.style.display = 'none';
+        modalAuth.classList.add('show');
+      });
+    }
+
+    if (btnCancelAuth) {
+      btnCancelAuth.addEventListener('click', (e) => {
+        e.stopPropagation();
+        modalAuth.classList.remove('show');
+      });
+    }
+
+    if (formAuth) {
+      formAuth.addEventListener('submit', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const email = inputEmail.value.trim();
+        const pass = inputPass.value;
+        const submitBtn = document.getElementById('btn-submit-auth');
+        if (submitBtn) submitBtn.textContent = 'CONECTANDO...';
+        if (fbErrorMsg) fbErrorMsg.style.display = 'none';
+
+        signInWithEmailAndPassword(auth, email, pass)
+          .then(() => {
+            if (submitBtn) submitBtn.textContent = 'CONECTAR';
+            try {
+              localStorage.setItem('canal_moderno_email', email);
+              localStorage.setItem('canal_moderno_pass', pass);
+            } catch (err) {}
+            modalAuth.classList.remove('show');
+            formAuth.reset();
+          })
+          .catch(err => {
+            if (submitBtn) submitBtn.textContent = 'CONECTAR';
+            if (fbErrorMsg) {
+              fbErrorMsg.textContent = "Error: Verifica tus credenciales.";
+              fbErrorMsg.style.display = 'block';
+            }
+          });
+      });
+    }
+
+    // =========================================================
+    // 5. MEDIAPIPE FACE MESH (VISIÓN COMPUTACIONAL)
+    // =========================================================
+    function onResults(results) {
+      const loadingEl = document.getElementById('loading-cam');
+      if (loadingEl) loadingEl.style.display = 'none';
+
+      const rostrosActuales = results.multiFaceLandmarks ? results.multiFaceLandmarks.length : 0;
+      const ahora = Date.now();
+      currentFacesCount = rostrosActuales;
+
+      const hayAlguien = manualPresenceForced || (rostrosActuales > 0);
+      actualizarEstadoPresencia(hayAlguien, rostrosActuales);
+
+      if (rostrosActuales > 0) {
+        if (!inicioSesionActual) inicioSesionActual = ahora;
+        tiempoSesionActual = (ahora - inicioSesionActual) / 1000;
+      } else {
+        if (inicioSesionActual) {
+          tiempoAcumuladoTotal += (ahora - inicioSesionActual) / 1000;
+          inicioSesionActual = null;
+          tiempoSesionActual = 0;
+        }
+      }
+
+      if (rostrosActuales > rostrosActivos.length) {
+        const nuevos = rostrosActuales - rostrosActivos.length;
+        for (let i = 0; i < nuevos; i++) rostrosActivos.push({ startTime: ahora, contado: false });
+      } else if (rostrosActuales < rostrosActivos.length) {
+        rostrosActivos.splice(rostrosActuales);
+      }
+
+      for (let i = 0; i < rostrosActivos.length; i++) {
+        if (!rostrosActivos[i].contado && (ahora - rostrosActivos[i].startTime >= 2000)) {
+          totalHistorico++;
+          rostrosActivos[i].contado = true;
+        }
+      }
+
+      let tiempoTotalParaCalculo = tiempoAcumuladoTotal + tiempoSesionActual;
+      let promedio = totalHistorico > 0 ? (tiempoTotalParaCalculo / totalHistorico) : 0;
+
+      faceElement.innerText = `ACTUAL: ${rostrosActuales}`;
+      totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
+      timeElement.innerText = `TIEMPO: ${tiempoSesionActual.toFixed(1)}s`;
+      avgElement.innerText = `PROMEDIO: ${promedio.toFixed(1)}s`;
+
+      if (results.image && canvasElement) {
+        if (canvasElement.width !== results.image.width || canvasElement.height !== results.image.height) {
+          canvasElement.width = results.image.width;
+          canvasElement.height = results.image.height;
+        }
+      }
+
+      if (canvasElement && canvasCtx) {
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+        if (card.classList.contains('is-flipped') && results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+          const drawFn = window.drawConnectors || (typeof drawConnectors !== 'undefined' ? drawConnectors : null);
+          const tess = window.FACEMESH_TESSELATION || (typeof FACEMESH_TESSELATION !== 'undefined' ? FACEMESH_TESSELATION : null);
+
+          if (drawFn && tess) {
+            for (const landmarks of results.multiFaceLandmarks) {
+              drawFn(canvasCtx, landmarks, tess, { color: '#00FF0080', lineWidth: 1.0 });
+            }
+          }
+        }
+      }
+    }
+
+    function iniciarCamaraYReconocimiento() {
+      if (camaraIniciada) return;
+      camaraIniciada = true;
+      try {
+        const faceMesh = new window.FaceMesh({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        });
+        faceMesh.setOptions({ maxNumFaces: 5, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+        faceMesh.onResults(onResults);
+        let lastFaceMeshFrameTime = 0;
+        const camera = new window.Camera(videoCamera, { 
+          onFrame: async () => { 
+            const now = performance.now();
+            const frameInterval = isRecipePlaying ? 250 : 90;
+            if (now - lastFaceMeshFrameTime < frameInterval) return;
+            lastFaceMeshFrameTime = now;
+
+            await faceMesh.send({image: videoCamera}); 
+          }, 
+          width: 480, 
+          height: 360 
+        });
+        camera.start().catch(err => {
+          console.warn("Cámara no disponible o bloqueada:", err);
+          const loadingEl = document.getElementById('loading-cam');
+          if (loadingEl) loadingEl.innerText = "CÁMARA INACTIVA (USA EL BOTÓN 👤)";
+        });
+      } catch (e) {
+        console.warn("MediaPipe no pudo iniciarse:", e);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', iniciarCamaraYReconocimiento);
+    setTimeout(iniciarCamaraYReconocimiento, 500);
+  </script>
+</body>
+</html>

@@ -65,9 +65,11 @@
             transform: scale(1.05);
         }
 
-        /* Contenedor principal del botón */
+        /* Contenedor principal de los botones */
         .container {
             display: flex;
+            flex-direction: column;
+            gap: 20px;
             justify-content: center;
             align-items: center;
             width: 100%;
@@ -75,7 +77,7 @@
             box-sizing: border-box;
         }
 
-        /* Estilo del botón único */
+        /* Estilo del botón */
         .btn-tv {
             background-color: #DACCAA; 
             color: #ffffff;
@@ -118,8 +120,11 @@
         <h1 onclick="toggleFullScreen()" title="Haz clic para alternar pantalla completa">Simulador de TV</h1>
 
         <div class="container">
-            <a href="https://yaryur-nestle.github.io/canal-moderno/lector" target="_blank" class="btn-tv">
-                RECETAS Redvital la Yaguara
+            <a href="lector.html" target="_blank" class="btn-tv">
+                01 - RECETAS Redvital la Yaguara
+            </a>
+            <a href="lector02.html" target="_blank" class="btn-tv">
+                02 - RECETAS Inversiones Yar-Yur
             </a>
         </div>
     </div>
