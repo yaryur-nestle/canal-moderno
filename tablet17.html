@@ -327,37 +327,35 @@
       // Enviar señal de presencia a Firebase para que el Televisor 02 reproduzca su video
       // (Usamos update para conservar recetaActiva si hay una receta en curso)
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
+        const prevCount = pendingFaceCount;
         hayPersonasActual = personasDetectadas;
-
-        update(estadoActualRef, {
+        const payloadEstado = {
             hayPersonas: hayPersonasActual,
             conteoActual: rostrosActuales,
             ultimaActividad: Date.now()
-        });
+        };
+        if (rostrosActuales > prevCount) {
+            totalHistorico += (rostrosActuales - prevCount);
+            payloadEstado.contadorAcumulado = totalHistorico;
+        }
+        update(estadoActualRef, payloadEstado);
       }
 
       if (rostrosActuales !== pendingFaceCount) {
         pendingFaceCount = rostrosActuales;
         clearTimeout(stabilityTimer); 
-        const delayMs = pendingFaceCount > lastLoggedFaceCount ? 350 : 1000;
         stabilityTimer = setTimeout(() => {
           if (pendingFaceCount !== lastLoggedFaceCount) {
-            const nuevasPersonas = pendingFaceCount - lastLoggedFaceCount;
             push(eventosRef, {
               timestamp: Date.now(),
               fecha: new Date().toISOString(),
               conteoAnterior: lastLoggedFaceCount,
               conteoActual: pendingFaceCount
             });
-            if (nuevasPersonas > 0) {
-              runTransaction(contadorAcumuladoRef, (valorActual) => {
-                return (Number(valorActual) || 0) + nuevasPersonas;
-              }).catch((err) => console.warn("Error actualizando contadorAcumulado:", err));
-            }
             set(statusRef, 'ONLINE');
             lastLoggedFaceCount = pendingFaceCount;
           }
-        }, delayMs); 
+        }, 1000); 
       }
 
       if (rostrosActuales > 0) {

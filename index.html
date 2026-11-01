@@ -1960,6 +1960,9 @@
             });
         }
 
+        let t17PrevConteo = null;
+        let t17AcumuladoActual = 0;
+
         function initGlobalMapListeners() {
             for (let i = 1; i <= 17; i++) {
                 let numFormat = i.toString().padStart(2, '0');
@@ -1968,7 +1971,33 @@
                 const globalEstadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
                 onValue(globalEstadoQuery, (snapshot) => {
                     const data = snapshot.val();
-                    liveTabletCounts[i] = (data && data.conteoActual !== undefined) ? data.conteoActual : 0;
+                    const nuevoConteo = (data && typeof data.conteoActual === 'number') ? data.conteoActual : 0;
+                    liveTabletCounts[i] = nuevoConteo;
+
+                    if (i === 17) {
+                        const acumuladoRemoto = (data && typeof data.contadorAcumulado === 'number') ? data.contadorAcumulado : 0;
+                        if (t17PrevConteo === null) {
+                            t17AcumuladoActual = acumuladoRemoto;
+                            if (nuevoConteo > 0 && acumuladoRemoto === 0) {
+                                t17AcumuladoActual = nuevoConteo;
+                                update(globalEstadoQuery, { contadorAcumulado: t17AcumuladoActual }).catch(() => {});
+                            }
+                        } else if (nuevoConteo > t17PrevConteo) {
+                            const diff = nuevoConteo - t17PrevConteo;
+                            if (acumuladoRemoto >= t17AcumuladoActual + diff) {
+                                t17AcumuladoActual = acumuladoRemoto;
+                            } else {
+                                t17AcumuladoActual += diff;
+                                update(globalEstadoQuery, { contadorAcumulado: t17AcumuladoActual }).catch(() => {});
+                            }
+                        } else {
+                            t17AcumuladoActual = acumuladoRemoto;
+                        }
+                        t17PrevConteo = nuevoConteo;
+                        const numEl = document.getElementById('tablet17-counter-number');
+                        if (numEl) numEl.textContent = t17AcumuladoActual;
+                    }
+
                     updateMapMarkers();
                     actualizarPulsoPanelInfo();
                     actualizarTablaSucursalesModal();
@@ -2151,7 +2180,7 @@
                 if (config.tabletId === 17) {
                     t17CounterEl.style.display = 'flex';
                     t17CounterEl.classList.remove('is-compact');
-                    if (t17CounterNumEl) t17CounterNumEl.textContent = '0';
+                    if (t17CounterNumEl) t17CounterNumEl.textContent = t17AcumuladoActual;
                 } else {
                     t17CounterEl.style.display = 'none';
                     t17CounterEl.classList.remove('is-compact');
@@ -2179,7 +2208,7 @@
             const unsubEstado = onValue(estadoQuery, (snapshot) => {
                 const data = snapshot.val();
                 if (config.tabletId === 17) {
-                    const acumulado = (data && typeof data.contadorAcumulado === 'number') ? data.contadorAcumulado : 0;
+                    const acumulado = (data && typeof data.contadorAcumulado === 'number') ? data.contadorAcumulado : t17AcumuladoActual;
                     const numEl = document.getElementById('tablet17-counter-number');
                     if (numEl) numEl.textContent = acumulado;
                 }
@@ -3981,6 +4010,7 @@
                 e.stopPropagation();
                 const codigo = t17CodeInput ? t17CodeInput.value.trim() : '';
                 if (codigo === '7097') {
+                    t17AcumuladoActual = 0;
                     const numEl = document.getElementById('tablet17-counter-number');
                     if (numEl) numEl.textContent = '0';
                     update(ref(db, 'muebles/tablet_17/estado_actual'), {
