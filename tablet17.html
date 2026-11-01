@@ -111,7 +111,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, set, update, push, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, set, update, push, onDisconnect, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -132,6 +132,7 @@
     const eventosRef = ref(db, 'muebles/tablet_17/eventos');
     const statusRef = ref(db, 'muebles/tablet_17/status');
     const estadoActualRef = ref(db, 'muebles/tablet_17/estado_actual'); 
+    const contadorAcumuladoRef = ref(db, 'muebles/tablet_17/estado_actual/contadorAcumulado');
     const connectedRef = ref(db, ".info/connected");
 
     const loginScreen = document.getElementById('login-screen');
@@ -254,10 +255,19 @@
       }
     });
 
-    // Sincronización con el Televisor 02 al escanear un código de barras de recetas
+    // Sincronización con el Televisor 02 al escanear un código de barras de recetas y con el contador reiniciable
     onValue(estadoActualRef, (snapshot) => {
       const estado = snapshot.val();
       if(!estado) return;
+
+      if (estado.contadorAcumulado !== undefined && typeof estado.contadorAcumulado === 'number') {
+        if (estado.contadorAcumulado === 0 && totalHistorico > 0) {
+          tiempoAcumuladoTotal = 0;
+        }
+        totalHistorico = estado.contadorAcumulado;
+        const totalEl = document.getElementById('total-counter');
+        if (totalEl) totalEl.innerText = `HISTÓRICO: ${totalHistorico}`;
+      }
 
       const nuevaReceta = estado.recetaActiva || "";
       const nuevoTimestamp = estado.timestampReceta || null; 
@@ -329,18 +339,25 @@
       if (rostrosActuales !== pendingFaceCount) {
         pendingFaceCount = rostrosActuales;
         clearTimeout(stabilityTimer); 
+        const delayMs = pendingFaceCount > lastLoggedFaceCount ? 350 : 1000;
         stabilityTimer = setTimeout(() => {
           if (pendingFaceCount !== lastLoggedFaceCount) {
+            const nuevasPersonas = pendingFaceCount - lastLoggedFaceCount;
             push(eventosRef, {
               timestamp: Date.now(),
               fecha: new Date().toISOString(),
               conteoAnterior: lastLoggedFaceCount,
               conteoActual: pendingFaceCount
             });
+            if (nuevasPersonas > 0) {
+              runTransaction(contadorAcumuladoRef, (valorActual) => {
+                return (Number(valorActual) || 0) + nuevasPersonas;
+              }).catch((err) => console.warn("Error actualizando contadorAcumulado:", err));
+            }
             set(statusRef, 'ONLINE');
             lastLoggedFaceCount = pendingFaceCount;
           }
-        }, 1000); 
+        }, delayMs); 
       }
 
       if (rostrosActuales > 0) {
@@ -350,17 +367,6 @@
         if (inicioSesionActual) {
           tiempoAcumuladoTotal += (ahora - inicioSesionActual) / 1000;
           inicioSesionActual = null; tiempoSesionActual = 0;
-        }
-      }
-
-      if (rostrosActuales > rostrosActivos.length) {
-        const nuevosRostros = rostrosActuales - rostrosActivos.length;
-        for (let i = 0; i < nuevosRostros; i++) { rostrosActivos.push({ startTime: ahora, contado: false }); }
-      } else if (rostrosActuales < rostrosActivos.length) { rostrosActivos.splice(rostrosActuales); }
-
-      for (let i = 0; i < rostrosActivos.length; i++) {
-        if (!rostrosActivos[i].contado && (ahora - rostrosActivos[i].startTime >= 2000)) {
-          totalHistorico++; rostrosActivos[i].contado = true;
         }
       }
 

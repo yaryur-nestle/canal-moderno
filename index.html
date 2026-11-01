@@ -510,6 +510,165 @@
         .fade-out-up { animation: fadeOutUp 0.5s forwards ease-in; }
         @keyframes fadeOutUp { 0% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-70%); } }
 
+        /* === CONTADOR GIGANTE / COMPACTO Y MODAL DE REINICIO (EXCLUSIVO TABLET 17 EN TIEMPO REAL) === */
+        .t17-counter-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 120;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.88);
+            border: 4px solid #b39c6e;
+            border-radius: 36px;
+            padding: 24px 64px;
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22), 0 0 0 8px rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(6px);
+            pointer-events: none;
+            transition: top 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                        padding 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                        border-radius 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                        border-width 0.45s ease,
+                        box-shadow 0.45s ease,
+                        background-color 0.45s ease;
+        }
+        .t17-counter-number {
+            font-size: clamp(7rem, 18vw, 14.5rem);
+            font-weight: 900;
+            line-height: 1;
+            color: #1a1a1a;
+            text-shadow: 3px 4px 0px #daccaa;
+            letter-spacing: -2px;
+            transition: font-size 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                        text-shadow 0.45s ease,
+                        letter-spacing 0.45s ease;
+        }
+        .t17-counter-display.is-compact {
+            top: 6px;
+            left: 50%;
+            transform: translate(-50%, 0);
+            padding: 3px 18px;
+            border-radius: 16px;
+            border-width: 2px;
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+        }
+        .t17-counter-display.is-compact .t17-counter-number {
+            font-size: 1.55rem;
+            text-shadow: 1px 1px 0px #daccaa;
+            letter-spacing: 0;
+        }
+
+        /* Modal Emergente de Reinicio del Contador (Tablet 17) */
+        .t17-reset-modal-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
+            z-index: 2500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .t17-reset-modal-backdrop.active {
+            display: flex;
+        }
+        .t17-reset-modal-card {
+            background: #ffffff;
+            border: 2.5px solid #b39c6e;
+            border-radius: 18px;
+            padding: 28px 32px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+            text-align: center;
+            animation: fadeIn 0.22s ease;
+        }
+        .t17-reset-modal-title {
+            color: #222222;
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin: 0 0 22px 0;
+            line-height: 1.35;
+        }
+        .t17-reset-modal-actions {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+        }
+        .t17-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 1.02rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            border: none;
+            outline: none;
+        }
+        .t17-btn:active {
+            transform: scale(0.97);
+        }
+        .t17-btn-confirm {
+            background: #b39c6e;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(179, 156, 110, 0.35);
+        }
+        .t17-btn-confirm:hover {
+            background: #968157;
+        }
+        .t17-btn-cancel {
+            background: #f2efe9;
+            color: #444444;
+            border: 1.5px solid #daccaa;
+        }
+        .t17-btn-cancel:hover {
+            background: #e6dfd2;
+        }
+        .t17-code-input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 8px;
+            text-align: center;
+            border: 2px solid #daccaa;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            outline: none;
+            color: #111;
+            background: #faf8f5;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .t17-code-input:focus {
+            border-color: #b39c6e;
+            box-shadow: 0 0 0 3px rgba(179, 156, 110, 0.25);
+        }
+        .t17-code-error {
+            color: #e53935;
+            font-size: 0.88rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: none;
+        }
+        @keyframes t17Shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .t17-shake {
+            animation: t17Shake 0.35s ease;
+        }
+
         /* Contenido Trasero */
         .back-content { background: #ffffff; padding: 20px 30px 48px 30px; border-radius: 15px; width: 95%; max-width: 1200px; box-shadow: 0 5px 25px rgba(0,0,0,0.08); border: 1px solid #eaeaea; text-align: center; position: relative; height: 85%; display: flex; flex-direction: column; }
         .header-top-row { display: flex; justify-content: center; align-items: center; gap: 14px; margin-bottom: 8px; padding: 0 140px; flex-wrap: wrap; }
@@ -1393,6 +1552,37 @@
                             <div class="live-datetime" id="live-datetime">--</div>
                         </div>
 
+                        <!-- Contador Acumulado Reiniciable (Exclusivo Tablet 17 en Tiempo Real) -->
+                        <div id="tablet17-counter-display" class="t17-counter-display" style="display: none;">
+                            <span id="tablet17-counter-number" class="t17-counter-number">0</span>
+                        </div>
+
+                        <!-- Ventana Emergente para Reiniciar el Contador de Tablet 17 -->
+                        <div id="t17-reset-modal" class="t17-reset-modal-backdrop">
+                            <div id="t17-reset-card" class="t17-reset-modal-card">
+                                <!-- Paso 1: Confirmación -->
+                                <div id="t17-reset-step-confirm">
+                                    <h3 class="t17-reset-modal-title">¿Deseas reiniciar el contador?</h3>
+                                    <div class="t17-reset-modal-actions">
+                                        <button type="button" id="t17-btn-confirm-yes" class="t17-btn t17-btn-confirm">Sí</button>
+                                        <button type="button" id="t17-btn-confirm-cancel" class="t17-btn t17-btn-cancel">Cancelar</button>
+                                    </div>
+                                </div>
+                                <!-- Paso 2: Código de seguridad 7097 -->
+                                <div id="t17-reset-step-code" style="display: none;">
+                                    <h3 class="t17-reset-modal-title">Introduzca el código para reiniciar el contador</h3>
+                                    <form id="t17-reset-code-form" autocomplete="off">
+                                        <input type="password" id="t17-reset-code-input" class="t17-code-input" inputmode="numeric" maxlength="4" placeholder="••••">
+                                        <div id="t17-reset-error-msg" class="t17-code-error">Código incorrecto</div>
+                                        <div class="t17-reset-modal-actions">
+                                            <button type="submit" id="t17-btn-code-submit" class="t17-btn t17-btn-confirm">Reiniciar</button>
+                                            <button type="button" id="t17-btn-code-cancel" class="t17-btn t17-btn-cancel">Cancelar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="realtime-click-tooltip" class="realtime-click-tooltip">Aquí aparecerán la cantidad de personas que estén frente al mueble en tiempo real</div>
                     </div>
 
@@ -1452,7 +1642,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getDatabase, ref, query, orderByChild, onChildAdded, onValue, get, child } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, query, orderByChild, onChildAdded, onValue, get, child, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
@@ -1851,6 +2041,12 @@
                 overlayEl.classList.remove('fade-out-up');
             }
             document.getElementById('live-timer').classList.remove('recorded');
+            const t17CounterEl = document.getElementById('tablet17-counter-display');
+            if (t17CounterEl) {
+                t17CounterEl.style.display = 'none';
+                t17CounterEl.classList.remove('is-compact');
+            }
+            if (typeof cerrarModalReinicioT17 === 'function') cerrarModalReinicioT17();
         }
 
         document.getElementById('btn-volver-mapa').addEventListener('click', () => {
@@ -1948,6 +2144,21 @@
             }
             tabletActualEnGrafico = zoneId;
             currentMonitorTabletId = config.tabletId;
+
+            const t17CounterEl = document.getElementById('tablet17-counter-display');
+            const t17CounterNumEl = document.getElementById('tablet17-counter-number');
+            if (t17CounterEl) {
+                if (config.tabletId === 17) {
+                    t17CounterEl.style.display = 'flex';
+                    t17CounterEl.classList.remove('is-compact');
+                    if (t17CounterNumEl) t17CounterNumEl.textContent = '0';
+                } else {
+                    t17CounterEl.style.display = 'none';
+                    t17CounterEl.classList.remove('is-compact');
+                }
+            }
+            if (typeof cerrarModalReinicioT17 === 'function') cerrarModalReinicioT17();
+
             viewState = 'CAL_MONTH';
             currentViewDate = initialDate ? new Date(initialDate) : new Date();
             currentMetric = 'count';
@@ -1967,10 +2178,18 @@
             const estadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
             const unsubEstado = onValue(estadoQuery, (snapshot) => {
                 const data = snapshot.val();
+                if (config.tabletId === 17) {
+                    const acumulado = (data && typeof data.contadorAcumulado === 'number') ? data.contadorAcumulado : 0;
+                    const numEl = document.getElementById('tablet17-counter-number');
+                    if (numEl) numEl.textContent = acumulado;
+                }
                 if (data && data.conteoActual !== undefined) {
                     actualizarSiluetas(zoneId, data.conteoActual);
                     conteosActuales[zoneId] = data.conteoActual;
                     if (!isInitialLoad) updateLiveOverlay();
+                    else if (config.tabletId === 17 && t17CounterEl) {
+                        t17CounterEl.classList.toggle('is-compact', data.conteoActual > 0);
+                    }
                 }
             });
             activeFirebaseListeners.push(unsubEstado);
@@ -3692,9 +3911,108 @@
         const realtimeClickTooltip = document.getElementById('realtime-click-tooltip');
         let realtimeTooltipTimer = null;
 
+        /* --- MODAL DE REINICIO DE CONTADOR (TABLET 17 EN TIEMPO REAL) --- */
+        const t17ResetModal = document.getElementById('t17-reset-modal');
+        const t17ResetCard = document.getElementById('t17-reset-card');
+        const t17StepConfirm = document.getElementById('t17-reset-step-confirm');
+        const t17StepCode = document.getElementById('t17-reset-step-code');
+        const t17BtnConfirmYes = document.getElementById('t17-btn-confirm-yes');
+        const t17BtnConfirmCancel = document.getElementById('t17-btn-confirm-cancel');
+        const t17CodeForm = document.getElementById('t17-reset-code-form');
+        const t17CodeInput = document.getElementById('t17-reset-code-input');
+        const t17ErrorMsg = document.getElementById('t17-reset-error-msg');
+        const t17BtnCodeCancel = document.getElementById('t17-btn-code-cancel');
+
+        function abrirModalReinicioT17() {
+            if (!t17ResetModal) return;
+            if (t17StepConfirm) t17StepConfirm.style.display = 'block';
+            if (t17StepCode) t17StepCode.style.display = 'none';
+            if (t17CodeInput) t17CodeInput.value = '';
+            if (t17ErrorMsg) t17ErrorMsg.style.display = 'none';
+            t17ResetModal.classList.add('active');
+        }
+
+        function cerrarModalReinicioT17() {
+            if (!t17ResetModal) return;
+            t17ResetModal.classList.remove('active');
+            if (t17CodeInput) t17CodeInput.value = '';
+            if (t17ErrorMsg) t17ErrorMsg.style.display = 'none';
+        }
+
+        if (t17BtnConfirmCancel) {
+            t17BtnConfirmCancel.addEventListener('click', (e) => {
+                e.stopPropagation();
+                cerrarModalReinicioT17();
+            });
+        }
+
+        if (t17BtnConfirmYes) {
+            t17BtnConfirmYes.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (t17StepConfirm) t17StepConfirm.style.display = 'none';
+                if (t17StepCode) t17StepCode.style.display = 'block';
+                if (t17ErrorMsg) t17ErrorMsg.style.display = 'none';
+                if (t17CodeInput) {
+                    t17CodeInput.value = '';
+                    setTimeout(() => t17CodeInput.focus(), 50);
+                }
+            });
+        }
+
+        if (t17BtnCodeCancel) {
+            t17BtnCodeCancel.addEventListener('click', (e) => {
+                e.stopPropagation();
+                cerrarModalReinicioT17();
+            });
+        }
+
+        if (t17ResetModal) {
+            t17ResetModal.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (e.target === t17ResetModal) {
+                    cerrarModalReinicioT17();
+                }
+            });
+        }
+
+        if (t17CodeForm) {
+            t17CodeForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const codigo = t17CodeInput ? t17CodeInput.value.trim() : '';
+                if (codigo === '7097') {
+                    const numEl = document.getElementById('tablet17-counter-number');
+                    if (numEl) numEl.textContent = '0';
+                    update(ref(db, 'muebles/tablet_17/estado_actual'), {
+                        contadorAcumulado: 0,
+                        ultimoReinicioContador: Date.now()
+                    }).catch(err => console.warn("Error al reiniciar contador en Firebase:", err));
+                    cerrarModalReinicioT17();
+                } else {
+                    if (t17ErrorMsg) t17ErrorMsg.style.display = 'block';
+                    if (t17ResetCard) {
+                        t17ResetCard.classList.remove('t17-shake');
+                        void t17ResetCard.offsetWidth;
+                        t17ResetCard.classList.add('t17-shake');
+                    }
+                    if (t17CodeInput) {
+                        t17CodeInput.value = '';
+                        t17CodeInput.focus();
+                    }
+                }
+            });
+        }
+
         if (realtimeBackCard && realtimeClickTooltip) {
             realtimeBackCard.addEventListener('click', (e) => {
-                if (e.target.closest('button, a, .global-zoom-controls')) return;
+                if (e.target.closest('button, a, .global-zoom-controls, #t17-reset-modal')) return;
+
+                // En la pantalla en tiempo real de la Tablet 17, abrir ventana emergente de reinicio del contador
+                if (currentMonitorTabletId === 17) {
+                    abrirModalReinicioT17();
+                    return;
+                }
+
                 const rect = realtimeBackCard.getBoundingClientRect();
                 const scaleX = (rect.width / realtimeBackCard.offsetWidth) || 1;
                 const scaleY = (rect.height / realtimeBackCard.offsetHeight) || 1;
@@ -3724,6 +4042,7 @@
 
         window.flipToCalendar = function() {
             if (realtimeClickTooltip) realtimeClickTooltip.classList.remove('visible');
+            cerrarModalReinicioT17();
             document.getElementById('flip-container').classList.remove('flipped');
         };
 
@@ -3747,9 +4066,13 @@
         function updateLiveOverlay() {
             const total = conteosActuales[1] + conteosActuales[2] + conteosActuales[3];
             const overlayEl = document.getElementById('live-overlay'), countEl = document.getElementById('live-count'), timerEl = document.getElementById('live-timer');
+            const t17CounterEl = document.getElementById('tablet17-counter-display');
 
             if (total > 0) {
                 clearTimeout(stopTimeout1); clearTimeout(stopTimeout2);
+                if (t17CounterEl && currentMonitorTabletId === 17) {
+                    t17CounterEl.classList.add('is-compact');
+                }
                 if (!isOverlayActive) {
                     isOverlayActive = true; overlayEl.classList.remove('fade-out-up'); overlayEl.style.display = 'flex';
                     timerEl.classList.remove('recorded'); overlayStartTime = Date.now(); overlayTimerInterval = setInterval(renderTimer, 47); 
@@ -3760,8 +4083,16 @@
                     isOverlayActive = false; clearInterval(overlayTimerInterval); timerEl.classList.add('recorded'); 
                     stopTimeout1 = setTimeout(() => {
                         overlayEl.classList.add('fade-out-up'); 
-                        stopTimeout2 = setTimeout(() => { overlayEl.style.display = 'none'; overlayEl.classList.remove('fade-out-up'); }, 500); 
+                        stopTimeout2 = setTimeout(() => { 
+                            overlayEl.style.display = 'none'; 
+                            overlayEl.classList.remove('fade-out-up'); 
+                            if (t17CounterEl && currentMonitorTabletId === 17 && (conteosActuales[1] + conteosActuales[2] + conteosActuales[3]) === 0) {
+                                t17CounterEl.classList.remove('is-compact');
+                            }
+                        }, 500); 
                     }, 1500); 
+                } else if (t17CounterEl && currentMonitorTabletId === 17) {
+                    t17CounterEl.classList.remove('is-compact');
                 }
             }
         }
