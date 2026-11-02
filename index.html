@@ -297,25 +297,18 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 6px 65px 8px 155px;
-            min-height: 68px;
+            padding: 8px 65px 8px 155px;
+            min-height: 54px;
             position: relative;
         }
         #stats-chart-title {
             color: #222;
-            font-size: 1.22rem;
+            font-size: 1.25rem;
             font-weight: 800;
             text-align: center;
             line-height: 1.3;
             letter-spacing: 0.4px;
             margin: 0;
-        }
-        #stats-chart-subtitle {
-            color: #888;
-            font-size: 0.82rem;
-            font-weight: 600;
-            margin-top: 3px;
-            text-align: center;
         }
 
         #btn-stats-metric {
@@ -347,7 +340,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.76rem;
+            font-size: 0.78rem;
             font-weight: 700;
             color: #444;
             white-space: nowrap;
@@ -379,6 +372,69 @@
             padding: 4px 6px;
         }
 
+        /* Tooltip Inteligente Minimalista para el Gráfico de Estadísticas */
+        .stats-custom-tooltip {
+            position: absolute;
+            z-index: 50;
+            background: #ffffff;
+            border: 2px solid #b39c6e;
+            border-radius: 12px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+            pointer-events: none;
+            min-width: 158px;
+            max-width: 215px;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+            transition: opacity 0.14s ease, transform 0.14s ease;
+        }
+        .stats-custom-tooltip.is-pinned {
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(179, 156, 110, 0.35);
+        }
+        .stats-tt-header {
+            padding: 9px 12px 7px;
+            font-size: 0.98rem;
+            font-weight: 800;
+            color: #1f1f1f;
+            letter-spacing: 0.2px;
+            border-bottom: 1px solid #f0ece1;
+            background: #fdfbf7;
+            white-space: nowrap;
+        }
+        .stats-tt-images {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #ffffff;
+        }
+        .stats-tt-marca-img {
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+            display: block;
+        }
+        .stats-tt-sucursal-img {
+            max-width: 120px;
+            height: 38px;
+            object-fit: contain;
+            display: block;
+        }
+        .stats-tt-estado {
+            background: #b39c6e;
+            color: #ffffff;
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 6px 12px;
+            text-align: center;
+        }
+
         .stats-color-dot {
             display: inline-block;
             width: 11px;
@@ -407,16 +463,6 @@
         .stats-subitem-link.active-subitem {
             background-color: #efe6d2;
             outline: 1.5px solid #b39c6e;
-        }
-        .stats-card-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 11px;
-            font-weight: 700;
-            color: #555;
-            margin-top: 4px;
-            justify-content: center;
         }
 
         .side-panel { position: absolute; top: 0; right: 0; width: 320px; height: 100%; background-color: #ffffff; box-shadow: none; z-index: 10000; transform: translateX(105%); visibility: hidden; opacity: 0; pointer-events: none; transition: transform 0.3s ease-in-out, opacity 0.2s ease-in-out, visibility 0.3s; display: flex; flex-direction: column; padding: 60px 20px 20px 20px; overflow-y: auto; overflow-x: hidden; }
@@ -1614,7 +1660,6 @@
 
                     <div class="stats-header-bar">
                         <h2 id="stats-chart-title">Número de personas en las exhibiciones</h2>
-                        <div id="stats-chart-subtitle">17 exhibiciones activas</div>
                     </div>
 
                     <div id="stats-legend-strip" class="stats-legend-strip"></div>
@@ -1625,6 +1670,14 @@
                         </button>
                         <div class="stats-canvas-wrapper" id="stats-canvas-wrapper">
                             <canvas id="stats-lines-chart"></canvas>
+                            <div id="stats-custom-tooltip" class="stats-custom-tooltip">
+                                <div id="stats-tt-header" class="stats-tt-header"></div>
+                                <div id="stats-tt-images" class="stats-tt-images">
+                                    <img id="stats-tt-marca-img" class="stats-tt-marca-img" src="" alt="Marca">
+                                    <img id="stats-tt-sucursal-img" class="stats-tt-sucursal-img" src="" alt="Sucursal">
+                                </div>
+                                <div id="stats-tt-estado" class="stats-tt-estado"></div>
+                            </div>
                         </div>
                         <button type="button" id="btn-stats-next" class="nav-arrow" title="Mes Siguiente">
                             <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
@@ -1639,37 +1692,32 @@
                         <button type="button" class="accordion-btn stats-accordion-btn" data-stats-accordion="marcas">Marcas <span>+</span></button>
                         <div class="accordion-content stats-accordion-content">
                             <div class="filter-wrapper">
-                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="NIDO" style="flex-direction:column;">
+                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="NIDO">
                                     <img src="NIDO.png" alt="NIDO">
-                                    <span class="stats-card-badge"><span class="stats-color-dot" style="background:#D49B00;"></span>Mostaza</span>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
-                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="RECETAS" style="flex-direction:column;">
+                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="RECETAS">
                                     <img src="RECETAS.png" alt="RECETAS">
-                                    <span class="stats-card-badge"><span class="stats-color-dot" style="background:#D81B60;"></span>Magenta</span>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
-                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="MULTIMARCA" style="flex-direction:column;">
+                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="MULTIMARCA">
                                     <img src="MULTIMARCA.png" alt="Multicategoría">
-                                    <span class="stats-card-badge"><span class="stats-color-dot" style="background:#1976D2;"></span>Azul</span>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
-                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="SAVOY" style="flex-direction:column;">
+                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="SAVOY">
                                     <img src="SAVOY.png" alt="Savoy">
-                                    <span class="stats-card-badge"><span class="stats-color-dot" style="background:#E53935;"></span>Rojo</span>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
-                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="MAGGI" style="flex-direction:column;">
+                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="MAGGI">
                                     <img src="MAGGI.png" alt="Maggi">
-                                    <span class="stats-card-badge"><span class="stats-color-dot" style="background:#FDD835;"></span>Amarillo</span>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
@@ -1681,56 +1729,48 @@
                             <div class="filter-wrapper">
                                 <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-REDVITAL.jpg">
                                     <img src="logo-REDVITAL.jpg" alt="REDVITAL">
-                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#0D3B66;"></span>Azul oscuro</div>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
                                 <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-KROMI.jpg">
                                     <img src="logo-KROMI.jpg" alt="KROMI">
-                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#29B6F6;"></span>Azul claro</div>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
                                 <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="rio.png">
                                     <img src="rio.png" alt="Río">
-                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#1B5E20;"></span>Verde oscuro</div>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
                                 <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-FRESCO.jpg">
                                     <img src="logo-FRESCO.jpg" alt="Fresco Market">
-                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#6B8E23;"></span>Verde oliva</div>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
                                 <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-GARZON.jpg">
                                     <img src="logo-GARZON.jpg" alt="Garzón">
-                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#66BB6A;"></span>Verde claro</div>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
                                 <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-EUROMERCADO.jpg">
                                     <img src="logo-EUROMERCADO.jpg" alt="Euromercado">
-                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#111111;"></span>Negro</div>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
                                 <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-BARATTA.jpg">
                                     <img src="logo-BARATTA.jpg" alt="Supermercado Baratta">
-                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#E53935;"></span>Rojo</div>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
                             <div class="filter-wrapper">
                                 <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-YARYUR.png">
                                     <img src="logo-YARYUR.png" alt="Inversiones Yar-Yur">
-                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#B39C6E;"></span>Dorado Yar-Yur</div>
                                 </div>
                                 <div class="filter-results stats-filter-results"></div>
                             </div>
@@ -4918,33 +4958,47 @@
 
         // Colores base por Marca
         const COLOR_BASE_MARCA = {
-            'RECETAS':     { color: '#D81B60', label: 'Recetas (Magenta)' },
-            'MULTIMARCA':  { color: '#1976D2', label: 'Multicategoría (Azul)' },
-            'SAVOY':       { color: '#E53935', label: 'Savoy (Rojo)' },
-            'NIDO':        { color: '#D49B00', label: 'Nido (Mostaza)' },
-            'MAGGI':       { color: '#FDD835', label: 'Maggi (Amarillo)' }
+            'RECETAS':     { color: '#D81B60', label: 'Recetas' },
+            'MULTIMARCA':  { color: '#1976D2', label: 'Multicategoría' },
+            'SAVOY':       { color: '#E53935', label: 'Savoy' },
+            'NIDO':        { color: '#D49B00', label: 'Nido' },
+            'MAGGI':       { color: '#FDD835', label: 'Maggi' }
         };
 
         // Colores base por Sucursal
         const COLOR_BASE_SUCURSAL = {
-            'logo-REDVITAL.jpg':    { color: '#0D3B66', label: 'Redvital (Azul oscuro)',        title: 'Redvital' },
-            'logo-KROMI.jpg':       { color: '#29B6F6', label: 'Kromi (Azul claro)',            title: 'Kromi' },
-            'rio.png':              { color: '#1B5E20', label: 'Río (Verde oscuro)',            title: 'Río' },
-            'logo-GARZON.jpg':      { color: '#66BB6A', label: 'Garzón (Verde claro)',          title: 'Garzón' },
-            'logo-EUROMERCADO.jpg': { color: '#111111', label: 'Euromercado (Negro)',           title: 'Euromercado' },
-            'logo-BARATTA.jpg':     { color: '#E53935', label: 'Baratta (Rojo)',                title: 'Baratta' },
-            'logo-FRESCO.jpg':      { color: '#6B8E23', label: 'Fresco Market (Verde oliva)',   title: 'Fresco Market' },
-            'logo-YARYUR.png':      { color: '#B39C6E', label: 'Inversiones Yar-Yur (Dorado)',  title: 'Inversiones Yar-Yur' }
+            'logo-REDVITAL.jpg':    { color: '#0D3B66', label: 'Redvital',            title: 'Redvital' },
+            'logo-KROMI.jpg':       { color: '#29B6F6', label: 'Kromi',               title: 'Kromi' },
+            'rio.png':              { color: '#1B5E20', label: 'Río',                 title: 'Río' },
+            'logo-GARZON.jpg':      { color: '#66BB6A', label: 'Garzón',              title: 'Garzón' },
+            'logo-EUROMERCADO.jpg': { color: '#111111', label: 'Euromercado',         title: 'Euromercado' },
+            'logo-BARATTA.jpg':     { color: '#E53935', label: 'Baratta',             title: 'Baratta' },
+            'logo-FRESCO.jpg':      { color: '#6B8E23', label: 'Fresco Market',       title: 'Fresco Market' },
+            'logo-YARYUR.png':      { color: '#B39C6E', label: 'Inversiones Yar-Yur', title: 'Inversiones Yar-Yur' }
         };
 
         // Colores base por Estado (Marrones y Beige estilo HTML)
         const COLOR_BASE_ESTADO = {
-            've-ca': { color: '#5C3A21', label: 'Carabobo (Marrón Café)',        title: 'Carabobo' },
-            've-df': { color: '#795548', label: 'Distrito Capital (Marrón Siena)', title: 'Distrito Capital' },
-            've-mi': { color: '#B39C6E', label: 'Miranda (Beige Dorado)',        title: 'Miranda' },
-            've-ar': { color: '#9C6B3B', label: 'Aragua (Marrón Canela)',        title: 'Aragua' },
-            've-ta': { color: '#C8AD7F', label: 'Táchira (Beige Arena)',         title: 'Táchira' }
+            've-ca': { color: '#5C3A21', label: 'Carabobo',         title: 'Carabobo' },
+            've-df': { color: '#795548', label: 'Distrito Capital', title: 'Distrito Capital' },
+            've-mi': { color: '#B39C6E', label: 'Miranda',          title: 'Miranda' },
+            've-ar': { color: '#9C6B3B', label: 'Aragua',           title: 'Aragua' },
+            've-ta': { color: '#C8AD7F', label: 'Táchira',          title: 'Táchira' }
         };
+
+        function hexToRgbaStats(hex, alpha) {
+            if (!hex || typeof hex !== 'string') return `rgba(179, 156, 110, ${alpha})`;
+            let c = hex.replace('#', '').trim();
+            if (c.length === 3) {
+                c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+            }
+            const num = parseInt(c, 16);
+            if (isNaN(num)) return `rgba(179, 156, 110, ${alpha})`;
+            const r = (num >> 16) & 255;
+            const g = (num >> 8) & 255;
+            const b = num & 255;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
 
         const statsMainArea = document.getElementById('stats-main-area');
         const statsNavPanel = document.getElementById('stats-nav-panel');
@@ -4955,8 +5009,13 @@
         const btnStatsPrev = document.getElementById('btn-stats-prev');
         const btnStatsNext = document.getElementById('btn-stats-next');
         const statsChartTitleEl = document.getElementById('stats-chart-title');
-        const statsChartSubtitleEl = document.getElementById('stats-chart-subtitle');
         const statsLegendStripEl = document.getElementById('stats-legend-strip');
+        const statsCustomTooltipEl = document.getElementById('stats-custom-tooltip');
+        const statsTtHeaderEl = document.getElementById('stats-tt-header');
+        const statsTtImagesEl = document.getElementById('stats-tt-images');
+        const statsTtMarcaImgEl = document.getElementById('stats-tt-marca-img');
+        const statsTtSucursalImgEl = document.getElementById('stats-tt-sucursal-img');
+        const statsTtEstadoEl = document.getElementById('stats-tt-estado');
 
         let statsViewDate = new Date();
         let statsMetric = 'count'; // 'count' (personas) | 'time' (segundos promedio)
@@ -4968,6 +5027,302 @@
         };
 
         let statsChartInstance = null;
+        let statsPinnedSelection = null; // { datasetIndex, dataIndex } o null
+        let statsHoveredNode = null;     // { datasetIndex, dataIndex } o null
+
+        function getCanvasCoordsFromEventStats(canvas, e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = rect.width > 0 ? (canvas.offsetWidth / rect.width) : 1;
+            const scaleY = rect.height > 0 ? (canvas.offsetHeight / rect.height) : 1;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        function findNonZeroNodeAtStats(x, y, maxDist = 14) {
+            if (!statsChartInstance) return null;
+            const datasets = statsChartInstance.data.datasets || [];
+            let best = null;
+            let bestDist = maxDist;
+
+            // Priorizar la curva seleccionada si existe una fijada
+            const order = datasets.map((_, idx) => idx);
+            if (statsPinnedSelection && statsPinnedSelection.datasetIndex != null) {
+                order.sort((a, b) => (a === statsPinnedSelection.datasetIndex ? -1 : b === statsPinnedSelection.datasetIndex ? 1 : 0));
+            }
+
+            for (const dsIdx of order) {
+                const ds = datasets[dsIdx];
+                if (!ds || !ds.data) continue;
+                const meta = statsChartInstance.getDatasetMeta(dsIdx);
+                if (!meta || meta.hidden || !meta.data) continue;
+
+                for (let ptIdx = 0; ptIdx < meta.data.length; ptIdx++) {
+                    const val = ds.data[ptIdx] || 0;
+                    if (val <= 0) continue; // Nodos en cero no son seleccionables
+                    const pt = meta.data[ptIdx];
+                    if (!pt || isNaN(pt.x) || isNaN(pt.y)) continue;
+                    const dist = Math.hypot(x - pt.x, y - pt.y);
+                    if (dist <= bestDist) {
+                        bestDist = dist;
+                        best = { datasetIndex: dsIdx, dataIndex: ptIdx };
+                    }
+                }
+            }
+            return best;
+        }
+
+        function distToSegmentStats(px, py, x1, y1, x2, y2) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const lenSq = dx * dx + dy * dy;
+            if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+            let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+            t = Math.max(0, Math.min(1, t));
+            return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+        }
+
+        function findNearestNonZeroDayIndexStats(ds, meta, targetX) {
+            if (!ds || !ds.data || !meta || !meta.data) return -1;
+            let bestIdx = -1;
+            let bestDx = Infinity;
+            for (let i = 0; i < ds.data.length; i++) {
+                if ((ds.data[i] || 0) <= 0) continue;
+                const pt = meta.data[i];
+                if (!pt || isNaN(pt.x)) continue;
+                const dx = Math.abs(targetX - pt.x);
+                if (dx < bestDx) {
+                    bestDx = dx;
+                    bestIdx = i;
+                }
+            }
+            return bestIdx;
+        }
+
+        function findCurveLineOrAreaAtStats(x, y) {
+            if (!statsChartInstance) return null;
+            const chartArea = statsChartInstance.chartArea;
+            if (!chartArea || x < chartArea.left || x > chartArea.right || y < chartArea.top || y > chartArea.bottom) {
+                return null;
+            }
+
+            const datasets = statsChartInstance.data.datasets || [];
+            const yScale = statsChartInstance.scales.y;
+            const baselineY = yScale ? yScale.getPixelForValue(0) : chartArea.bottom;
+
+            // 1. Verificar proximidad directa a un segmento de línea (con al menos un extremo > 0)
+            let bestLineDs = -1;
+            let bestLineDist = 10;
+
+            for (let dsIdx = 0; dsIdx < datasets.length; dsIdx++) {
+                const ds = datasets[dsIdx];
+                const meta = statsChartInstance.getDatasetMeta(dsIdx);
+                if (!ds || !meta || meta.hidden || !meta.data || meta.data.length < 2) continue;
+
+                for (let i = 0; i < meta.data.length - 1; i++) {
+                    const v1 = ds.data[i] || 0;
+                    const v2 = ds.data[i + 1] || 0;
+                    if (v1 <= 0 && v2 <= 0) continue; // Ignorar segmentos planos en cero
+                    const p1 = meta.data[i];
+                    const p2 = meta.data[i + 1];
+                    if (!p1 || !p2) continue;
+                    const d = distToSegmentStats(x, y, p1.x, p1.y, p2.x, p2.y);
+                    if (d <= bestLineDist) {
+                        bestLineDist = d;
+                        bestLineDs = dsIdx;
+                    }
+                }
+            }
+
+            if (bestLineDs !== -1) {
+                const ds = datasets[bestLineDs];
+                const meta = statsChartInstance.getDatasetMeta(bestLineDs);
+                const ptIdx = findNearestNonZeroDayIndexStats(ds, meta, x);
+                if (ptIdx !== -1) {
+                    return { datasetIndex: bestLineDs, dataIndex: ptIdx };
+                }
+            }
+
+            // 2. Verificar si el clic cayó dentro del área bajo la curva (entre la curva y el eje Y=0)
+            let bestAreaDs = -1;
+            let bestVerticalGap = Infinity;
+
+            for (let dsIdx = 0; dsIdx < datasets.length; dsIdx++) {
+                const ds = datasets[dsIdx];
+                const meta = statsChartInstance.getDatasetMeta(dsIdx);
+                if (!ds || !meta || meta.hidden || !meta.data || meta.data.length < 2) continue;
+
+                for (let i = 0; i < meta.data.length - 1; i++) {
+                    const p1 = meta.data[i];
+                    const p2 = meta.data[i + 1];
+                    if (!p1 || !p2) continue;
+                    if (x >= p1.x && x <= p2.x && p2.x > p1.x) {
+                        const v1 = ds.data[i] || 0;
+                        const v2 = ds.data[i + 1] || 0;
+                        if (v1 <= 0 && v2 <= 0) break;
+                        const t = (x - p1.x) / (p2.x - p1.x);
+                        const curveY = p1.y + t * (p2.y - p1.y);
+                        // Debe estar por debajo de la línea de la curva y por encima de la base cero
+                        if (curveY < baselineY - 2 && y >= curveY - 4 && y <= baselineY) {
+                            const gap = y - curveY;
+                            if (gap < bestVerticalGap) {
+                                bestVerticalGap = gap;
+                                bestAreaDs = dsIdx;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (bestAreaDs !== -1) {
+                const ds = datasets[bestAreaDs];
+                const meta = statsChartInstance.getDatasetMeta(bestAreaDs);
+                const ptIdx = findNearestNonZeroDayIndexStats(ds, meta, x);
+                if (ptIdx !== -1) {
+                    return { datasetIndex: bestAreaDs, dataIndex: ptIdx };
+                }
+            }
+
+            return null;
+        }
+
+        function hideStatsCustomTooltip() {
+            if (statsCustomTooltipEl) {
+                statsCustomTooltipEl.classList.remove('visible');
+            }
+        }
+
+        function showStatsCustomTooltip(selection) {
+            if (!statsCustomTooltipEl || !statsChartInstance || !selection) {
+                hideStatsCustomTooltip();
+                return;
+            }
+
+            const { datasetIndex, dataIndex } = selection;
+            const ds = statsChartInstance.data.datasets[datasetIndex];
+            const meta = statsChartInstance.getDatasetMeta(datasetIndex);
+            if (!ds || !meta || !meta.data || !meta.data[dataIndex]) {
+                hideStatsCustomTooltip();
+                return;
+            }
+
+            const val = ds.data[dataIndex] || 0;
+            if (val <= 0) {
+                hideStatsCustomTooltip();
+                return;
+            }
+
+            const pt = meta.data[dataIndex];
+            const dayNum = String(dataIndex + 1).padStart(2, '0');
+            const monthNum = String(statsViewDate.getMonth() + 1).padStart(2, '0');
+            const yearShort = String(statsViewDate.getFullYear()).slice(-2);
+            const dateStr = `${dayNum}/${monthNum}/${yearShort}`;
+
+            const metricStr = statsMetric === 'time'
+                ? `${val === 1 ? '1 seg' : `${val} segs`}`
+                : `${val === 1 ? '1 persona' : `${val} personas`}`;
+
+            if (statsTtHeaderEl) {
+                statsTtHeaderEl.textContent = `${dateStr} • ${metricStr}`;
+                statsTtHeaderEl.style.borderBottomColor = hexToRgbaStats(ds.baseColor || '#b39c6e', 0.35);
+            }
+
+            // Lógica inteligente del contenido del tooltip según las exhibiciones asociadas a la línea/nodo
+            const exList = (ds.exhibiciones && ds.exhibiciones.length) ? ds.exhibiciones : (ds.exhibicion ? [ds.exhibicion] : []);
+            const uniqueBrands = Array.from(new Set(exList.map(e => e.brandImg).filter(Boolean)));
+            const uniqueChains = Array.from(new Set(exList.map(e => e.chainLogo).filter(Boolean)));
+            const uniqueEstados = Array.from(new Set(exList.map(e => e.estadoNombre).filter(Boolean)));
+
+            const showMarca = uniqueBrands.length === 1;
+            const showSucursal = uniqueChains.length === 1;
+            const showEstado = uniqueEstados.length === 1;
+
+            if (statsTtMarcaImgEl) {
+                if (showMarca) {
+                    statsTtMarcaImgEl.src = uniqueBrands[0];
+                    statsTtMarcaImgEl.style.display = 'block';
+                } else {
+                    statsTtMarcaImgEl.style.display = 'none';
+                }
+            }
+
+            if (statsTtSucursalImgEl) {
+                if (showSucursal) {
+                    statsTtSucursalImgEl.src = uniqueChains[0];
+                    statsTtSucursalImgEl.style.display = 'block';
+                } else {
+                    statsTtSucursalImgEl.style.display = 'none';
+                }
+            }
+
+            if (statsTtImagesEl) {
+                statsTtImagesEl.style.display = (showMarca || showSucursal) ? 'flex' : 'none';
+            }
+
+            if (statsTtEstadoEl) {
+                if (showEstado) {
+                    statsTtEstadoEl.textContent = uniqueEstados[0];
+                    statsTtEstadoEl.style.display = 'block';
+                } else {
+                    statsTtEstadoEl.style.display = 'none';
+                }
+            }
+
+            const wrapper = document.getElementById('stats-canvas-wrapper');
+            const wrapperW = wrapper ? wrapper.offsetWidth : 800;
+            const clampedX = Math.max(95, Math.min(wrapperW - 95, pt.x));
+
+            statsCustomTooltipEl.style.left = `${clampedX}px`;
+            statsCustomTooltipEl.style.top = `${pt.y}px`;
+            if (pt.y < 195) {
+                statsCustomTooltipEl.style.transform = 'translate(-50%, 16px)';
+            } else {
+                statsCustomTooltipEl.style.transform = 'translate(-50%, calc(-100% - 14px))';
+            }
+            statsCustomTooltipEl.classList.add('visible');
+        }
+
+        function applyStatsSelectionStyles() {
+            if (!statsChartInstance) return;
+            const datasets = statsChartInstance.data.datasets || [];
+            const hasPin = statsPinnedSelection !== null;
+
+            datasets.forEach((ds, idx) => {
+                const c = ds.baseColor || '#b39c6e';
+                const isSelected = hasPin && statsPinnedSelection.datasetIndex === idx;
+
+                if (!hasPin) {
+                    ds.borderColor = hexToRgbaStats(c, 0.92);
+                    ds.backgroundColor = hexToRgbaStats(c, 0.22);
+                    ds.borderWidth = datasets.length <= 5 ? 3 : 2.2;
+                    ds.order = idx;
+                } else if (isSelected) {
+                    ds.borderColor = hexToRgbaStats(c, 1);
+                    ds.backgroundColor = hexToRgbaStats(c, 0.48);
+                    ds.borderWidth = 3.8;
+                    ds.order = 0;
+                } else {
+                    ds.borderColor = hexToRgbaStats(c, 0.16);
+                    ds.backgroundColor = hexToRgbaStats(c, 0.03);
+                    ds.borderWidth = 1.4;
+                    ds.order = idx + 1;
+                }
+            });
+
+            statsChartInstance.update('none');
+        }
+
+        function clearStatsPinnedSelection() {
+            if (statsPinnedSelection !== null) {
+                statsPinnedSelection = null;
+                applyStatsSelectionStyles();
+            }
+            if (!statsHoveredNode) {
+                hideStatsCustomTooltip();
+            }
+        }
 
         function initStatsChart() {
             const canvas = document.getElementById('stats-lines-chart');
@@ -4984,9 +5339,8 @@
                     maintainAspectRatio: false,
                     animation: { duration: 350, easing: 'easeOutQuart' },
                     interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
+                        mode: 'point',
+                        intersect: true
                     },
                     scales: {
                         x: {
@@ -5027,28 +5381,75 @@
                             display: false
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(20, 20, 20, 0.92)',
-                            titleFont: { size: 13, weight: 'bold' },
-                            bodyFont: { size: 12 },
-                            padding: 10,
-                            usePointStyle: true,
-                            callbacks: {
-                                title: function(items) {
-                                    if (!items || !items.length) return '';
-                                    const dayNum = items[0].label;
-                                    const mesNom = MESES_NOMBRES_STATS[statsViewDate.getMonth()];
-                                    return `Día ${dayNum} de ${mesNom} ${statsViewDate.getFullYear()}`;
-                                },
-                                label: function(context) {
-                                    const val = context.raw || 0;
-                                    const unit = statsMetric === 'time'
-                                        ? `${val} segs (promedio)`
-                                        : (val === 1 ? '1 persona' : `${val} personas`);
-                                    return ` ${context.dataset.label}: ${unit}`;
-                                }
-                            }
+                            enabled: false
                         }
                     }
+                }
+            });
+
+            // Eventos de hover y clic sobre el lienzo del gráfico (nodos > 0, líneas y áreas bajo la curva)
+            canvas.addEventListener('mousemove', (e) => {
+                if (!statsChartInstance) return;
+                const { x, y } = getCanvasCoordsFromEventStats(canvas, e);
+                const nodeHit = findNonZeroNodeAtStats(x, y, 14);
+
+                if (nodeHit) {
+                    canvas.style.cursor = 'pointer';
+                    statsHoveredNode = nodeHit;
+                    showStatsCustomTooltip(nodeHit);
+                } else {
+                    statsHoveredNode = null;
+                    const curveHit = findCurveLineOrAreaAtStats(x, y);
+                    canvas.style.cursor = curveHit ? 'pointer' : 'default';
+                    if (statsPinnedSelection) {
+                        showStatsCustomTooltip(statsPinnedSelection);
+                    } else {
+                        hideStatsCustomTooltip();
+                    }
+                }
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                statsHoveredNode = null;
+                canvas.style.cursor = 'default';
+                if (statsPinnedSelection) {
+                    showStatsCustomTooltip(statsPinnedSelection);
+                } else {
+                    hideStatsCustomTooltip();
+                }
+            });
+
+            canvas.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!statsChartInstance) return;
+                const { x, y } = getCanvasCoordsFromEventStats(canvas, e);
+
+                // 1. Verificar clic en un nodo con valor > 0
+                const nodeHit = findNonZeroNodeAtStats(x, y, 16);
+                if (nodeHit) {
+                    statsPinnedSelection = nodeHit;
+                    applyStatsSelectionStyles();
+                    showStatsCustomTooltip(statsPinnedSelection);
+                    return;
+                }
+
+                // 2. Verificar clic en una línea o en el área bajo la curva
+                const curveHit = findCurveLineOrAreaAtStats(x, y);
+                if (curveHit) {
+                    statsPinnedSelection = curveHit;
+                    applyStatsSelectionStyles();
+                    showStatsCustomTooltip(statsPinnedSelection);
+                    return;
+                }
+
+                // 3. Clic en una parte vacía del gráfico -> ocultar tooltip y restaurar áreas
+                clearStatsPinnedSelection();
+            });
+
+            // Al hacer clic en cualquier otra parte fuera del gráfico se oculta el tooltip y se restaura el área
+            document.addEventListener('click', () => {
+                if (statsPinnedSelection !== null) {
+                    clearStatsPinnedSelection();
                 }
             });
         }
@@ -5254,6 +5655,10 @@
             if (!statsChartInstance) initStatsChart();
             if (!statsChartInstance) return;
 
+            statsPinnedSelection = null;
+            statsHoveredNode = null;
+            hideStatsCustomTooltip();
+
             const year = statsViewDate.getFullYear();
             const monthIdx = statsViewDate.getMonth();
             const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
@@ -5264,29 +5669,67 @@
             }
 
             const filteredExhibiciones = getFilteredStatsExhibiciones();
-            const datasets = filteredExhibiciones.map(ex => {
+            const baseRadius = filteredExhibiciones.length <= 5 ? 4 : 3;
+
+            const datasets = filteredExhibiciones.map((ex, idx) => {
                 const lineColor = getLineColorForExhibicion(ex);
                 const seriesData = computeTabletMonthlySeries(ex.tabletId, year, monthIdx, statsMetric);
                 return {
                     label: `${ex.sucursalName} (${ex.brandTitle})`,
                     data: seriesData,
-                    borderColor: lineColor,
-                    backgroundColor: lineColor,
-                    borderWidth: filteredExhibiciones.length <= 5 ? 3 : 2.3,
-                    pointRadius: filteredExhibiciones.length <= 5 ? 3.5 : 2.5,
-                    pointHoverRadius: 6,
+                    baseColor: lineColor,
+                    exhibicion: ex,
+                    exhibiciones: [ex],
+                    borderColor: hexToRgbaStats(lineColor, 0.92),
+                    backgroundColor: hexToRgbaStats(lineColor, 0.22),
+                    borderWidth: filteredExhibiciones.length <= 5 ? 3 : 2.2,
+                    pointRadius: (ctx) => {
+                        const val = ctx.raw || 0;
+                        if (val <= 0) return 0;
+                        if (statsPinnedSelection) {
+                            if (statsPinnedSelection.datasetIndex === ctx.datasetIndex) {
+                                return statsPinnedSelection.dataIndex === ctx.dataIndex ? 6.5 : 4.2;
+                            }
+                            return 2;
+                        }
+                        return baseRadius;
+                    },
+                    pointHoverRadius: (ctx) => {
+                        const val = ctx.raw || 0;
+                        return val <= 0 ? 0 : 7;
+                    },
+                    pointHitRadius: (ctx) => {
+                        const val = ctx.raw || 0;
+                        return val <= 0 ? 0 : 10;
+                    },
+                    pointBackgroundColor: (ctx) => {
+                        const val = ctx.raw || 0;
+                        if (val <= 0) return 'transparent';
+                        if (statsPinnedSelection && statsPinnedSelection.datasetIndex !== ctx.datasetIndex) {
+                            return hexToRgbaStats(lineColor, 0.16);
+                        }
+                        return hexToRgbaStats(lineColor, 1);
+                    },
+                    pointBorderColor: (ctx) => {
+                        const val = ctx.raw || 0;
+                        if (val <= 0) return 'transparent';
+                        if (statsPinnedSelection && statsPinnedSelection.datasetIndex !== ctx.datasetIndex) {
+                            return hexToRgbaStats('#ffffff', 0.16);
+                        }
+                        return '#ffffff';
+                    },
+                    pointBorderWidth: (ctx) => {
+                        const val = ctx.raw || 0;
+                        return val <= 0 ? 0 : 1.5;
+                    },
                     tension: 0.25,
-                    fill: false
+                    fill: 'origin',
+                    order: idx
                 };
             });
 
             if (statsChartTitleEl) {
                 statsChartTitleEl.textContent = buildDynamicStatsTitle();
-            }
-            if (statsChartSubtitleEl) {
-                const countLines = filteredExhibiciones.length;
-                const ejeYTexto = statsMetric === 'time' ? 'Eje Y: Tiempo promedio (segundos)' : 'Eje Y: Número de personas';
-                statsChartSubtitleEl.textContent = `${countLines === 1 ? '1 línea visible' : `${countLines} líneas superpuestas`} • ${ejeYTexto} • Eje X: ${daysInMonth} días`;
             }
 
             updateStatsLegendStrip(filteredExhibiciones);
@@ -5312,7 +5755,7 @@
             });
             document.querySelectorAll('#stats-nav-panel .estado-btn').forEach(b => {
                 b.classList.remove('active-estado');
-                const sp = b.querySelector('span');
+                const sp = b.querySelector('.estado-toggle-sign');
                 if (sp) sp.textContent = '+';
             });
             document.querySelectorAll('#stats-nav-panel .estado-sucursales-content').forEach(c => c.classList.remove('open'));
@@ -5460,8 +5903,16 @@
                 estadosMap.get(ex.estadoId).items.push(ex);
             });
 
-            estadosMap.forEach(({ estadoId, estadoNombre, logos, items }) => {
+            const ordenEstadosKeys = Object.keys(COLOR_BASE_ESTADO);
+            const estadosOrdenados = Array.from(estadosMap.values()).sort((a, b) => {
+                const idxA = ordenEstadosKeys.indexOf(a.estadoId);
+                const idxB = ordenEstadosKeys.indexOf(b.estadoId);
+                return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+            });
+
+            estadosOrdenados.forEach(({ estadoId, estadoNombre, logos, items }) => {
                 const baseEstColor = COLOR_BASE_ESTADO[estadoId]?.color || '#b39c6e';
+                const labelEstado = COLOR_BASE_ESTADO[estadoId]?.label || estadoNombre;
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'estado-filter-item';
                 itemDiv.setAttribute('data-estado-id', estadoId);
@@ -5471,7 +5922,7 @@
                 btn.className = 'estado-btn';
                 btn.style.borderLeftColor = baseEstColor;
                 btn.setAttribute('data-estado-id', estadoId);
-                btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:8px;"><span class="stats-color-dot" style="background:${baseEstColor};"></span>${estadoNombre}</span> <span>+</span>`;
+                btn.innerHTML = `<span class="estado-btn-label" style="display:inline-flex;align-items:center;gap:8px;"><span class="stats-color-dot" style="background:${baseEstColor};"></span>${labelEstado}</span> <span class="estado-toggle-sign">+</span>`;
 
                 const sucursalesContent = document.createElement('div');
                 sucursalesContent.className = 'estado-sucursales-content';
@@ -5560,7 +6011,7 @@
                         statsFilter.selectedKey = null;
                     } else {
                         btn.classList.add('active-estado');
-                        const sp = btn.querySelector('span:last-child');
+                        const sp = btn.querySelector('.estado-toggle-sign');
                         if (sp) sp.textContent = '-';
                         sucursalesContent.classList.add('open');
                         statsFilter.category = 'estados';
