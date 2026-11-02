@@ -1655,7 +1655,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getDatabase, ref, query, orderByChild, onChildAdded, onValue, get, child, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, query, orderByChild, onChildAdded, onValue, get, child, update, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBjbMwDALsz7nKRna6W6owbmd6NLCJpEx0",
@@ -1974,8 +1974,102 @@
         }
 
         let t17AcumuladoActual = 0;
+        const t17ContadorPersonasRef = ref(db, 'muebles/tablet_17/contador_personas');
+        let t17PresenciaTimer = null;
+        let t17AusenciaTimer = null;
+
+        function renderizarContadorT17(valor) {
+            const valLimpio = (typeof valor === 'number' && !isNaN(valor) && valor >= 0) ? Math.floor(valor) : 0;
+            t17AcumuladoActual = valLimpio;
+            const numEl = document.getElementById('tablet17-counter-number');
+            const labelEl = document.getElementById('tablet17-counter-label');
+            if (numEl) numEl.textContent = String(valLimpio);
+            if (labelEl) labelEl.textContent = valLimpio === 1 ? 'PERSONA' : 'PERSONAS';
+        }
+
+        function registrarPresenciaContadorT17(conteoEstable) {
+            if (!conteoEstable || conteoEstable <= 0) return;
+            runTransaction(t17ContadorPersonasRef, (estado) => {
+                const actual = (estado && typeof estado === 'object')
+                    ? estado
+                    : { valor: 0, sesionActiva: false, maxEnSesion: 0 };
+                const valorActual = (typeof actual.valor === 'number' && !isNaN(actual.valor) && actual.valor >= 0)
+                    ? Math.floor(actual.valor)
+                    : 0;
+                const sesionActiva = !!actual.sesionActiva;
+                const maxPrevio = sesionActiva ? (actual.maxEnSesion || 0) : 0;
+
+                // Si la persona sigue en la misma visita (no aumentó el máximo simultáneo), no volver a sumar
+                if (sesionActiva && conteoEstable <= maxPrevio) {
+                    return;
+                }
+
+                const nuevasPersonas = conteoEstable - maxPrevio;
+                return {
+                    valor: valorActual + nuevasPersonas,
+                    sesionActiva: true,
+                    maxEnSesion: conteoEstable,
+                    ultimaActualizacion: Date.now()
+                };
+            }).catch(() => {});
+        }
+
+        function cerrarSesionContadorT17() {
+            runTransaction(t17ContadorPersonasRef, (estado) => {
+                if (!estado || typeof estado !== 'object' || !estado.sesionActiva) {
+                    return;
+                }
+                const valorActual = (typeof estado.valor === 'number' && !isNaN(estado.valor) && estado.valor >= 0)
+                    ? Math.floor(estado.valor)
+                    : 0;
+                return {
+                    valor: valorActual,
+                    sesionActiva: false,
+                    maxEnSesion: 0,
+                    ultimaActualizacion: Date.now()
+                };
+            }).catch(() => {});
+        }
+
+        function procesarCambioConteoT17(nuevoConteo) {
+            if (nuevoConteo > 0) {
+                if (t17AusenciaTimer) {
+                    clearTimeout(t17AusenciaTimer);
+                    t17AusenciaTimer = null;
+                }
+                if (t17PresenciaTimer) clearTimeout(t17PresenciaTimer);
+                const conteoObjetivo = nuevoConteo;
+                t17PresenciaTimer = setTimeout(() => {
+                    t17PresenciaTimer = null;
+                    if ((liveTabletCounts[17] || 0) >= conteoObjetivo) {
+                        registrarPresenciaContadorT17(conteoObjetivo);
+                    }
+                }, 800);
+            } else {
+                if (t17PresenciaTimer) {
+                    clearTimeout(t17PresenciaTimer);
+                    t17PresenciaTimer = null;
+                }
+                if (!t17AusenciaTimer) {
+                    // Esperar 3.5s continuos sin rostros antes de dar por finalizada la visita
+                    t17AusenciaTimer = setTimeout(() => {
+                        t17AusenciaTimer = null;
+                        if ((liveTabletCounts[17] || 0) === 0) {
+                            cerrarSesionContadorT17();
+                        }
+                    }, 3500);
+                }
+            }
+        }
 
         function initGlobalMapListeners() {
+            // Escuchar nodo dedicado y aislado para el contador acumulado de la Tablet 17 (solo lectura en este listener)
+            onValue(t17ContadorPersonasRef, (snapshot) => {
+                const data = snapshot.val();
+                const val = (data && typeof data.valor === 'number') ? data.valor : 0;
+                renderizarContadorT17(val);
+            });
+
             for (let i = 1; i <= 17; i++) {
                 let numFormat = i.toString().padStart(2, '0');
                 
@@ -1984,12 +2078,11 @@
                 onValue(globalEstadoQuery, (snapshot) => {
                     const data = snapshot.val();
                     const nuevoConteo = (data && typeof data.conteoActual === 'number') ? data.conteoActual : 0;
+                    const conteoPrevio = liveTabletCounts[i];
                     liveTabletCounts[i] = nuevoConteo;
 
-                    if (i === 17) {
-                        t17AcumuladoActual = (data && typeof data.contadorAcumulado === 'number') ? data.contadorAcumulado : 0;
-                        const numEl = document.getElementById('tablet17-counter-number');
-                        if (numEl) numEl.textContent = t17AcumuladoActual;
+                    if (i === 17 && nuevoConteo !== conteoPrevio) {
+                        procesarCambioConteoT17(nuevoConteo);
                     }
 
                     updateMapMarkers();
@@ -2169,12 +2262,11 @@
             currentMonitorTabletId = config.tabletId;
 
             const t17CounterEl = document.getElementById('tablet17-counter-display');
-            const t17CounterNumEl = document.getElementById('tablet17-counter-number');
             if (t17CounterEl) {
                 if (config.tabletId === 17) {
                     t17CounterEl.style.display = 'flex';
                     t17CounterEl.classList.remove('is-compact');
-                    if (t17CounterNumEl) t17CounterNumEl.textContent = t17AcumuladoActual;
+                    renderizarContadorT17(t17AcumuladoActual);
                 } else {
                     t17CounterEl.style.display = 'none';
                     t17CounterEl.classList.remove('is-compact');
@@ -2201,11 +2293,6 @@
             const estadoQuery = ref(db, `muebles/tablet_${numFormat}/estado_actual`);
             const unsubEstado = onValue(estadoQuery, (snapshot) => {
                 const data = snapshot.val();
-                if (config.tabletId === 17) {
-                    const acumulado = (data && typeof data.contadorAcumulado === 'number') ? data.contadorAcumulado : t17AcumuladoActual;
-                    const numEl = document.getElementById('tablet17-counter-number');
-                    if (numEl) numEl.textContent = acumulado;
-                }
                 if (data && data.conteoActual !== undefined) {
                     actualizarSiluetas(zoneId, data.conteoActual);
                     conteosActuales[zoneId] = data.conteoActual;
@@ -4004,13 +4091,19 @@
                 e.stopPropagation();
                 const codigo = t17CodeInput ? t17CodeInput.value.trim() : '';
                 if (codigo === '7097') {
-                    t17AcumuladoActual = 0;
-                    const numEl = document.getElementById('tablet17-counter-number');
-                    if (numEl) numEl.textContent = '0';
+                    renderizarContadorT17(0);
+                    const conteoEnVivo = liveTabletCounts[17] || 0;
+                    set(t17ContadorPersonasRef, {
+                        valor: 0,
+                        sesionActiva: conteoEnVivo > 0,
+                        maxEnSesion: conteoEnVivo > 0 ? conteoEnVivo : 0,
+                        ultimaActualizacion: Date.now(),
+                        ultimoReinicio: Date.now()
+                    }).catch(err => console.warn("Error al reiniciar contador en Firebase:", err));
                     update(ref(db, 'muebles/tablet_17/estado_actual'), {
                         contadorAcumulado: 0,
                         ultimoReinicioContador: Date.now()
-                    }).catch(err => console.warn("Error al reiniciar contador en Firebase:", err));
+                    }).catch(() => {});
                     cerrarModalReinicioT17();
                 } else {
                     if (t17ErrorMsg) t17ErrorMsg.style.display = 'block';
