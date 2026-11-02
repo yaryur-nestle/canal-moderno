@@ -99,7 +99,8 @@
         body[data-ui-zoom="40"] #btn-open-sucursales,
         body[data-ui-zoom="40"] #btn-volver-mapa,
         body[data-ui-zoom="40"] #btn-atras-grafico,
-        body[data-ui-zoom="40"] #btn-volver-mapa-sucursales {
+        body[data-ui-zoom="40"] #btn-volver-mapa-sucursales,
+        body[data-ui-zoom="40"] #btn-volver-mapa-stats {
             top: 145px;
         }
         body[data-ui-zoom="40"] .sucursales-screen-header {
@@ -124,7 +125,8 @@
         body[data-ui-zoom="20"] #btn-open-sucursales,
         body[data-ui-zoom="20"] #btn-volver-mapa,
         body[data-ui-zoom="20"] #btn-atras-grafico,
-        body[data-ui-zoom="20"] #btn-volver-mapa-sucursales {
+        body[data-ui-zoom="20"] #btn-volver-mapa-sucursales,
+        body[data-ui-zoom="20"] #btn-volver-mapa-stats {
             top: 308px;
         }
         body[data-ui-zoom="20"] .sucursales-screen-header {
@@ -220,6 +222,202 @@
         #hamburger-btn.open span:nth-child(1) { transform: rotate(-45deg) translateY(-2px); width: 16px; }
         #hamburger-btn.open span:nth-child(2) { transform: scaleX(1); }
         #hamburger-btn.open span:nth-child(3) { transform: rotate(45deg) translateY(2px); width: 16px; }
+
+        /* Botón de Estadísticas debajo del botón de hamburguesa */
+        #stats-btn {
+            position: absolute;
+            top: 56px;
+            right: 20px;
+            width: 32px;
+            height: 28px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 10002;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            color: #b39c6e;
+            transition: transform 0.25s ease, color 0.25s ease, opacity 0.2s ease;
+        }
+        #stats-btn:hover {
+            color: #968157;
+            transform: scale(1.12);
+        }
+        #stats-btn svg {
+            width: 32px;
+            height: 28px;
+            display: block;
+        }
+
+        /* =========================================
+           PANEL DE ESTADÍSTICAS (GRÁFICO DE LÍNEAS SUPERPUESTAS + MENÚ LATERAL DERECHO)
+           ========================================= */
+        #stats-main-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: calc(100% - 320px);
+            height: 100%;
+            background-color: #ffffff;
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+            padding: 18px 24px 18px 24px;
+            border-right: 1px solid #f0ece1;
+        }
+        #stats-main-area.active {
+            display: flex;
+        }
+
+        #btn-volver-mapa-stats {
+            position: absolute;
+            top: 62px;
+            left: 20px;
+            padding: 8px 18px;
+            background: rgba(179, 156, 110, 0.92);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10003;
+            transition: background 0.3s, transform 0.2s;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        }
+        #btn-volver-mapa-stats:hover {
+            background: rgba(150, 129, 87, 1);
+            transform: translateY(-1px);
+        }
+
+        .stats-header-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 65px 8px 155px;
+            min-height: 68px;
+            position: relative;
+        }
+        #stats-chart-title {
+            color: #222;
+            font-size: 1.22rem;
+            font-weight: 800;
+            text-align: center;
+            line-height: 1.3;
+            letter-spacing: 0.4px;
+            margin: 0;
+        }
+        #stats-chart-subtitle {
+            color: #888;
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-top: 3px;
+            text-align: center;
+        }
+
+        #btn-stats-metric {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            width: 42px;
+            height: 42px;
+            border-color: #ccc;
+            z-index: 20;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .stats-legend-strip {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 8px 14px;
+            padding: 6px 12px;
+            margin-bottom: 6px;
+            background: #faf8f4;
+            border: 1px solid #ede6d6;
+            border-radius: 8px;
+            max-height: 64px;
+            overflow-y: auto;
+        }
+        .stats-legend-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: #444;
+            white-space: nowrap;
+        }
+        .stats-legend-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            display: inline-block;
+            flex-shrink: 0;
+            border: 1px solid rgba(0,0,0,0.18);
+        }
+
+        .stats-chart-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            flex-grow: 1;
+            min-height: 0;
+            position: relative;
+            gap: 8px;
+        }
+        .stats-canvas-wrapper {
+            position: relative;
+            flex-grow: 1;
+            height: 100%;
+            min-width: 0;
+            padding: 4px 6px;
+        }
+
+        .stats-color-dot {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+            border: 1px solid rgba(0,0,0,0.22);
+            flex-shrink: 0;
+        }
+        .stats-subitem-link {
+            display: flex !important;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 6px !important;
+            border-radius: 5px;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+            font-size: 12.5px !important;
+            line-height: 1.25;
+        }
+        .stats-subitem-link:hover {
+            background-color: #f3ede0;
+            text-decoration: none !important;
+            transform: translateX(2px);
+        }
+        .stats-subitem-link.active-subitem {
+            background-color: #efe6d2;
+            outline: 1.5px solid #b39c6e;
+        }
+        .stats-card-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #555;
+            margin-top: 4px;
+            justify-content: center;
+        }
 
         .side-panel { position: absolute; top: 0; right: 0; width: 320px; height: 100%; background-color: #ffffff; box-shadow: none; z-index: 10000; transform: translateX(105%); visibility: hidden; opacity: 0; pointer-events: none; transition: transform 0.3s ease-in-out, opacity 0.2s ease-in-out, visibility 0.3s; display: flex; flex-direction: column; padding: 60px 20px 20px 20px; overflow-y: auto; overflow-x: hidden; }
         .side-panel.active { transform: translateX(0); visibility: visible; opacity: 1; pointer-events: auto; box-shadow: -4px 0 15px rgba(0,0,0,0.1); z-index: 10001; }
@@ -1394,9 +1592,155 @@
                     </svg>
                 </button>
 
-                <button id="hamburger-btn">
+                <button id="hamburger-btn" title="Filtros del Mapa">
                     <span></span><span></span><span></span>
                 </button>
+
+                <button id="stats-btn" title="Estadísticas Generales">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                        <polyline points="16 7 22 7 22 13"></polyline>
+                    </svg>
+                </button>
+
+                <!-- ÁREA PRINCIPAL DE ESTADÍSTICAS (Espacio que no tapa el menú lateral derecho) -->
+                <div id="stats-main-area">
+                    <button type="button" id="btn-volver-mapa-stats">Volver al mapa</button>
+
+                    <button type="button" id="btn-stats-metric" class="icon-btn" title="Cambiar Métrica (Personas / Tiempo Promedio)">
+                        <svg id="stats-icon-chrono" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42A8.962 8.962 0 0012 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+                        <svg id="stats-icon-user" viewBox="0 0 24 24" style="display:none;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </button>
+
+                    <div class="stats-header-bar">
+                        <h2 id="stats-chart-title">Número de personas en las exhibiciones</h2>
+                        <div id="stats-chart-subtitle">17 exhibiciones activas</div>
+                    </div>
+
+                    <div id="stats-legend-strip" class="stats-legend-strip"></div>
+
+                    <div class="stats-chart-body">
+                        <button type="button" id="btn-stats-prev" class="nav-arrow" title="Mes Anterior">
+                            <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
+                        </button>
+                        <div class="stats-canvas-wrapper" id="stats-canvas-wrapper">
+                            <canvas id="stats-lines-chart"></canvas>
+                        </div>
+                        <button type="button" id="btn-stats-next" class="nav-arrow" title="Mes Siguiente">
+                            <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MENÚ LATERAL DERECHO DE ESTADÍSTICAS -->
+                <div id="stats-nav-panel" class="side-panel">
+                    <h2 style="color: #333; margin-bottom: 20px; font-size: 20px;">Estadísticas</h2>
+                    <div class="accordion-item" id="stats-accordion-marcas">
+                        <button type="button" class="accordion-btn stats-accordion-btn" data-stats-accordion="marcas">Marcas <span>+</span></button>
+                        <div class="accordion-content stats-accordion-content">
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="NIDO" style="flex-direction:column;">
+                                    <img src="NIDO.png" alt="NIDO">
+                                    <span class="stats-card-badge"><span class="stats-color-dot" style="background:#D49B00;"></span>Mostaza</span>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="RECETAS" style="flex-direction:column;">
+                                    <img src="RECETAS.png" alt="RECETAS">
+                                    <span class="stats-card-badge"><span class="stats-color-dot" style="background:#D81B60;"></span>Magenta</span>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="MULTIMARCA" style="flex-direction:column;">
+                                    <img src="MULTIMARCA.png" alt="Multicategoría">
+                                    <span class="stats-card-badge"><span class="stats-color-dot" style="background:#1976D2;"></span>Azul</span>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="SAVOY" style="flex-direction:column;">
+                                    <img src="SAVOY.png" alt="Savoy">
+                                    <span class="stats-card-badge"><span class="stats-color-dot" style="background:#E53935;"></span>Rojo</span>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn marca-btn stats-filter-btn" data-stats-type="marca" data-stats-val="MAGGI" style="flex-direction:column;">
+                                    <img src="MAGGI.png" alt="Maggi">
+                                    <span class="stats-card-badge"><span class="stats-color-dot" style="background:#FDD835;"></span>Amarillo</span>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item" id="stats-accordion-sucursales">
+                        <button type="button" class="accordion-btn stats-accordion-btn" data-stats-accordion="sucursales">Sucursales <span>+</span></button>
+                        <div class="accordion-content stats-accordion-content">
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-REDVITAL.jpg">
+                                    <img src="logo-REDVITAL.jpg" alt="REDVITAL">
+                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#0D3B66;"></span>Azul oscuro</div>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-KROMI.jpg">
+                                    <img src="logo-KROMI.jpg" alt="KROMI">
+                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#29B6F6;"></span>Azul claro</div>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="rio.png">
+                                    <img src="rio.png" alt="Río">
+                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#1B5E20;"></span>Verde oscuro</div>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-FRESCO.jpg">
+                                    <img src="logo-FRESCO.jpg" alt="Fresco Market">
+                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#6B8E23;"></span>Verde oliva</div>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-GARZON.jpg">
+                                    <img src="logo-GARZON.jpg" alt="Garzón">
+                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#66BB6A;"></span>Verde claro</div>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-EUROMERCADO.jpg">
+                                    <img src="logo-EUROMERCADO.jpg" alt="Euromercado">
+                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#111111;"></span>Negro</div>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-BARATTA.jpg">
+                                    <img src="logo-BARATTA.jpg" alt="Supermercado Baratta">
+                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#E53935;"></span>Rojo</div>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                            <div class="filter-wrapper">
+                                <div class="filter-img-btn sucursal-btn stats-filter-btn" data-stats-type="sucursal" data-stats-val="logo-YARYUR.png">
+                                    <img src="logo-YARYUR.png" alt="Inversiones Yar-Yur">
+                                    <div class="stats-card-badge"><span class="stats-color-dot" style="background:#B39C6E;"></span>Dorado Yar-Yur</div>
+                                </div>
+                                <div class="filter-results stats-filter-results"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item" id="stats-accordion-estados">
+                        <button type="button" class="accordion-btn stats-accordion-btn" data-stats-accordion="estados">Estados <span>+</span></button>
+                        <div class="accordion-content stats-accordion-content" id="stats-estados-accordion-content"></div>
+                    </div>
+                </div>
 
                 <div id="nav-panel" class="side-panel">
                     <h2 style="color: #333; margin-bottom: 20px; font-size: 20px;">Filtros de Búsqueda</h2>
@@ -1819,11 +2163,25 @@
         /* --- ESTADO GLOBAL DE MAPA EN VIVO (17 EXHIBICIONES) --- */
         let liveTabletCounts = {};
         let liveTabletStatuses = {};
+        let statsEventosPorTablet = {};
         for (let i = 1; i <= 17; i++) {
             liveTabletCounts[i] = 0;
             liveTabletStatuses[i] = "OFFLINE";
+            statsEventosPorTablet[i] = [];
         }
         let isGlobalListenerInit = false;
+        let statsUpdateTimer = null;
+        function scheduleStatsChartUpdate() {
+            if (statsUpdateTimer) clearTimeout(statsUpdateTimer);
+            statsUpdateTimer = setTimeout(() => {
+                if (typeof renderStatsLinesChart === 'function') {
+                    const statsMain = document.getElementById('stats-main-area');
+                    if (statsMain && statsMain.classList.contains('active')) {
+                        renderStatsLinesChart(true);
+                    }
+                }
+            }, 80);
+        }
 
         let visibleNodeIds = null;
         let initialMapViewState = null;
@@ -2100,6 +2458,20 @@
                     if (activeAppView === 1 && currentMonitorTabletId === i && currentViewLevel === 'day') {
                         updateChartDisplay(true);
                     }
+                });
+
+                // 3. Escuchar eventos históricos para el panel de Estadísticas Generales (17 líneas)
+                const statsEventosRef = ref(db, `muebles/tablet_${numFormat}/eventos`);
+                onValue(statsEventosRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const rawObj = snapshot.val();
+                        statsEventosPorTablet[i] = Object.values(rawObj)
+                            .filter(ev => ev && typeof ev.timestamp === 'number')
+                            .sort((a, b) => a.timestamp - b.timestamp);
+                    } else {
+                        statsEventosPorTablet[i] = [];
+                    }
+                    scheduleStatsChartUpdate();
                 });
             }
         }
@@ -2658,22 +3030,25 @@
             }
         }
 
+        const statsBtn = document.getElementById('stats-btn');
+
         function abrirMenuFiltros() {
             resetearScrollContenedorMapa();
             infoPanel.classList.remove('active');
             navPanel.classList.add('active');
             hamburgerBtn.style.display = 'flex';
             hamburgerBtn.classList.add('open');
+            if (statsBtn) statsBtn.style.display = 'none';
         }
         function limpiarSeleccionFiltros() {
-            document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
-            document.querySelectorAll('.filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; });
-            document.querySelectorAll('.estado-btn').forEach(b => {
+            document.querySelectorAll('#nav-panel .filter-img-btn').forEach(b => b.classList.remove('active-filter'));
+            document.querySelectorAll('#nav-panel .filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; });
+            document.querySelectorAll('#nav-panel .estado-btn').forEach(b => {
                 b.classList.remove('active-estado');
                 const sp = b.querySelector('span');
                 if (sp) sp.textContent = '+';
             });
-            document.querySelectorAll('.estado-sucursales-content').forEach(c => c.classList.remove('open'));
+            document.querySelectorAll('#nav-panel .estado-sucursales-content').forEach(c => c.classList.remove('open'));
         }
         function cerrarPanelesYResetear() {
             resetearScrollContenedorMapa();
@@ -2681,6 +3056,9 @@
             infoPanel.classList.remove('active');
             hamburgerBtn.classList.remove('open');
             hamburgerBtn.style.display = 'flex';
+            if (statsBtn && !document.getElementById('stats-main-area').classList.contains('active')) {
+                statsBtn.style.display = 'flex';
+            }
             limpiarSeleccionFiltros();
             iluminarEstados([]);
         }
@@ -2689,10 +3067,11 @@
             resetearScrollContenedorMapa();
             navPanel.classList.remove('active');
             limpiarSeleccionFiltros();
-            document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
-            document.querySelectorAll('.accordion-btn span').forEach(s => s.textContent = '+');
+            document.querySelectorAll('#nav-panel .accordion-content').forEach(c => c.classList.remove('open'));
+            document.querySelectorAll('#nav-panel .accordion-btn span').forEach(s => s.textContent = '+');
             hamburgerBtn.classList.remove('open');
             hamburgerBtn.style.display = 'none'; 
+            if (statsBtn) statsBtn.style.display = 'none';
             document.getElementById('panel-subtitle').textContent = estadoNombre;
             document.getElementById('panel-title').textContent = sucursal;
             document.getElementById('panel-logo-img').src = logo; 
@@ -2759,8 +3138,8 @@
             const filterEstadoId = btnElement.getAttribute('data-estado-id');
             const resultsContainer = btnElement.nextElementSibling;
 
-            document.querySelectorAll('.filter-img-btn').forEach(b => b.classList.remove('active-filter'));
-            document.querySelectorAll('.filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; });
+            document.querySelectorAll('#nav-panel .filter-img-btn').forEach(b => b.classList.remove('active-filter'));
+            document.querySelectorAll('#nav-panel .filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; });
 
             if (wasActive) {
                 if (type === 'estado-sucursal' && filterEstadoId) {
@@ -2899,8 +3278,8 @@
         function seleccionarEstadoEnFiltro(estadoId, abrirMenuDesdeMapa = false) {
             if (abrirMenuDesdeMapa) {
                 abrirMenuFiltros();
-                document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
-                document.querySelectorAll('.accordion-btn span').forEach(s => s.textContent = '+');
+                document.querySelectorAll('#nav-panel .accordion-content').forEach(c => c.classList.remove('open'));
+                document.querySelectorAll('#nav-panel .accordion-btn span').forEach(s => s.textContent = '+');
                 const accEstados = document.getElementById('accordion-estados');
                 if (accEstados) {
                     const content = accEstados.querySelector('.accordion-content');
@@ -2912,8 +3291,8 @@
 
             limpiarSeleccionFiltros();
 
-            const estadoBtn = document.querySelector(`.estado-btn[data-estado-id="${estadoId}"]`);
-            const estadoContent = document.querySelector(`.estado-sucursales-content[data-estado-id="${estadoId}"]`);
+            const estadoBtn = document.querySelector(`#nav-panel .estado-btn[data-estado-id="${estadoId}"]`);
+            const estadoContent = document.querySelector(`#nav-panel .estado-sucursales-content[data-estado-id="${estadoId}"]`);
             if (estadoBtn && estadoContent) {
                 estadoBtn.classList.add('active-estado');
                 const span = estadoBtn.querySelector('span');
@@ -3012,11 +3391,11 @@
 
         inicializarFiltroEstados();
 
-        document.querySelectorAll('.accordion-btn').forEach(btn => {
+        document.querySelectorAll('#nav-panel .accordion-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const content = this.nextElementSibling, span = this.querySelector('span'), isOpen = content.classList.contains('open');
-                document.querySelectorAll('.accordion-content').forEach(c => c.classList.remove('open'));
-                document.querySelectorAll('.accordion-btn span').forEach(s => s.textContent = '+');
+                document.querySelectorAll('#nav-panel .accordion-content').forEach(c => c.classList.remove('open'));
+                document.querySelectorAll('#nav-panel .accordion-btn span').forEach(s => s.textContent = '+');
                 limpiarSeleccionFiltros();
                 iluminarEstados([]);
                 if (!isOpen) { content.classList.add('open'); span.textContent = '-'; }
@@ -4475,6 +4854,7 @@
             setTimeout(() => {
                 if (chartInstance) chartInstance.reflow();
                 if (mainChart) mainChart.resize();
+                if (typeof statsChartInstance !== 'undefined' && statsChartInstance) statsChartInstance.resize();
             }, 60);
         }
 
@@ -4505,6 +4885,853 @@
             btnVolverMapaSucursales.addEventListener('click', (e) => {
                 e.stopPropagation();
                 toggleAppView(0);
+            });
+        }
+
+        /* =========================================================
+           SISTEMA DE ESTADÍSTICAS GENERALES (17 LÍNEAS SUPERPUESTAS)
+           ========================================================= */
+        const MESES_NOMBRES_STATS = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+
+        const statsExhibiciones = [
+            { tabletId: 1,  brandKey: 'NIDO',       brandTitle: 'NIDO',            brandImg: 'NIDO.png',       chainLogo: 'logo-REDVITAL.jpg',    chainTitle: 'Redvital',            sucursalName: 'Redvital La Yaguara',                 estadoId: 've-df', estadoNombre: 'Distrito Capital', colorVarMarca: '#9E6B00', colorVarSucursal: '#061A40', colorVarEstado: '#4E342E' },
+            { tabletId: 2,  brandKey: 'MULTIMARCA', brandTitle: 'MULTICATEGORÍA',  brandImg: 'MULTIMARCA.png', chainLogo: 'logo-GARZON.jpg',      chainTitle: 'Garzón',              sucursalName: 'Garzón Hiperahorro',                  estadoId: 've-ta', estadoNombre: 'Táchira',          colorVarMarca: '#0D47A1', colorVarSucursal: '#66BB6A', colorVarEstado: '#5C3A21' },
+            { tabletId: 3,  brandKey: 'RECETAS',    brandTitle: 'RECETAS',         brandImg: 'RECETAS.png',    chainLogo: 'logo-REDVITAL.jpg',    chainTitle: 'Redvital',            sucursalName: 'Redvital La Yaguara',                 estadoId: 've-df', estadoNombre: 'Distrito Capital', colorVarMarca: '#C2185B', colorVarSucursal: '#0D47A1', colorVarEstado: '#8D6E63' },
+            { tabletId: 4,  brandKey: 'NIDO',       brandTitle: 'NIDO',            brandImg: 'NIDO.png',       chainLogo: 'logo-REDVITAL.jpg',    chainTitle: 'Redvital',            sucursalName: 'Redvital San Diego',                  estadoId: 've-ca', estadoNombre: 'Carabobo',         colorVarMarca: '#D49B00', colorVarSucursal: '#1E56A0', colorVarEstado: '#3E2723' },
+            { tabletId: 5,  brandKey: 'NIDO',       brandTitle: 'NIDO',            brandImg: 'NIDO.png',       chainLogo: 'logo-KROMI.jpg',       chainTitle: 'Kromi',               sucursalName: 'Kromi Market Prebo',                  estadoId: 've-ca', estadoNombre: 'Carabobo',         colorVarMarca: '#F5B82E', colorVarSucursal: '#0288D1', colorVarEstado: '#6D4C41' },
+            { tabletId: 6,  brandKey: 'MULTIMARCA', brandTitle: 'MULTICATEGORÍA',  brandImg: 'MULTIMARCA.png', chainLogo: 'logo-EUROMERCADO.jpg', chainTitle: 'Euromercado',         sucursalName: 'Euromercado Las Delicias',            estadoId: 've-ar', estadoNombre: 'Aragua',           colorVarMarca: '#29B6F6', colorVarSucursal: '#111111', colorVarEstado: '#8B5A2B' },
+            { tabletId: 7,  brandKey: 'SAVOY',      brandTitle: 'SAVOY',           brandImg: 'SAVOY.png',      chainLogo: 'rio.png',              chainTitle: 'Río',                 sucursalName: 'Río Lomas del Sol',                   estadoId: 've-mi', estadoNombre: 'Miranda',          colorVarMarca: '#8E0000', colorVarSucursal: '#0D3B10', colorVarEstado: '#3B2818' },
+            { tabletId: 8,  brandKey: 'SAVOY',      brandTitle: 'SAVOY',           brandImg: 'SAVOY.png',      chainLogo: 'logo-FRESCO.jpg',      chainTitle: 'Fresco Market',       sucursalName: 'Fresco Market Caurimare',             estadoId: 've-mi', estadoNombre: 'Miranda',          colorVarMarca: '#C62828', colorVarSucursal: '#6B8E23', colorVarEstado: '#5C4033' },
+            { tabletId: 9,  brandKey: 'SAVOY',      brandTitle: 'SAVOY',           brandImg: 'SAVOY.png',      chainLogo: 'logo-KROMI.jpg',       chainTitle: 'Kromi',               sucursalName: 'Kromi Market Mañongo',                estadoId: 've-ca', estadoNombre: 'Carabobo',         colorVarMarca: '#E53935', colorVarSucursal: '#29B6F6', colorVarEstado: '#9C6B3B' },
+            { tabletId: 10, brandKey: 'SAVOY',      brandTitle: 'SAVOY',           brandImg: 'SAVOY.png',      chainLogo: 'rio.png',              chainTitle: 'Río',                 sucursalName: 'Río El Cigarral',                     estadoId: 've-mi', estadoNombre: 'Miranda',          colorVarMarca: '#FF1744', colorVarSucursal: '#1B5E20', colorVarEstado: '#7F5A3C' },
+            { tabletId: 11, brandKey: 'SAVOY',      brandTitle: 'SAVOY',           brandImg: 'SAVOY.png',      chainLogo: 'rio.png',              chainTitle: 'Río',                 sucursalName: 'Río El Recreo',                       estadoId: 've-df', estadoNombre: 'Distrito Capital', colorVarMarca: '#E64A19', colorVarSucursal: '#2E7D32', colorVarEstado: '#C5A880' },
+            { tabletId: 12, brandKey: 'SAVOY',      brandTitle: 'SAVOY',           brandImg: 'SAVOY.png',      chainLogo: 'logo-BARATTA.jpg',     chainTitle: 'Baratta',             sucursalName: 'Supermercado Baratta',                estadoId: 've-ta', estadoNombre: 'Táchira',          colorVarMarca: '#FF6E40', colorVarSucursal: '#E53935', colorVarEstado: '#B39C6E' },
+            { tabletId: 13, brandKey: 'SAVOY',      brandTitle: 'SAVOY',           brandImg: 'SAVOY.png',      chainLogo: 'logo-KROMI.jpg',       chainTitle: 'Kromi',               sucursalName: 'Kromi Market Prebo',                  estadoId: 've-ca', estadoNombre: 'Carabobo',         colorVarMarca: '#AD1457', colorVarSucursal: '#4DD0E1', colorVarEstado: '#C8AD7F' },
+            { tabletId: 14, brandKey: 'MAGGI',      brandTitle: 'MAGGI',           brandImg: 'MAGGI.png',      chainLogo: 'logo-YARYUR.png',      chainTitle: 'Inversiones Yar-Yur', sucursalName: 'Inversiones Yar-Yur (El Parral)',     estadoId: 've-mi', estadoNombre: 'Miranda',          colorVarMarca: '#F9A825', colorVarSucursal: '#7A5C38', colorVarEstado: '#968157' },
+            { tabletId: 15, brandKey: 'MAGGI',      brandTitle: 'MAGGI',           brandImg: 'MAGGI.png',      chainLogo: 'logo-YARYUR.png',      chainTitle: 'Inversiones Yar-Yur', sucursalName: 'Inversiones Yar-Yur (El Bosque)',     estadoId: 've-mi', estadoNombre: 'Miranda',          colorVarMarca: '#FDD835', colorVarSucursal: '#9E7F56', colorVarEstado: '#B39C6E' },
+            { tabletId: 16, brandKey: 'MAGGI',      brandTitle: 'MAGGI',           brandImg: 'MAGGI.png',      chainLogo: 'logo-YARYUR.png',      chainTitle: 'Inversiones Yar-Yur', sucursalName: 'Inversiones Yar-Yur (Las Chimeneas)', estadoId: 've-mi', estadoNombre: 'Miranda',          colorVarMarca: '#FFEE58', colorVarSucursal: '#B39C6E', colorVarEstado: '#C9B38C' },
+            { tabletId: 17, brandKey: 'RECETAS',    brandTitle: 'RECETAS',         brandImg: 'RECETAS.png',    chainLogo: 'logo-YARYUR.png',      chainTitle: 'Inversiones Yar-Yur', sucursalName: 'Inversiones Yar-Yur',                 estadoId: 've-mi', estadoNombre: 'Miranda',          colorVarMarca: '#FF4081', colorVarSucursal: '#D1B88A', colorVarEstado: '#DFC9A6' }
+        ];
+
+        // Colores base por Marca
+        const COLOR_BASE_MARCA = {
+            'RECETAS':     { color: '#D81B60', label: 'Recetas (Magenta)' },
+            'MULTIMARCA':  { color: '#1976D2', label: 'Multicategoría (Azul)' },
+            'SAVOY':       { color: '#E53935', label: 'Savoy (Rojo)' },
+            'NIDO':        { color: '#D49B00', label: 'Nido (Mostaza)' },
+            'MAGGI':       { color: '#FDD835', label: 'Maggi (Amarillo)' }
+        };
+
+        // Colores base por Sucursal
+        const COLOR_BASE_SUCURSAL = {
+            'logo-REDVITAL.jpg':    { color: '#0D3B66', label: 'Redvital (Azul oscuro)',        title: 'Redvital' },
+            'logo-KROMI.jpg':       { color: '#29B6F6', label: 'Kromi (Azul claro)',            title: 'Kromi' },
+            'rio.png':              { color: '#1B5E20', label: 'Río (Verde oscuro)',            title: 'Río' },
+            'logo-GARZON.jpg':      { color: '#66BB6A', label: 'Garzón (Verde claro)',          title: 'Garzón' },
+            'logo-EUROMERCADO.jpg': { color: '#111111', label: 'Euromercado (Negro)',           title: 'Euromercado' },
+            'logo-BARATTA.jpg':     { color: '#E53935', label: 'Baratta (Rojo)',                title: 'Baratta' },
+            'logo-FRESCO.jpg':      { color: '#6B8E23', label: 'Fresco Market (Verde oliva)',   title: 'Fresco Market' },
+            'logo-YARYUR.png':      { color: '#B39C6E', label: 'Inversiones Yar-Yur (Dorado)',  title: 'Inversiones Yar-Yur' }
+        };
+
+        // Colores base por Estado (Marrones y Beige estilo HTML)
+        const COLOR_BASE_ESTADO = {
+            've-ca': { color: '#5C3A21', label: 'Carabobo (Marrón Café)',        title: 'Carabobo' },
+            've-df': { color: '#795548', label: 'Distrito Capital (Marrón Siena)', title: 'Distrito Capital' },
+            've-mi': { color: '#B39C6E', label: 'Miranda (Beige Dorado)',        title: 'Miranda' },
+            've-ar': { color: '#9C6B3B', label: 'Aragua (Marrón Canela)',        title: 'Aragua' },
+            've-ta': { color: '#C8AD7F', label: 'Táchira (Beige Arena)',         title: 'Táchira' }
+        };
+
+        const statsMainArea = document.getElementById('stats-main-area');
+        const statsNavPanel = document.getElementById('stats-nav-panel');
+        const btnVolverMapaStats = document.getElementById('btn-volver-mapa-stats');
+        const btnStatsMetric = document.getElementById('btn-stats-metric');
+        const statsIconChrono = document.getElementById('stats-icon-chrono');
+        const statsIconUser = document.getElementById('stats-icon-user');
+        const btnStatsPrev = document.getElementById('btn-stats-prev');
+        const btnStatsNext = document.getElementById('btn-stats-next');
+        const statsChartTitleEl = document.getElementById('stats-chart-title');
+        const statsChartSubtitleEl = document.getElementById('stats-chart-subtitle');
+        const statsLegendStripEl = document.getElementById('stats-legend-strip');
+
+        let statsViewDate = new Date();
+        let statsMetric = 'count'; // 'count' (personas) | 'time' (segundos promedio)
+        let statsFilter = {
+            category: null,     // null | 'marcas' | 'sucursales' | 'estados'
+            selectedKey: null,  // e.g. 'NIDO', 'logo-REDVITAL.jpg', 've-ca'
+            subSucursalKey: null, // cuando dentro de un estado se selecciona una cadena
+            selectedTabletId: null // cuando se hace clic en un item específico de la sub-lista
+        };
+
+        let statsChartInstance = null;
+
+        function initStatsChart() {
+            const canvas = document.getElementById('stats-lines-chart');
+            if (!canvas) return;
+            const ctxStats = canvas.getContext('2d');
+            statsChartInstance = new Chart(ctxStats, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 350, easing: 'easeOutQuart' },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Días del mes',
+                                color: '#666',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.04)'
+                            },
+                            ticks: {
+                                color: '#444',
+                                font: { weight: '600' }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Número de personas',
+                                color: '#666',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            ticks: {
+                                precision: 0,
+                                color: '#444',
+                                font: { weight: '600' }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.06)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(20, 20, 20, 0.92)',
+                            titleFont: { size: 13, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 10,
+                            usePointStyle: true,
+                            callbacks: {
+                                title: function(items) {
+                                    if (!items || !items.length) return '';
+                                    const dayNum = items[0].label;
+                                    const mesNom = MESES_NOMBRES_STATS[statsViewDate.getMonth()];
+                                    return `Día ${dayNum} de ${mesNom} ${statsViewDate.getFullYear()}`;
+                                },
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    const unit = statsMetric === 'time'
+                                        ? `${val} segs (promedio)`
+                                        : (val === 1 ? '1 persona' : `${val} personas`);
+                                    return ` ${context.dataset.label}: ${unit}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function computeTabletMonthlySeries(tabletId, year, monthIndex, metric) {
+            const events = statsEventosPorTablet[tabletId] || [];
+            const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+            const dataBuckets = new Array(daysInMonth).fill(0);
+            const countBuckets = new Array(daysInMonth).fill(0);
+
+            if (!events.length) return dataBuckets;
+
+            const duracionesRealesMap = new Map();
+            let colaSimulada = [];
+
+            events.forEach(ev => {
+                const prev = ev.conteoAnterior || 0;
+                const act = ev.conteoActual || 0;
+
+                if (act === 0) {
+                    while (colaSimulada.length > 0) {
+                        const llegada = colaSimulada.shift();
+                        if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
+                        const dur = (ev.timestamp - llegada.timestamp) / 1000;
+                        duracionesRealesMap.get(llegada).push(dur);
+                    }
+                } else if (act > prev) {
+                    for (let k = 0; k < (act - prev); k++) colaSimulada.push(ev);
+                } else if (act < prev) {
+                    for (let k = 0; k < (prev - act); k++) {
+                        if (colaSimulada.length > 0) {
+                            const llegada = colaSimulada.shift();
+                            if (!duracionesRealesMap.has(llegada)) duracionesRealesMap.set(llegada, []);
+                            const dur = (ev.timestamp - llegada.timestamp) / 1000;
+                            duracionesRealesMap.get(llegada).push(dur);
+                        }
+                    }
+                }
+            });
+
+            const now = new Date();
+            const isCurrentMonth = (year === now.getFullYear() && monthIndex === now.getMonth());
+
+            events.forEach(ev => {
+                const evDate = new Date(ev.timestamp);
+                if (evDate.getFullYear() !== year || evDate.getMonth() !== monthIndex) return;
+
+                const conteoPrevio = ev.conteoAnterior || 0;
+                if (ev.conteoActual > conteoPrevio) {
+                    const nuevas = ev.conteoActual - conteoPrevio;
+                    const idx = evDate.getDate() - 1;
+                    const tiempos = duracionesRealesMap.get(ev) || [];
+
+                    for (let k = 0; k < nuevas; k++) {
+                        let duracion = 0;
+                        let esValido = true;
+
+                        if (k < tiempos.length) {
+                            duracion = tiempos[k];
+                            if (duracion >= 100) esValido = false;
+                        } else {
+                            if (isCurrentMonth && (liveTabletCounts[tabletId] || 0) > 0) {
+                                duracion = (Date.now() - ev.timestamp) / 1000;
+                                if (duracion >= 100) esValido = false;
+                            } else {
+                                esValido = false;
+                            }
+                        }
+
+                        if (esValido) {
+                            if (metric === 'count') {
+                                dataBuckets[idx] += 1;
+                            } else {
+                                dataBuckets[idx] += duracion;
+                                countBuckets[idx] += 1;
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (metric === 'time') {
+                for (let i = 0; i < daysInMonth; i++) {
+                    if (countBuckets[i] > 0) {
+                        dataBuckets[i] = Math.round(dataBuckets[i] / countBuckets[i]);
+                    }
+                }
+            }
+
+            return dataBuckets;
+        }
+
+        function getFilteredStatsExhibiciones() {
+            return statsExhibiciones.filter(ex => {
+                if (statsFilter.selectedTabletId) {
+                    return ex.tabletId === statsFilter.selectedTabletId;
+                }
+                if (statsFilter.category === 'marcas' && statsFilter.selectedKey) {
+                    return ex.brandKey === statsFilter.selectedKey;
+                }
+                if (statsFilter.category === 'sucursales' && statsFilter.selectedKey) {
+                    return ex.chainLogo === statsFilter.selectedKey;
+                }
+                if (statsFilter.category === 'estados' && statsFilter.selectedKey) {
+                    if (ex.estadoId !== statsFilter.selectedKey) return false;
+                    if (statsFilter.subSucursalKey && ex.chainLogo !== statsFilter.subSucursalKey) return false;
+                    return true;
+                }
+                return true;
+            });
+        }
+
+        function getLineColorForExhibicion(ex) {
+            const hasSubSelection = !!(statsFilter.selectedKey || statsFilter.selectedTabletId);
+            if (statsFilter.category === 'marcas') {
+                return hasSubSelection ? ex.colorVarMarca : (COLOR_BASE_MARCA[ex.brandKey]?.color || ex.colorVarMarca);
+            }
+            if (statsFilter.category === 'sucursales') {
+                return hasSubSelection ? ex.colorVarSucursal : (COLOR_BASE_SUCURSAL[ex.chainLogo]?.color || ex.colorVarSucursal);
+            }
+            if (statsFilter.category === 'estados') {
+                return hasSubSelection ? ex.colorVarEstado : (COLOR_BASE_ESTADO[ex.estadoId]?.color || ex.colorVarEstado);
+            }
+            // Sin pestaña activa: usar colores por marca con variación sutil para distinguir las 17 líneas
+            return ex.colorVarMarca;
+        }
+
+        function buildDynamicStatsTitle() {
+            const mesNombre = MESES_NOMBRES_STATS[statsViewDate.getMonth()];
+            const anio = statsViewDate.getFullYear();
+            const metricPrefix = statsMetric === 'time'
+                ? 'Permanencia de tiempo en segundos en las exhibiciones'
+                : 'Número de personas en las exhibiciones';
+
+            let selectionLabel = '';
+            if (statsFilter.selectedTabletId) {
+                const ex = statsExhibiciones.find(item => item.tabletId === statsFilter.selectedTabletId);
+                if (ex) selectionLabel = `${ex.brandTitle} (${ex.sucursalName})`;
+            } else if (statsFilter.category === 'marcas' && statsFilter.selectedKey) {
+                const ex = statsExhibiciones.find(item => item.brandKey === statsFilter.selectedKey);
+                selectionLabel = ex ? ex.brandTitle : statsFilter.selectedKey;
+            } else if (statsFilter.category === 'sucursales' && statsFilter.selectedKey) {
+                selectionLabel = COLOR_BASE_SUCURSAL[statsFilter.selectedKey]?.title || '';
+            } else if (statsFilter.category === 'estados' && statsFilter.selectedKey) {
+                const estTitle = COLOR_BASE_ESTADO[statsFilter.selectedKey]?.title || '';
+                if (statsFilter.subSucursalKey) {
+                    const sucTitle = COLOR_BASE_SUCURSAL[statsFilter.subSucursalKey]?.title || '';
+                    selectionLabel = `${sucTitle} (${estTitle})`;
+                } else {
+                    selectionLabel = estTitle;
+                }
+            }
+
+            if (selectionLabel) {
+                return `${metricPrefix} ${selectionLabel} ${mesNombre} ${anio}`;
+            }
+            return `${metricPrefix} ${mesNombre} ${anio}`;
+        }
+
+        function updateStatsLegendStrip(filteredExhibiciones) {
+            if (!statsLegendStripEl) return;
+            statsLegendStripEl.innerHTML = '';
+
+            // Si estamos viendo una selección específica (marca, sucursal, estado o exhibición individual), mostrar cada línea con su variación de color
+            if (statsFilter.selectedKey || statsFilter.selectedTabletId) {
+                filteredExhibiciones.forEach(ex => {
+                    const color = getLineColorForExhibicion(ex);
+                    const chip = document.createElement('span');
+                    chip.className = 'stats-legend-chip';
+                    chip.innerHTML = `<span class="stats-legend-swatch" style="background:${color};"></span>${ex.sucursalName} (${ex.brandTitle})`;
+                    statsLegendStripEl.appendChild(chip);
+                });
+                return;
+            }
+
+            // Si estamos en la pestaña general sin sub-selección, mostrar el código de colores de la categoría activa
+            if (statsFilter.category === 'sucursales') {
+                Object.values(COLOR_BASE_SUCURSAL).forEach(info => {
+                    const chip = document.createElement('span');
+                    chip.className = 'stats-legend-chip';
+                    chip.innerHTML = `<span class="stats-legend-swatch" style="background:${info.color};"></span>${info.label}`;
+                    statsLegendStripEl.appendChild(chip);
+                });
+            } else if (statsFilter.category === 'estados') {
+                Object.values(COLOR_BASE_ESTADO).forEach(info => {
+                    const chip = document.createElement('span');
+                    chip.className = 'stats-legend-chip';
+                    chip.innerHTML = `<span class="stats-legend-swatch" style="background:${info.color};"></span>${info.label}`;
+                    statsLegendStripEl.appendChild(chip);
+                });
+            } else {
+                // Por defecto o en la pestaña Marcas: mostrar los 5 colores de Marcas
+                Object.values(COLOR_BASE_MARCA).forEach(info => {
+                    const chip = document.createElement('span');
+                    chip.className = 'stats-legend-chip';
+                    chip.innerHTML = `<span class="stats-legend-swatch" style="background:${info.color};"></span>${info.label}`;
+                    statsLegendStripEl.appendChild(chip);
+                });
+            }
+        }
+
+        function renderStatsLinesChart(skipAnim = false) {
+            if (!statsChartInstance) initStatsChart();
+            if (!statsChartInstance) return;
+
+            const year = statsViewDate.getFullYear();
+            const monthIdx = statsViewDate.getMonth();
+            const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
+
+            const labels = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                labels.push(String(d));
+            }
+
+            const filteredExhibiciones = getFilteredStatsExhibiciones();
+            const datasets = filteredExhibiciones.map(ex => {
+                const lineColor = getLineColorForExhibicion(ex);
+                const seriesData = computeTabletMonthlySeries(ex.tabletId, year, monthIdx, statsMetric);
+                return {
+                    label: `${ex.sucursalName} (${ex.brandTitle})`,
+                    data: seriesData,
+                    borderColor: lineColor,
+                    backgroundColor: lineColor,
+                    borderWidth: filteredExhibiciones.length <= 5 ? 3 : 2.3,
+                    pointRadius: filteredExhibiciones.length <= 5 ? 3.5 : 2.5,
+                    pointHoverRadius: 6,
+                    tension: 0.25,
+                    fill: false
+                };
+            });
+
+            if (statsChartTitleEl) {
+                statsChartTitleEl.textContent = buildDynamicStatsTitle();
+            }
+            if (statsChartSubtitleEl) {
+                const countLines = filteredExhibiciones.length;
+                const ejeYTexto = statsMetric === 'time' ? 'Eje Y: Tiempo promedio (segundos)' : 'Eje Y: Número de personas';
+                statsChartSubtitleEl.textContent = `${countLines === 1 ? '1 línea visible' : `${countLines} líneas superpuestas`} • ${ejeYTexto} • Eje X: ${daysInMonth} días`;
+            }
+
+            updateStatsLegendStrip(filteredExhibiciones);
+
+            statsChartInstance.data.labels = labels;
+            statsChartInstance.data.datasets = datasets;
+            statsChartInstance.options.scales.y.title.text = statsMetric === 'time'
+                ? 'Segundos de tiempo promedio'
+                : 'Número de personas';
+
+            if (skipAnim) {
+                statsChartInstance.update('none');
+            } else {
+                statsChartInstance.update();
+            }
+        }
+
+        function limpiarSeleccionPanelStats() {
+            document.querySelectorAll('#stats-nav-panel .stats-filter-btn').forEach(b => b.classList.remove('active-filter'));
+            document.querySelectorAll('#stats-nav-panel .stats-filter-results').forEach(r => {
+                r.classList.remove('active');
+                r.innerHTML = '';
+            });
+            document.querySelectorAll('#stats-nav-panel .estado-btn').forEach(b => {
+                b.classList.remove('active-estado');
+                const sp = b.querySelector('span');
+                if (sp) sp.textContent = '+';
+            });
+            document.querySelectorAll('#stats-nav-panel .estado-sucursales-content').forEach(c => c.classList.remove('open'));
+        }
+
+        function populateStatsSublistByMarca(brandKey, resultsContainer) {
+            const matchedEx = statsExhibiciones.filter(ex => ex.brandKey === brandKey);
+            const gruposPorSucursal = new Map();
+
+            matchedEx.forEach(ex => {
+                if (!gruposPorSucursal.has(ex.chainLogo)) {
+                    gruposPorSucursal.set(ex.chainLogo, []);
+                }
+                gruposPorSucursal.get(ex.chainLogo).push(ex);
+            });
+
+            const logosOrdenados = Array.from(gruposPorSucursal.keys()).sort((a, b) => {
+                const idxA = ordenLogosSucursales.indexOf(a);
+                const idxB = ordenLogosSucursales.indexOf(b);
+                return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+            });
+
+            logosOrdenados.forEach(logoSrc => {
+                const items = gruposPorSucursal.get(logoSrc);
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'filter-group';
+
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'filter-group-header sucursal-group-header';
+                const headerImg = document.createElement('img');
+                headerImg.src = logoSrc;
+                headerImg.alt = logoSrc;
+                headerDiv.appendChild(headerImg);
+                groupDiv.appendChild(headerDiv);
+
+                const linksDiv = document.createElement('div');
+                linksDiv.className = 'filter-group-links';
+                items.forEach(ex => {
+                    const a = document.createElement('a');
+                    a.href = 'javascript:void(0);';
+                    a.className = 'stats-subitem-link';
+                    a.style.color = ex.colorVarMarca;
+                    a.innerHTML = `<span class="stats-color-dot" style="background:${ex.colorVarMarca};"></span><span>${ex.sucursalName} (${ex.estadoNombre})</span>`;
+                    a.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const wasSelected = (statsFilter.selectedTabletId === ex.tabletId);
+                        document.querySelectorAll('#stats-nav-panel .stats-subitem-link').forEach(el => el.classList.remove('active-subitem'));
+                        if (wasSelected) {
+                            statsFilter.selectedTabletId = null;
+                        } else {
+                            statsFilter.selectedTabletId = ex.tabletId;
+                            a.classList.add('active-subitem');
+                        }
+                        renderStatsLinesChart();
+                    });
+                    linksDiv.appendChild(a);
+                });
+                groupDiv.appendChild(linksDiv);
+                resultsContainer.appendChild(groupDiv);
+            });
+
+            if (logosOrdenados.length > 0) resultsContainer.classList.add('active');
+        }
+
+        function populateStatsSublistBySucursal(chainLogo, resultsContainer, filterEstadoId = null) {
+            const matchedEx = statsExhibiciones.filter(ex => {
+                if (ex.chainLogo !== chainLogo) return false;
+                if (filterEstadoId && ex.estadoId !== filterEstadoId) return false;
+                return true;
+            });
+
+            const gruposPorMarca = new Map();
+            matchedEx.forEach(ex => {
+                if (!gruposPorMarca.has(ex.brandImg)) {
+                    gruposPorMarca.set(ex.brandImg, []);
+                }
+                gruposPorMarca.get(ex.brandImg).push(ex);
+            });
+
+            const marcasOrdenadas = Array.from(gruposPorMarca.keys()).sort((a, b) => {
+                const idxA = ordenImagenesMarcas.indexOf(a);
+                const idxB = ordenImagenesMarcas.indexOf(b);
+                return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+            });
+
+            marcasOrdenadas.forEach(marcaSrc => {
+                const items = gruposPorMarca.get(marcaSrc);
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'filter-group';
+
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'filter-group-header marca-group-header';
+                const headerImg = document.createElement('img');
+                headerImg.src = marcaSrc;
+                headerImg.alt = marcaSrc;
+                headerDiv.appendChild(headerImg);
+                groupDiv.appendChild(headerDiv);
+
+                const linksDiv = document.createElement('div');
+                linksDiv.className = 'filter-group-links';
+                items.forEach(ex => {
+                    const itemColor = filterEstadoId ? ex.colorVarEstado : ex.colorVarSucursal;
+                    const a = document.createElement('a');
+                    a.href = 'javascript:void(0);';
+                    a.className = 'stats-subitem-link';
+                    a.style.color = itemColor;
+                    a.innerHTML = `<span class="stats-color-dot" style="background:${itemColor};"></span><span>${ex.sucursalName} (${ex.estadoNombre})</span>`;
+                    a.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const wasSelected = (statsFilter.selectedTabletId === ex.tabletId);
+                        document.querySelectorAll('#stats-nav-panel .stats-subitem-link').forEach(el => el.classList.remove('active-subitem'));
+                        if (wasSelected) {
+                            statsFilter.selectedTabletId = null;
+                        } else {
+                            statsFilter.selectedTabletId = ex.tabletId;
+                            a.classList.add('active-subitem');
+                        }
+                        renderStatsLinesChart();
+                    });
+                    linksDiv.appendChild(a);
+                });
+                groupDiv.appendChild(linksDiv);
+                resultsContainer.appendChild(groupDiv);
+            });
+
+            if (marcasOrdenadas.length > 0) resultsContainer.classList.add('active');
+        }
+
+        function inicializarFiltroEstadosStats() {
+            const container = document.getElementById('stats-estados-accordion-content');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const estadosMap = new Map();
+            statsExhibiciones.forEach(ex => {
+                if (!estadosMap.has(ex.estadoId)) {
+                    estadosMap.set(ex.estadoId, {
+                        estadoId: ex.estadoId,
+                        estadoNombre: ex.estadoNombre,
+                        logos: new Set(),
+                        items: []
+                    });
+                }
+                estadosMap.get(ex.estadoId).logos.add(ex.chainLogo);
+                estadosMap.get(ex.estadoId).items.push(ex);
+            });
+
+            estadosMap.forEach(({ estadoId, estadoNombre, logos, items }) => {
+                const baseEstColor = COLOR_BASE_ESTADO[estadoId]?.color || '#b39c6e';
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'estado-filter-item';
+                itemDiv.setAttribute('data-estado-id', estadoId);
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'estado-btn';
+                btn.style.borderLeftColor = baseEstColor;
+                btn.setAttribute('data-estado-id', estadoId);
+                btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:8px;"><span class="stats-color-dot" style="background:${baseEstColor};"></span>${estadoNombre}</span> <span>+</span>`;
+
+                const sucursalesContent = document.createElement('div');
+                sucursalesContent.className = 'estado-sucursales-content';
+                sucursalesContent.setAttribute('data-estado-id', estadoId);
+
+                // Lista directa de exhibiciones del estado con su variación de color marrón/beige
+                const directListDiv = document.createElement('div');
+                directListDiv.className = 'filter-results active';
+                directListDiv.style.marginTop = '0';
+                items.forEach(ex => {
+                    const a = document.createElement('a');
+                    a.href = 'javascript:void(0);';
+                    a.className = 'stats-subitem-link';
+                    a.style.color = '#5a4b32';
+                    a.innerHTML = `<span class="stats-color-dot" style="background:${ex.colorVarEstado};"></span><span>${ex.sucursalName} — ${ex.brandTitle}</span>`;
+                    a.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const wasSelected = (statsFilter.selectedTabletId === ex.tabletId);
+                        document.querySelectorAll('#stats-nav-panel .stats-subitem-link').forEach(el => el.classList.remove('active-subitem'));
+                        if (wasSelected) {
+                            statsFilter.selectedTabletId = null;
+                        } else {
+                            statsFilter.selectedTabletId = ex.tabletId;
+                            a.classList.add('active-subitem');
+                        }
+                        renderStatsLinesChart();
+                    });
+                    directListDiv.appendChild(a);
+                });
+                sucursalesContent.appendChild(directListDiv);
+
+                const logosOrdenados = Array.from(logos).sort((a, b) => {
+                    const idxA = ordenLogosSucursales.indexOf(a);
+                    const idxB = ordenLogosSucursales.indexOf(b);
+                    return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+                });
+
+                logosOrdenados.forEach(logoSrc => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'filter-wrapper';
+
+                    const imgBtn = document.createElement('div');
+                    imgBtn.className = 'filter-img-btn sucursal-btn stats-filter-btn';
+                    imgBtn.setAttribute('data-stats-type', 'estado-sucursal');
+                    imgBtn.setAttribute('data-stats-val', logoSrc);
+                    imgBtn.setAttribute('data-estado-id', estadoId);
+
+                    const img = document.createElement('img');
+                    img.src = logoSrc;
+                    img.alt = estadoNombre;
+                    imgBtn.appendChild(img);
+
+                    const resultsDiv = document.createElement('div');
+                    resultsDiv.className = 'filter-results stats-filter-results';
+
+                    imgBtn.addEventListener('click', function() {
+                        const wasActive = this.classList.contains('active-filter');
+                        sucursalesContent.querySelectorAll('.stats-filter-btn').forEach(b => b.classList.remove('active-filter'));
+                        sucursalesContent.querySelectorAll('.stats-filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; });
+                        statsFilter.selectedTabletId = null;
+
+                        if (wasActive) {
+                            statsFilter.subSucursalKey = null;
+                            renderStatsLinesChart();
+                            return;
+                        }
+
+                        this.classList.add('active-filter');
+                        statsFilter.subSucursalKey = logoSrc;
+                        populateStatsSublistBySucursal(logoSrc, resultsDiv, estadoId);
+                        renderStatsLinesChart();
+                    });
+
+                    wrapper.appendChild(imgBtn);
+                    wrapper.appendChild(resultsDiv);
+                    sucursalesContent.appendChild(wrapper);
+                });
+
+                btn.addEventListener('click', () => {
+                    const isOpen = sucursalesContent.classList.contains('open');
+                    limpiarSeleccionPanelStats();
+                    statsFilter.selectedTabletId = null;
+                    statsFilter.subSucursalKey = null;
+
+                    if (isOpen) {
+                        statsFilter.selectedKey = null;
+                    } else {
+                        btn.classList.add('active-estado');
+                        const sp = btn.querySelector('span:last-child');
+                        if (sp) sp.textContent = '-';
+                        sucursalesContent.classList.add('open');
+                        statsFilter.category = 'estados';
+                        statsFilter.selectedKey = estadoId;
+                    }
+                    renderStatsLinesChart();
+                });
+
+                itemDiv.appendChild(btn);
+                itemDiv.appendChild(sucursalesContent);
+                container.appendChild(itemDiv);
+            });
+        }
+
+        inicializarFiltroEstadosStats();
+
+        // Eventos de pestañas principales (Marcas, Sucursales, Estados) en el panel derecho de Estadísticas
+        document.querySelectorAll('#stats-nav-panel .stats-accordion-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const category = this.getAttribute('data-stats-accordion');
+                const content = this.nextElementSibling;
+                const span = this.querySelector('span');
+                const isOpen = content.classList.contains('open');
+
+                document.querySelectorAll('#stats-nav-panel .stats-accordion-content').forEach(c => c.classList.remove('open'));
+                document.querySelectorAll('#stats-nav-panel .stats-accordion-btn span').forEach(s => s.textContent = '+');
+                limpiarSeleccionPanelStats();
+
+                statsFilter.selectedKey = null;
+                statsFilter.subSucursalKey = null;
+                statsFilter.selectedTabletId = null;
+
+                if (isOpen) {
+                    statsFilter.category = null;
+                } else {
+                    content.classList.add('open');
+                    if (span) span.textContent = '-';
+                    statsFilter.category = category;
+                }
+                renderStatsLinesChart();
+            });
+        });
+
+        // Eventos de clic en una Marca o una Sucursal dentro del panel de Estadísticas
+        document.querySelectorAll('#stats-accordion-marcas .stats-filter-btn, #stats-accordion-sucursales .stats-filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const wasActive = this.classList.contains('active-filter');
+                const type = this.getAttribute('data-stats-type');
+                const val = this.getAttribute('data-stats-val');
+                const resultsContainer = this.nextElementSibling;
+
+                limpiarSeleccionPanelStats();
+                statsFilter.selectedTabletId = null;
+                statsFilter.subSucursalKey = null;
+
+                if (wasActive) {
+                    statsFilter.selectedKey = null;
+                    renderStatsLinesChart();
+                    return;
+                }
+
+                this.classList.add('active-filter');
+                statsFilter.selectedKey = val;
+
+                if (type === 'marca') {
+                    statsFilter.category = 'marcas';
+                    populateStatsSublistByMarca(val, resultsContainer);
+                } else if (type === 'sucursal') {
+                    statsFilter.category = 'sucursales';
+                    populateStatsSublistBySucursal(val, resultsContainer);
+                }
+
+                renderStatsLinesChart();
+            });
+        });
+
+        function abrirInterfazEstadisticas() {
+            resetearScrollContenedorMapa();
+            // Cerrar paneles del mapa si estaban abiertos
+            navPanel.classList.remove('active');
+            infoPanel.classList.remove('active');
+            hamburgerBtn.classList.remove('open');
+            limpiarSeleccionFiltros();
+            iluminarEstados([]);
+
+            // Ocultar botones propios del mapa mientras se está en la interfaz de estadísticas
+            hamburgerBtn.style.display = 'none';
+            if (statsBtn) statsBtn.style.display = 'none';
+            if (btnHelpSemaforo) btnHelpSemaforo.style.display = 'none';
+            if (btnOpenSucursales) btnOpenSucursales.style.display = 'none';
+
+            // Mostrar área del gráfico y menú lateral derecho de estadísticas
+            if (statsMainArea) statsMainArea.classList.add('active');
+            if (statsNavPanel) statsNavPanel.classList.add('active');
+
+            renderStatsLinesChart();
+            setTimeout(() => {
+                if (statsChartInstance) statsChartInstance.resize();
+            }, 60);
+        }
+
+        function cerrarInterfazEstadisticas() {
+            resetearScrollContenedorMapa();
+            if (statsMainArea) statsMainArea.classList.remove('active');
+            if (statsNavPanel) statsNavPanel.classList.remove('active');
+
+            // Restaurar botones del mapa
+            hamburgerBtn.style.display = 'flex';
+            if (statsBtn) statsBtn.style.display = 'flex';
+            if (btnHelpSemaforo) btnHelpSemaforo.style.display = 'flex';
+            if (btnOpenSucursales) btnOpenSucursales.style.display = 'flex';
+
+            setTimeout(() => {
+                if (chartInstance) chartInstance.reflow();
+            }, 60);
+        }
+
+        if (statsBtn) {
+            statsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                abrirInterfazEstadisticas();
+            });
+        }
+
+        if (btnVolverMapaStats) {
+            btnVolverMapaStats.addEventListener('click', (e) => {
+                e.stopPropagation();
+                cerrarInterfazEstadisticas();
+            });
+        }
+
+        if (btnStatsMetric) {
+            btnStatsMetric.addEventListener('click', (e) => {
+                e.stopPropagation();
+                statsMetric = (statsMetric === 'count') ? 'time' : 'count';
+                if (statsIconChrono) statsIconChrono.style.display = (statsMetric === 'count') ? 'block' : 'none';
+                if (statsIconUser) statsIconUser.style.display = (statsMetric === 'time') ? 'block' : 'none';
+                renderStatsLinesChart();
+            });
+        }
+
+        function changeStatsMonth(direction) {
+            const wrapper = document.getElementById('stats-canvas-wrapper');
+            if (wrapper) {
+                wrapper.classList.add(direction < 0 ? 'slide-out-right' : 'slide-out-left');
+            }
+            setTimeout(() => {
+                const d = new Date(statsViewDate.getFullYear(), statsViewDate.getMonth() + direction, 1);
+                statsViewDate = d;
+                renderStatsLinesChart(true);
+                if (wrapper) {
+                    wrapper.classList.remove('slide-out-right', 'slide-out-left');
+                    wrapper.classList.add(direction < 0 ? 'slide-in-left' : 'slide-in-right');
+                    setTimeout(() => {
+                        wrapper.classList.remove('slide-in-left', 'slide-in-right');
+                    }, 380);
+                }
+            }, 220);
+        }
+
+        if (btnStatsPrev) {
+            btnStatsPrev.addEventListener('click', (e) => {
+                e.stopPropagation();
+                changeStatsMonth(-1);
+            });
+        }
+
+        if (btnStatsNext) {
+            btnStatsNext.addEventListener('click', (e) => {
+                e.stopPropagation();
+                changeStatsMonth(1);
             });
         }
 
