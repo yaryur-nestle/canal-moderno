@@ -384,7 +384,7 @@
             transform: translate(-50%, -50%);
             pointer-events: auto;
             background: #f4ead5;
-            color: #2c1d11;
+            color: #000000;
             border: 1.8px solid #8b6b3e;
             border-radius: 6px;
             font-size: 12.5px;
@@ -399,7 +399,7 @@
         }
         .stats-xaxis-inst-btn:hover {
             background: #b39c6e;
-            color: #ffffff;
+            color: #ffffff !important;
             border-color: #5c3a21;
             transform: translate(-50%, -50%) scale(1.16);
             box-shadow: 0 4px 10px rgba(92, 58, 33, 0.35);
@@ -535,26 +535,29 @@
             display: flex;
             align-items: center;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 10px;
+            margin-bottom: 4px;
         }
         .stats-inst-type-badge {
             display: inline-block;
-            font-size: 11px;
-            font-weight: 800;
+            font-size: 16px;
+            font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 3px 8px;
-            border-radius: 5px;
+            letter-spacing: 0.8px;
+            padding: 6px 14px;
+            border-radius: 7px;
+            line-height: 1.15;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
         .stats-inst-type-badge.type-mueble {
-            background: #efe3c8;
-            color: #5c3a21;
-            border: 1px solid #cdb486;
+            background: #ecdcbb;
+            color: #4a2c14;
+            border: 2px solid #b39c6e;
         }
         .stats-inst-type-badge.type-lte {
-            background: #e1f0fa;
-            color: #0d47a1;
-            border: 1px solid #90caf9;
+            background: #d8edff;
+            color: #083c8a;
+            border: 2px solid #64b5f6;
         }
         .stats-inst-code-pill {
             font-size: 11px;
@@ -2372,10 +2375,12 @@
         let liveTabletCounts = {};
         let liveTabletStatuses = {};
         let statsEventosPorTablet = {};
+        let statsUptimePorTablet = {};
         for (let i = 1; i <= 17; i++) {
             liveTabletCounts[i] = 0;
             liveTabletStatuses[i] = "OFFLINE";
             statsEventosPorTablet[i] = [];
+            statsUptimePorTablet[i] = {};
         }
         let isGlobalListenerInit = false;
         let statsUpdateTimer = null;
@@ -2679,6 +2684,13 @@
                     } else {
                         statsEventosPorTablet[i] = [];
                     }
+                    scheduleStatsChartUpdate();
+                });
+
+                // 4. Escuchar el historial de UPTIME de cada exhibición para colorear los números de días en el eje horizontal
+                const statsUptimeRef = ref(db, `muebles/tablet_${numFormat}/uptime`);
+                onValue(statsUptimeRef, (snapshot) => {
+                    statsUptimePorTablet[i] = snapshot.exists() ? snapshot.val() : {};
                     scheduleStatsChartUpdate();
                 });
             }
@@ -4035,7 +4047,32 @@
             data: { labels: [], datasets: [{ label: 'Data', data: [], backgroundColor: '#000', borderRadius: 4 }] },
             options: {
                 responsive: true, maintainAspectRatio: false, animation: { duration: 400, easing: 'easeOutQuart' },
-                scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(0, 0, 0, 0.06)' } }, x: { grid: { display: false } } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(0, 0, 0, 0.06)' } },
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: (c) => {
+                                if (currentViewLevel === 'month' && hasTabletUptime()) {
+                                    const dayNum = (c.index || 0) + 1;
+                                    const cellDate = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth(), dayNum);
+                                    const st = getDayUptimeStatus(cellDate).status;
+                                    if (st === 'online') return '#00C853';
+                                    if (st === 'partial') return '#E6B800';
+                                    if (st === 'offline') return '#FF1744';
+                                    return '#000000';
+                                }
+                                return '#000000';
+                            },
+                            font: (c) => {
+                                return {
+                                    weight: currentViewLevel === 'month' ? '700' : '600',
+                                    size: 12
+                                };
+                            }
+                        }
+                    }
+                },
                 interaction: { mode: 'index', intersect: false },
                 onHover: (event, chartElement) => {
                     event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
@@ -5757,6 +5794,80 @@
             });
         }
 
+        function getSingleActiveExhibicionStats() {
+            if (statsPinnedSelection && statsChartInstance && statsChartInstance.data && statsChartInstance.data.datasets) {
+                const pinnedDs = statsChartInstance.data.datasets[statsPinnedSelection.datasetIndex];
+                if (pinnedDs && pinnedDs.exhibicion) {
+                    return pinnedDs.exhibicion;
+                }
+            }
+            if (statsFilter.selectedTabletId) {
+                return statsExhibiciones.find(ex => ex.tabletId === statsFilter.selectedTabletId) || null;
+            }
+            if (!isNoPanelSelectionStats()) {
+                const filtered = getFilteredStatsExhibiciones();
+                if (filtered.length === 1) {
+                    return filtered[0];
+                }
+            }
+            return null;
+        }
+
+        function getTabletDayUptimeStatusById(tabletId, year, monthIdx, dayNum) {
+            const uptimeData = statsUptimePorTablet[tabletId];
+            if (!uptimeData || Object.keys(uptimeData).length === 0) {
+                return 'none';
+            }
+
+            const now = new Date();
+            const inicioHoy = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const inicioFecha = new Date(year, monthIdx, dayNum).getTime();
+
+            if (inicioFecha > inicioHoy) {
+                return 'future';
+            }
+
+            const yyyy = year;
+            const mm = String(monthIdx + 1).padStart(2, '0');
+            const dd = String(dayNum).padStart(2, '0');
+            const fechaStr = `${yyyy}-${mm}-${dd}`;
+
+            const fechasRegistradas = Object.keys(uptimeData).sort();
+            const primeraFecha = fechasRegistradas[0];
+
+            // Si la fecha es previa al inicio del parámetro uptime (antes de la instalación), devolver 'none' (negro)
+            if (fechaStr < primeraFecha) {
+                return 'none';
+            }
+
+            const dayRecord = uptimeData[fechaStr] || {};
+            const horasActivas = Object.keys(dayRecord).length;
+            const esHoy = (inicioFecha === inicioHoy);
+            const maxEsperadas = esHoy ? (now.getHours() + 1) : 24;
+
+            if (horasActivas === 0) {
+                return 'offline';
+            } else if (horasActivas >= maxEsperadas) {
+                return 'online';
+            } else {
+                return 'partial';
+            }
+        }
+
+        function getStatsXAxisDayColor(dayNum) {
+            const singleEx = getSingleActiveExhibicionStats();
+            if (!singleEx) return '#000000';
+
+            const year = statsViewDate.getFullYear();
+            const monthIdx = statsViewDate.getMonth();
+            const st = getTabletDayUptimeStatusById(singleEx.tabletId, year, monthIdx, dayNum);
+
+            if (st === 'online') return '#00C853';  // Verde: todo el día online
+            if (st === 'partial') return '#E6B800'; // Amarillo: hubo intermitencia
+            if (st === 'offline') return '#FF1744'; // Rojo: todo el día offline
+            return '#000000';                       // Negro: antes de la instalación / sin parámetro uptime / futuro
+        }
+
         function rebuildStatsXAxisInstalacionButtons() {
             statsCurrentMonthInstalacionesMap = getInstalacionesForCurrentStatsView();
             if (!statsXAxisBtnsLayer) return;
@@ -5769,6 +5880,7 @@
                 btn.setAttribute('data-day', String(dayNum));
                 btn.title = `Ver instalaciones del ${items[0].dateStr}`;
                 btn.textContent = String(dayNum);
+                btn.style.color = getStatsXAxisDayColor(dayNum);
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     abrirModalInstalacionesStats(dayNum, items);
@@ -5819,12 +5931,15 @@
                                 maxRotation: 0,
                                 color: (ctx) => {
                                     const dayNum = (ctx.index || 0) + 1;
-                                    return statsCurrentMonthInstalacionesMap.has(dayNum) ? 'rgba(0, 0, 0, 0)' : '#444';
+                                    if (statsCurrentMonthInstalacionesMap.has(dayNum)) {
+                                        return 'rgba(0, 0, 0, 0)';
+                                    }
+                                    return getStatsXAxisDayColor(dayNum);
                                 },
                                 font: (ctx) => {
                                     const dayNum = (ctx.index || 0) + 1;
                                     return {
-                                        weight: statsCurrentMonthInstalacionesMap.has(dayNum) ? '900' : '600',
+                                        weight: statsCurrentMonthInstalacionesMap.has(dayNum) ? '900' : '700',
                                         size: 12
                                     };
                                 }
