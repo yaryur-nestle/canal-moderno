@@ -5146,20 +5146,25 @@
 
             if (activeChartSel && statsChartInstance) {
                 const ds = statsChartInstance.data.datasets[activeChartSel.datasetIndex];
-                if (ds && ds.exhibicion) {
+                if (ds) {
                     const v = ds.data[activeChartSel.dataIndex] || 0;
                     if (v > 0) {
-                        chartEx = ds.exhibicion;
+                        chartEx = ds.exhibicion || null;
                         chartVal = v;
                         chartDayIdx = activeChartSel.dataIndex;
-                        chartColor = ds.baseColor || '#b39c6e';
+                        chartColor = ds.baseColor || '#6D4C41';
                     }
                 }
             }
 
+            // Actualizar también el título principal del gráfico cuando se selecciona o deselecciona una curva
+            if (statsChartTitleEl && statsChartInstance && statsChartInstance.data && statsChartInstance.data.datasets) {
+                statsChartTitleEl.textContent = buildDynamicStatsTitle();
+            }
+
             // 1. Actualizar título del panel derecho ("Estadísticas" vs "dd/mm/aa • 12 personas" / "18 segs")
             if (statsPanelTitleEl) {
-                if (chartEx && chartDayIdx >= 0) {
+                if (chartDayIdx >= 0 && chartVal > 0) {
                     const dayNum = String(chartDayIdx + 1).padStart(2, '0');
                     const monthNum = String(statsViewDate.getMonth() + 1).padStart(2, '0');
                     const yearShort = String(statsViewDate.getFullYear()).slice(-2);
@@ -5656,9 +5661,50 @@
             return ex.colorVarMarca;
         }
 
+        function isNoPanelSelectionStats() {
+            return (!statsFilter.category && !statsFilter.selectedKey && !statsFilter.selectedTabletId);
+        }
+
+        function computeNiceAxisMax(maxVal) {
+            if (!maxVal || maxVal <= 0) return 10;
+            const rawStep = maxVal / 6;
+            const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const residual = rawStep / mag;
+            let niceStep;
+            if (residual <= 1) niceStep = 1 * mag;
+            else if (residual <= 2) niceStep = 2 * mag;
+            else if (residual <= 2.5) niceStep = 2.5 * mag;
+            else if (residual <= 5) niceStep = 5 * mag;
+            else niceStep = 10 * mag;
+            niceStep = Math.max(1, Math.round(niceStep));
+            return Math.ceil(maxVal / niceStep) * niceStep;
+        }
+
         function buildDynamicStatsTitle() {
             const mesNombre = MESES_NOMBRES_STATS[statsViewDate.getMonth()];
             const anio = statsViewDate.getFullYear();
+
+            // Si hay una curva seleccionada en el gráfico (o una única exhibición seleccionada en el panel), reflejar el área bajo la curva (suma de todos los días del mes)
+            let selectedDs = null;
+            const activeChartSel = statsPinnedSelection || statsHoveredNode;
+            if (activeChartSel && statsChartInstance && statsChartInstance.data && statsChartInstance.data.datasets) {
+                selectedDs = statsChartInstance.data.datasets[activeChartSel.datasetIndex] || null;
+            } else if (statsFilter.selectedTabletId && statsChartInstance && statsChartInstance.data && statsChartInstance.data.datasets && statsChartInstance.data.datasets.length === 1) {
+                selectedDs = statsChartInstance.data.datasets[0];
+            }
+
+            if (selectedDs && Array.isArray(selectedDs.data)) {
+                const totalMes = selectedDs.data.reduce((acc, v) => acc + (Number(v) || 0), 0);
+                const unitStr = statsMetric === 'time'
+                    ? (totalMes === 1 ? '1 segundo' : `${totalMes} segundos`)
+                    : (totalMes === 1 ? '1 persona' : `${totalMes} personas`);
+                if (selectedDs.exhibicion) {
+                    const ex = selectedDs.exhibicion;
+                    return `${unitStr} ${ex.sucursalName} ${ex.brandTitle} (${ex.estadoNombre}) ${mesNombre} ${anio}`;
+                }
+                return `${unitStr} en las exhibiciones ${mesNombre} ${anio}`;
+            }
+
             const metricPrefix = statsMetric === 'time'
                 ? 'Permanencia de tiempo en segundos en las exhibiciones'
                 : 'Número de personas en las exhibiciones';
@@ -5666,7 +5712,7 @@
             let selectionLabel = '';
             if (statsFilter.selectedTabletId) {
                 const ex = statsExhibiciones.find(item => item.tabletId === statsFilter.selectedTabletId);
-                if (ex) selectionLabel = `${ex.brandTitle} (${ex.sucursalName})`;
+                if (ex) selectionLabel = `${ex.sucursalName} ${ex.brandTitle} (${ex.estadoNombre})`;
             } else if (statsFilter.category === 'marcas' && statsFilter.selectedKey) {
                 const ex = statsExhibiciones.find(item => item.brandKey === statsFilter.selectedKey);
                 selectionLabel = ex ? ex.brandTitle : statsFilter.selectedKey;
@@ -5691,6 +5737,15 @@
         function updateStatsLegendStrip(filteredExhibiciones) {
             if (!statsLegendStripEl) return;
             statsLegendStripEl.innerHTML = '';
+
+            // Cuando no hay ninguna selección en el panel derecho, el gráfico muestra 1 sola línea marrón con la suma total
+            if (isNoPanelSelectionStats()) {
+                const chip = document.createElement('span');
+                chip.className = 'stats-legend-chip';
+                chip.innerHTML = `<span class="stats-legend-swatch" style="background:#6D4C41;"></span>Total exhibiciones`;
+                statsLegendStripEl.appendChild(chip);
+                return;
+            }
 
             // Si estamos viendo una selección específica (marca, sucursal, estado o exhibición individual), mostrar cada línea con su variación de color
             if (statsFilter.selectedKey || statsFilter.selectedTabletId) {
@@ -5720,7 +5775,7 @@
                     statsLegendStripEl.appendChild(chip);
                 });
             } else {
-                // Por defecto o en la pestaña Marcas: mostrar los 5 colores de Marcas
+                // En la pestaña Marcas: mostrar los 5 colores de Marcas
                 Object.values(COLOR_BASE_MARCA).forEach(info => {
                     const chip = document.createElement('span');
                     chip.className = 'stats-legend-chip';
@@ -5736,7 +5791,6 @@
 
             statsPinnedSelection = null;
             statsHoveredNode = null;
-            syncStatsRightPanelDynamicView();
 
             const year = statsViewDate.getFullYear();
             const monthIdx = statsViewDate.getMonth();
@@ -5747,31 +5801,50 @@
                 labels.push(String(d));
             }
 
-            const filteredExhibiciones = getFilteredStatsExhibiciones();
-            const baseRadius = filteredExhibiciones.length <= 5 ? 4 : 3;
+            // Calcular primero las series de las 17 exhibiciones para determinar la cota máxima fija de todos los gráficos filtrados
+            const allSeriesMap = new Map();
+            let globalSingleLineMax = 0;
+            statsExhibiciones.forEach(ex => {
+                const s = computeTabletMonthlySeries(ex.tabletId, year, monthIdx, statsMetric);
+                allSeriesMap.set(ex.tabletId, s);
+                for (let i = 0; i < s.length; i++) {
+                    if (s[i] > globalSingleLineMax) globalSingleLineMax = s[i];
+                }
+            });
+            const fixedFilteredYMax = computeNiceAxisMax(globalSingleLineMax);
 
-            const datasets = filteredExhibiciones.map((ex, idx) => {
-                const lineColor = getLineColorForExhibicion(ex);
-                const seriesData = computeTabletMonthlySeries(ex.tabletId, year, monthIdx, statsMetric);
-                return {
-                    label: `${ex.sucursalName} (${ex.brandTitle})`,
-                    data: seriesData,
-                    baseColor: lineColor,
-                    exhibicion: ex,
-                    exhibiciones: [ex],
-                    borderColor: hexToRgbaStats(lineColor, 0.92),
-                    backgroundColor: hexToRgbaStats(lineColor, 0.22),
-                    borderWidth: filteredExhibiciones.length <= 5 ? 3 : 2.2,
+            const filteredExhibiciones = getFilteredStatsExhibiciones();
+            let datasets = [];
+            let yAxisMax = fixedFilteredYMax;
+
+            if (isNoPanelSelectionStats()) {
+                // Sin ninguna selección en el panel derecho: 1 sola línea marrón con la suma de todas las personas (o tiempos)
+                const summedData = new Array(daysInMonth).fill(0);
+                statsExhibiciones.forEach(ex => {
+                    const s = allSeriesMap.get(ex.tabletId) || [];
+                    for (let i = 0; i < daysInMonth; i++) {
+                        summedData[i] += (s[i] || 0);
+                    }
+                });
+                const maxSumVal = Math.max(0, ...summedData);
+                yAxisMax = computeNiceAxisMax(maxSumVal);
+
+                const brownColor = '#6D4C41';
+                datasets = [{
+                    label: 'Total exhibiciones',
+                    data: summedData,
+                    baseColor: brownColor,
+                    isTotalSum: true,
+                    exhibicion: null,
+                    exhibiciones: statsExhibiciones,
+                    borderColor: hexToRgbaStats(brownColor, 0.94),
+                    backgroundColor: hexToRgbaStats(brownColor, 0.25),
+                    borderWidth: 3.2,
                     pointRadius: (ctx) => {
                         const val = ctx.raw || 0;
                         if (val <= 0) return 0;
-                        if (statsPinnedSelection) {
-                            if (statsPinnedSelection.datasetIndex === ctx.datasetIndex) {
-                                return statsPinnedSelection.dataIndex === ctx.dataIndex ? 6.5 : 4.2;
-                            }
-                            return 2;
-                        }
-                        return baseRadius;
+                        if (statsPinnedSelection && statsPinnedSelection.dataIndex === ctx.dataIndex) return 6.5;
+                        return 4;
                     },
                     pointHoverRadius: (ctx) => {
                         const val = ctx.raw || 0;
@@ -5783,19 +5856,11 @@
                     },
                     pointBackgroundColor: (ctx) => {
                         const val = ctx.raw || 0;
-                        if (val <= 0) return 'transparent';
-                        if (statsPinnedSelection && statsPinnedSelection.datasetIndex !== ctx.datasetIndex) {
-                            return hexToRgbaStats(lineColor, 0.16);
-                        }
-                        return hexToRgbaStats(lineColor, 1);
+                        return val <= 0 ? 'transparent' : hexToRgbaStats(brownColor, 1);
                     },
                     pointBorderColor: (ctx) => {
                         const val = ctx.raw || 0;
-                        if (val <= 0) return 'transparent';
-                        if (statsPinnedSelection && statsPinnedSelection.datasetIndex !== ctx.datasetIndex) {
-                            return hexToRgbaStats('#ffffff', 0.16);
-                        }
-                        return '#ffffff';
+                        return val <= 0 ? 'transparent' : '#ffffff';
                     },
                     pointBorderWidth: (ctx) => {
                         const val = ctx.raw || 0;
@@ -5803,21 +5868,81 @@
                     },
                     tension: 0.25,
                     fill: 'origin',
-                    order: idx
-                };
-            });
+                    order: 0
+                }];
+            } else {
+                const baseRadius = filteredExhibiciones.length <= 5 ? 4 : 3;
+                datasets = filteredExhibiciones.map((ex, idx) => {
+                    const lineColor = getLineColorForExhibicion(ex);
+                    const seriesData = allSeriesMap.get(ex.tabletId) || computeTabletMonthlySeries(ex.tabletId, year, monthIdx, statsMetric);
+                    return {
+                        label: `${ex.sucursalName} (${ex.brandTitle})`,
+                        data: seriesData,
+                        baseColor: lineColor,
+                        exhibicion: ex,
+                        exhibiciones: [ex],
+                        borderColor: hexToRgbaStats(lineColor, 0.92),
+                        backgroundColor: hexToRgbaStats(lineColor, 0.22),
+                        borderWidth: filteredExhibiciones.length <= 5 ? 3 : 2.2,
+                        pointRadius: (ctx) => {
+                            const val = ctx.raw || 0;
+                            if (val <= 0) return 0;
+                            if (statsPinnedSelection) {
+                                if (statsPinnedSelection.datasetIndex === ctx.datasetIndex) {
+                                    return statsPinnedSelection.dataIndex === ctx.dataIndex ? 6.5 : 4.2;
+                                }
+                                return 2;
+                            }
+                            return baseRadius;
+                        },
+                        pointHoverRadius: (ctx) => {
+                            const val = ctx.raw || 0;
+                            return val <= 0 ? 0 : 7;
+                        },
+                        pointHitRadius: (ctx) => {
+                            const val = ctx.raw || 0;
+                            return val <= 0 ? 0 : 10;
+                        },
+                        pointBackgroundColor: (ctx) => {
+                            const val = ctx.raw || 0;
+                            if (val <= 0) return 'transparent';
+                            if (statsPinnedSelection && statsPinnedSelection.datasetIndex !== ctx.datasetIndex) {
+                                return hexToRgbaStats(lineColor, 0.16);
+                            }
+                            return hexToRgbaStats(lineColor, 1);
+                        },
+                        pointBorderColor: (ctx) => {
+                            const val = ctx.raw || 0;
+                            if (val <= 0) return 'transparent';
+                            if (statsPinnedSelection && statsPinnedSelection.datasetIndex !== ctx.datasetIndex) {
+                                return hexToRgbaStats('#ffffff', 0.16);
+                            }
+                            return '#ffffff';
+                        },
+                        pointBorderWidth: (ctx) => {
+                            const val = ctx.raw || 0;
+                            return val <= 0 ? 0 : 1.5;
+                        },
+                        tension: 0.25,
+                        fill: 'origin',
+                        order: idx
+                    };
+                });
+            }
+
+            statsChartInstance.data.labels = labels;
+            statsChartInstance.data.datasets = datasets;
+            statsChartInstance.options.scales.y.max = yAxisMax;
+            statsChartInstance.options.scales.y.title.text = statsMetric === 'time'
+                ? 'Segundos de tiempo promedio'
+                : 'Número de personas';
+
+            updateStatsLegendStrip(filteredExhibiciones);
+            syncStatsRightPanelDynamicView();
 
             if (statsChartTitleEl) {
                 statsChartTitleEl.textContent = buildDynamicStatsTitle();
             }
-
-            updateStatsLegendStrip(filteredExhibiciones);
-
-            statsChartInstance.data.labels = labels;
-            statsChartInstance.data.datasets = datasets;
-            statsChartInstance.options.scales.y.title.text = statsMetric === 'time'
-                ? 'Segundos de tiempo promedio'
-                : 'Número de personas';
 
             if (skipAnim) {
                 statsChartInstance.update('none');
