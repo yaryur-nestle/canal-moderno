@@ -17,7 +17,8 @@
     .error-msg { color: #FF0055; margin-top: 15px; font-size: 0.85rem; display: none; text-shadow: 0 0 5px #FF0055; }
 
     .scene { position: relative; width: 100vw; height: 100vh; perspective: 1000px; display: none; }
-    .fullscreen-btn { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 100; width: 150px; height: 80px; background: transparent; border: none; outline: none; cursor: pointer; }
+    /* Botón invisible de pantalla completa que actúa como reiniciador de la experiencia en Tablet 17 y TV 02 */
+    .fullscreen-btn { position: absolute; top: 0; left: 0; z-index: 200; width: 100vw; height: 100vh; background: transparent; border: none; outline: none; cursor: pointer; }
 
     .card { width: 100%; height: 100%; position: relative; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; }
     .card.is-flipped { transform: rotateY(180deg); }
@@ -205,15 +206,36 @@
       });
     }
 
-    const fullscreenBtn = document.getElementById('fullscreen-btn');
-    fullscreenBtn.addEventListener('click', () => {
+    function reiniciarExperienciaCompleta() {
+      // 1. Asegurar pantalla completa en la tablet sin salir de ella al tocar
       const elem = document.documentElement;
-      if (!document.fullscreenElement) {
-        if (elem.requestFullscreen) elem.requestFullscreen();
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
+      if (!document.fullscreenElement && elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
       }
-    });
+
+      // 2. Detener cualquier video de receta en reproducción en la Tablet 17 y volver a la pantalla de bienvenida
+      overlayReceta.style.display = 'none';
+      Object.values(videosReceta).forEach(v => {
+        if (v) {
+          v.pause();
+          v.currentTime = 0;
+          v.style.display = 'none';
+        }
+      });
+      isVideoPlaying = false;
+      ultimaRecetaProcesada = "";
+      estadoRecetaPendiente = "";
+
+      // 3. Enviar señal a Firebase para detener cualquier video en el Televisor 02 (lector02.html)
+      update(estadoActualRef, {
+        recetaActiva: "",
+        timestampReceta: null,
+        timestampReset: Date.now()
+      });
+    }
+
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    fullscreenBtn.addEventListener('click', reiniciarExperienciaCompleta);
 
     const btnFlip = document.getElementById('flip-btn');
     const card = document.getElementById('card');

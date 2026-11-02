@@ -239,11 +239,15 @@
         };
 
         // ======= LÓGICA DE OPTIMIZACIÓN EXTREMA ======= //
+        let ultimoTimestampReset = null;
+        let tiempoUltimoResetLocal = 0;
+
         function detenerTodoParaEscanear() {
             const todosLosVideos = [video1, video2, ...Object.values(videosReceta)];
             
             todosLosVideos.forEach(v => {
                 if (!v.paused) v.pause();
+                v.currentTime = 0;
                 v.style.display = 'none';
             });
             
@@ -395,6 +399,20 @@
                 if (!estado) return;
 
                 ultimoEstadoFirebase = estado; 
+
+                // Inicializar timestampReset en la primera lectura para no disparar un reset antiguo al abrir
+                if (ultimoTimestampReset === null) {
+                    ultimoTimestampReset = estado.timestampReset || 0;
+                } else if (estado.timestampReset && estado.timestampReset !== ultimoTimestampReset) {
+                    // Toque en la Tablet 17: detener cualquier video en curso y volver a la pantalla de bienvenida
+                    ultimoTimestampReset = estado.timestampReset;
+                    tiempoUltimoResetLocal = Date.now();
+                    estaEscaneando = false;
+                    estadoGlobalReceta = "";
+                    detenerTodoParaEscanear();
+                    personaDetectadaLocalmente = Boolean(estado.hayPersonas);
+                    return;
+                }
                 
                 if (!estaEscaneando) {
                     procesarEstadoFirebase(estado);
@@ -405,10 +423,11 @@
         function procesarEstadoFirebase(estado) {
             estadoGlobalReceta = estado.recetaActiva || "";
             const deteccionRemota = estado.hayPersonas;
+            const enEnfriamientoReset = (Date.now() - tiempoUltimoResetLocal) < 2500;
 
             if (deteccionRemota && !personaDetectadaLocalmente) {
                 personaDetectadaLocalmente = true;
-                if (!isVideo1Playing && !isVideo2Playing && estadoGlobalReceta === "") {
+                if (!enEnfriamientoReset && !isVideo1Playing && !isVideo2Playing && estadoGlobalReceta === "") {
                     video1.style.display = 'block';
                     video1.currentTime = 0;
                     video1.play().catch(e => console.error("Error reproduciendo Video 01:", e));
