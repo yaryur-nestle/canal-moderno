@@ -5400,15 +5400,17 @@
             let chartDayIdx = -1;
             let chartColor = '#b39c6e';
 
-            if (activeChartSel && statsChartInstance) {
+            if (activeChartSel && statsChartInstance && statsChartInstance.data && statsChartInstance.data.datasets) {
                 const ds = statsChartInstance.data.datasets[activeChartSel.datasetIndex];
                 if (ds) {
-                    const v = ds.data[activeChartSel.dataIndex] || 0;
-                    if (v > 0) {
-                        chartEx = ds.exhibicion || null;
-                        chartVal = v;
-                        chartDayIdx = activeChartSel.dataIndex;
-                        chartColor = ds.baseColor || '#6D4C41';
+                    chartEx = ds.exhibicion || null;
+                    chartColor = ds.baseColor || '#6D4C41';
+                    if (activeChartSel.dataIndex >= 0) {
+                        const v = ds.data[activeChartSel.dataIndex] || 0;
+                        if (v > 0) {
+                            chartVal = v;
+                            chartDayIdx = activeChartSel.dataIndex;
+                        }
                     }
                 }
             }
@@ -5628,7 +5630,7 @@
             }
         }
 
-        function applyStatsSelectionStyles() {
+        function applyStatsSelectionStyles(shouldUpdate = true) {
             if (!statsChartInstance) return;
             const datasets = statsChartInstance.data.datasets || [];
             const hasPin = statsPinnedSelection !== null;
@@ -5636,17 +5638,26 @@
             datasets.forEach((ds, idx) => {
                 const c = ds.baseColor || '#b39c6e';
                 const isSelected = hasPin && statsPinnedSelection.datasetIndex === idx;
+                const hasPositiveData = Array.isArray(ds.data) && ds.data.some(v => (Number(v) || 0) > 0);
 
                 if (!hasPin) {
-                    ds.borderColor = hexToRgbaStats(c, 0.92);
-                    ds.backgroundColor = hexToRgbaStats(c, 0.22);
-                    ds.borderWidth = datasets.length <= 5 ? 3 : 2.2;
+                    ds.borderColor = hexToRgbaStats(c, ds.isTotalSum ? 0.94 : 0.92);
+                    ds.backgroundColor = hexToRgbaStats(c, ds.isTotalSum ? 0.25 : 0.22);
+                    ds.borderWidth = ds.isTotalSum ? 3.2 : (datasets.length <= 5 ? 3 : 2.2);
                     ds.order = idx;
                 } else if (isSelected) {
-                    ds.borderColor = hexToRgbaStats(c, 1);
-                    ds.backgroundColor = hexToRgbaStats(c, 0.48);
-                    ds.borderWidth = 3.8;
-                    ds.order = 0;
+                    if (hasPositiveData) {
+                        ds.borderColor = hexToRgbaStats(c, 1);
+                        ds.backgroundColor = hexToRgbaStats(c, 0.48);
+                        ds.borderWidth = 3.8;
+                        ds.order = 0;
+                    } else {
+                        // Si en este mes no hay datos en la curva seleccionada, todas las curvas se ven claritas
+                        ds.borderColor = hexToRgbaStats(c, 0.16);
+                        ds.backgroundColor = hexToRgbaStats(c, 0.03);
+                        ds.borderWidth = 1.4;
+                        ds.order = 0;
+                    }
                 } else {
                     ds.borderColor = hexToRgbaStats(c, 0.16);
                     ds.backgroundColor = hexToRgbaStats(c, 0.03);
@@ -5655,7 +5666,30 @@
                 }
             });
 
-            statsChartInstance.update('none');
+            if (shouldUpdate) {
+                statsChartInstance.update('none');
+            }
+        }
+
+        function setStatsPinnedSelectionFromHit(hit) {
+            if (!hit || !statsChartInstance || !statsChartInstance.data || !statsChartInstance.data.datasets) return;
+            const ds = statsChartInstance.data.datasets[hit.datasetIndex];
+            statsPinnedSelection = {
+                datasetIndex: hit.datasetIndex,
+                dataIndex: hit.dataIndex,
+                tabletId: (ds && ds.exhibicion) ? ds.exhibicion.tabletId : null,
+                isTotalSum: !!(ds && ds.isTotalSum),
+                monthKey: `${statsViewDate.getFullYear()}-${statsViewDate.getMonth()}`
+            };
+        }
+
+        function isPinnedDatasetEmptyInCurrentMonth() {
+            if (!statsPinnedSelection || !statsChartInstance || !statsChartInstance.data || !statsChartInstance.data.datasets) {
+                return false;
+            }
+            const ds = statsChartInstance.data.datasets[statsPinnedSelection.datasetIndex];
+            if (!ds || !Array.isArray(ds.data)) return true;
+            return !ds.data.some(v => (Number(v) || 0) > 0);
         }
 
         function clearStatsPinnedSelection() {
@@ -6007,12 +6041,20 @@
             canvas.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (!statsChartInstance) return;
+
+                // Si venimos de otro mes con una curva seleccionada que en este mes no tiene nada que seleccionar (todas las curvas claritas),
+                // al hacer clic en cualquier parte del gráfico se quita la selección y vuelven a verse todas las curvas normales.
+                if (statsPinnedSelection !== null && isPinnedDatasetEmptyInCurrentMonth()) {
+                    clearStatsPinnedSelection();
+                    return;
+                }
+
                 const { x, y } = getCanvasCoordsFromEventStats(canvas, e);
 
                 // 1. Verificar clic en un nodo con valor > 0
                 const nodeHit = findNonZeroNodeAtStats(x, y, 16);
                 if (nodeHit) {
-                    statsPinnedSelection = nodeHit;
+                    setStatsPinnedSelectionFromHit(nodeHit);
                     applyStatsSelectionStyles();
                     syncStatsRightPanelDynamicView();
                     rebuildStatsXAxisInstalacionButtons();
@@ -6023,7 +6065,7 @@
                 // 2. Verificar clic en una línea o en el área bajo la curva
                 const curveHit = findCurveLineOrAreaAtStats(x, y);
                 if (curveHit) {
-                    statsPinnedSelection = curveHit;
+                    setStatsPinnedSelectionFromHit(curveHit);
                     applyStatsSelectionStyles();
                     syncStatsRightPanelDynamicView();
                     rebuildStatsXAxisInstalacionButtons();
@@ -6294,11 +6336,12 @@
             if (!statsChartInstance) initStatsChart();
             if (!statsChartInstance) return;
 
-            statsPinnedSelection = null;
+            const prevPin = statsPinnedSelection;
             statsHoveredNode = null;
 
             const year = statsViewDate.getFullYear();
             const monthIdx = statsViewDate.getMonth();
+            const currentMonthKey = `${year}-${monthIdx}`;
             const daysInMonth = new Date(year, monthIdx + 1, 0).getDate();
 
             const labels = [];
@@ -6442,6 +6485,39 @@
                 ? 'Segundos de tiempo promedio'
                 : 'Número de personas';
 
+            // Preservar la selección del área bajo la curva al cambiar de mes (o actualizar datos) para mantener continuidad
+            if (prevPin) {
+                let matchedDsIdx = -1;
+                if (prevPin.isTotalSum) {
+                    matchedDsIdx = datasets.findIndex(d => d.isTotalSum);
+                } else if (prevPin.tabletId != null) {
+                    matchedDsIdx = datasets.findIndex(d => d.exhibicion && d.exhibicion.tabletId === prevPin.tabletId);
+                } else if (prevPin.datasetIndex != null && prevPin.datasetIndex < datasets.length) {
+                    matchedDsIdx = prevPin.datasetIndex;
+                }
+
+                if (matchedDsIdx !== -1) {
+                    const matchedDs = datasets[matchedDsIdx];
+                    const isSameMonth = (prevPin.monthKey === currentMonthKey);
+                    let nextDataIdx = -1;
+                    if (isSameMonth && prevPin.dataIndex >= 0 && matchedDs.data && (matchedDs.data[prevPin.dataIndex] || 0) > 0) {
+                        nextDataIdx = prevPin.dataIndex;
+                    }
+                    statsPinnedSelection = {
+                        datasetIndex: matchedDsIdx,
+                        dataIndex: nextDataIdx,
+                        tabletId: matchedDs.exhibicion ? matchedDs.exhibicion.tabletId : null,
+                        isTotalSum: !!matchedDs.isTotalSum,
+                        monthKey: currentMonthKey
+                    };
+                    applyStatsSelectionStyles(false);
+                } else {
+                    statsPinnedSelection = null;
+                }
+            } else {
+                statsPinnedSelection = null;
+            }
+
             updateStatsLegendStrip(filteredExhibiciones);
             syncStatsRightPanelDynamicView();
             cerrarModalInstalacionesStats();
@@ -6460,6 +6536,7 @@
         }
 
         function limpiarSeleccionPanelStats() {
+            statsPinnedSelection = null;
             document.querySelectorAll('#stats-nav-panel .stats-filter-btn').forEach(b => b.classList.remove('active-filter'));
             document.querySelectorAll('#stats-nav-panel .stats-filter-results').forEach(r => {
                 r.classList.remove('active');
@@ -6515,6 +6592,7 @@
                     a.innerHTML = `<span class="stats-color-dot" style="background:${ex.colorVarMarca};"></span><span>${ex.sucursalName} (${ex.estadoNombre})</span>`;
                     a.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        statsPinnedSelection = null;
                         const wasSelected = (statsFilter.selectedTabletId === ex.tabletId);
                         document.querySelectorAll('#stats-nav-panel .stats-subitem-link').forEach(el => el.classList.remove('active-subitem'));
                         if (wasSelected) {
@@ -6581,6 +6659,7 @@
                     a.innerHTML = `<span class="stats-color-dot" style="background:${itemColor};"></span><span>${ex.sucursalName} (${ex.estadoNombre})</span>`;
                     a.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        statsPinnedSelection = null;
                         const wasSelected = (statsFilter.selectedTabletId === ex.tabletId);
                         document.querySelectorAll('#stats-nav-panel .stats-subitem-link').forEach(el => el.classList.remove('active-subitem'));
                         if (wasSelected) {
@@ -6657,6 +6736,7 @@
                     a.innerHTML = `<span class="stats-color-dot" style="background:${ex.colorVarEstado};"></span><span>${ex.sucursalName} — ${ex.brandTitle}</span>`;
                     a.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        statsPinnedSelection = null;
                         const wasSelected = (statsFilter.selectedTabletId === ex.tabletId);
                         document.querySelectorAll('#stats-nav-panel .stats-subitem-link').forEach(el => el.classList.remove('active-subitem'));
                         if (wasSelected) {
@@ -6696,6 +6776,7 @@
                     resultsDiv.className = 'filter-results stats-filter-results';
 
                     imgBtn.addEventListener('click', function() {
+                        statsPinnedSelection = null;
                         const wasActive = this.classList.contains('active-filter');
                         sucursalesContent.querySelectorAll('.stats-filter-btn').forEach(b => b.classList.remove('active-filter'));
                         sucursalesContent.querySelectorAll('.stats-filter-results').forEach(r => { r.classList.remove('active'); r.innerHTML = ''; });
