@@ -547,6 +547,15 @@
                         text-shadow 0.45s ease,
                         letter-spacing 0.45s ease;
         }
+        .t17-counter-label {
+            font-size: clamp(1.1rem, 2.2vw, 1.7rem);
+            font-weight: 800;
+            color: #7a6843;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-top: 6px;
+            line-height: 1.1;
+        }
         .t17-counter-display.is-compact {
             top: 6px;
             left: 50%;
@@ -561,6 +570,9 @@
             font-size: 1.55rem;
             text-shadow: 1px 1px 0px #daccaa;
             letter-spacing: 0;
+        }
+        .t17-counter-display.is-compact .t17-counter-label {
+            display: none;
         }
 
         /* Modal Emergente de Reinicio del Contador (Tablet 17) */
@@ -1555,6 +1567,7 @@
                         <!-- Contador Acumulado Reiniciable (Exclusivo Tablet 17 en Tiempo Real) -->
                         <div id="tablet17-counter-display" class="t17-counter-display" style="display: none;">
                             <span id="tablet17-counter-number" class="t17-counter-number">0</span>
+                            <span id="tablet17-counter-label" class="t17-counter-label">PERSONAS</span>
                         </div>
 
                         <!-- Ventana Emergente para Reiniciar el Contador de Tablet 17 -->
@@ -1960,7 +1973,6 @@
             });
         }
 
-        let t17PrevConteo = null;
         let t17AcumuladoActual = 0;
 
         function initGlobalMapListeners() {
@@ -1975,25 +1987,7 @@
                     liveTabletCounts[i] = nuevoConteo;
 
                     if (i === 17) {
-                        const acumuladoRemoto = (data && typeof data.contadorAcumulado === 'number') ? data.contadorAcumulado : 0;
-                        if (t17PrevConteo === null) {
-                            t17AcumuladoActual = acumuladoRemoto;
-                            if (nuevoConteo > 0 && acumuladoRemoto === 0) {
-                                t17AcumuladoActual = nuevoConteo;
-                                update(globalEstadoQuery, { contadorAcumulado: t17AcumuladoActual }).catch(() => {});
-                            }
-                        } else if (nuevoConteo > t17PrevConteo) {
-                            const diff = nuevoConteo - t17PrevConteo;
-                            if (acumuladoRemoto >= t17AcumuladoActual + diff) {
-                                t17AcumuladoActual = acumuladoRemoto;
-                            } else {
-                                t17AcumuladoActual += diff;
-                                update(globalEstadoQuery, { contadorAcumulado: t17AcumuladoActual }).catch(() => {});
-                            }
-                        } else {
-                            t17AcumuladoActual = acumuladoRemoto;
-                        }
-                        t17PrevConteo = nuevoConteo;
+                        t17AcumuladoActual = (data && typeof data.contadorAcumulado === 'number') ? data.contadorAcumulado : 0;
                         const numEl = document.getElementById('tablet17-counter-number');
                         if (numEl) numEl.textContent = t17AcumuladoActual;
                     }

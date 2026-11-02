@@ -347,20 +347,14 @@
       const personasDetectadas = rostrosActuales > 0;
 
       // Enviar señal de presencia a Firebase para que el Televisor 02 reproduzca su video
-      // (Usamos update para conservar recetaActiva si hay una receta en curso)
+      // (Usamos update para conservar recetaActiva y contadorAcumulado)
       if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
-        const prevCount = pendingFaceCount;
         hayPersonasActual = personasDetectadas;
-        const payloadEstado = {
+        update(estadoActualRef, {
             hayPersonas: hayPersonasActual,
             conteoActual: rostrosActuales,
             ultimaActividad: Date.now()
-        };
-        if (rostrosActuales > prevCount) {
-            totalHistorico += (rostrosActuales - prevCount);
-            payloadEstado.contadorAcumulado = totalHistorico;
-        }
-        update(estadoActualRef, payloadEstado);
+        });
       }
 
       if (rostrosActuales !== pendingFaceCount) {
@@ -368,6 +362,16 @@
         clearTimeout(stabilityTimer); 
         stabilityTimer = setTimeout(() => {
           if (pendingFaceCount !== lastLoggedFaceCount) {
+            // Solo aumentar el contador acumulado si las nuevas personas permanecen al menos 1 segundo frente a la tablet
+            if (pendingFaceCount > lastLoggedFaceCount) {
+              const nuevasPersonasEstables = pendingFaceCount - lastLoggedFaceCount;
+              totalHistorico += nuevasPersonasEstables;
+              update(estadoActualRef, {
+                contadorAcumulado: totalHistorico
+              });
+              const totalEl = document.getElementById('total-counter');
+              if (totalEl) totalEl.innerText = `HISTÓRICO: ${totalHistorico}`;
+            }
             push(eventosRef, {
               timestamp: Date.now(),
               fecha: new Date().toISOString(),
