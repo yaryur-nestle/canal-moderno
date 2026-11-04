@@ -57,10 +57,11 @@
 
         #visorImagen {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 50%;
+            left: 50%;
+            width: 100vh;
+            height: 100vw;
+            transform: translate(-50%, -50%) rotate(90deg);
             object-fit: contain;
             background-color: #000;
             z-index: 1; /* Fondo base */
@@ -69,10 +70,11 @@
         /* Contenedores de video superpuestos */
         .video-player {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 50%;
+            left: 50%;
+            width: 100vh;
+            height: 100vw;
+            transform: translate(-50%, -50%) rotate(90deg);
             object-fit: contain; 
             background-color: #000;
             z-index: 2;
@@ -84,12 +86,12 @@
             z-index: 5;
         }
 
-        /* === ESTILOS DEL CARTEL DE ERROR ROTADO === */
+        /* === ESTILOS DEL CARTEL DE ERROR === */
         #barcode-display {
             position: fixed; 
-            top: 50%; /* Centrado verticalmente */
-            left: 80px; /* Más a la izquierda, ajusta este valor si lo quieres más a la orilla */
-            transform: translate(-50%, -50%) rotate(-90deg); /* Traslada su centro y lo rota 90 grados anti-horario */
+            top: 80px;
+            left: 50%;
+            transform: translate(-50%, -50%);
             
             color: #FFFFFF; 
             font-size: 2.5rem; 
