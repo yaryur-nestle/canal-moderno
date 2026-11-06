@@ -923,7 +923,9 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform-origin: right center;
+            translate: -50% -50%;
+            scale: 1;
             z-index: 120;
             display: none;
             flex-direction: column;
@@ -937,10 +939,9 @@
             backdrop-filter: blur(6px);
             pointer-events: none;
             transition: top 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                        padding 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                        border-radius 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                        border-width 0.45s ease,
+                        left 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                        translate 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                        scale 0.45s cubic-bezier(0.22, 1, 0.36, 1),
                         box-shadow 0.45s ease,
                         background-color 0.45s ease;
         }
@@ -951,9 +952,6 @@
             color: #1a1a1a;
             text-shadow: 3px 4px 0px #daccaa;
             letter-spacing: -2px;
-            transition: font-size 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-                        text-shadow 0.45s ease,
-                        letter-spacing 0.45s ease;
         }
         .t17-counter-label {
             font-size: clamp(1.1rem, 2.2vw, 1.7rem);
@@ -965,22 +963,12 @@
             line-height: 1.1;
         }
         .t17-counter-display.is-compact {
-            top: 6px;
-            left: 50%;
-            transform: translate(-50%, 0);
-            padding: 3px 18px;
-            border-radius: 16px;
-            border-width: 2px;
+            top: 50%;
+            left: 100%;
+            translate: -100% -50%;
+            scale: 0.7;
             background: rgba(255, 255, 255, 0.94);
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
-        }
-        .t17-counter-display.is-compact .t17-counter-number {
-            font-size: 1.55rem;
-            text-shadow: 1px 1px 0px #daccaa;
-            letter-spacing: 0;
-        }
-        .t17-counter-display.is-compact .t17-counter-label {
-            display: none;
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.2);
         }
 
         /* Modal Emergente de Reinicio del Contador (Tablet 17) */
