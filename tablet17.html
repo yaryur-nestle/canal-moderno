@@ -97,7 +97,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, set, push, onDisconnect, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, set, update, push, onDisconnect, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -118,6 +118,7 @@
     const eventosRef = ref(db, 'muebles/tablet_17/eventos');
     const statusRef = ref(db, 'muebles/tablet_17/status');
     const estadoActualRef = ref(db, 'muebles/tablet_17/estado_actual');
+    const contadorPersonasRef = ref(db, 'muebles/tablet_17/contador_personas');
     const connectedRef = ref(db, ".info/connected");
 
     const loginScreen = document.getElementById('login-screen');
@@ -177,6 +178,7 @@
         if (snap.val() === true) {
           onDisconnect(statusRef).set('OFFLINE').then(() => { set(statusRef, 'ONLINE'); });
           onDisconnect(estadoActualRef).update({ hayPersonas: false, conteoActual: 0 });
+          onDisconnect(contadorPersonasRef).update({ sesionActiva: false, maxEnSesion: 0 });
           registrarLatido();
           if (!heartbeatInterval) {
             heartbeatInterval = setInterval(registrarLatido, 5 * 60 * 1000);
@@ -211,8 +213,68 @@
     let lastLoggedFaceCount = 0;
     let pendingFaceCount = 0;
     let stabilityTimer = null;
+    let zeroPresenceDebounceTimer = null;
+    let ausenciaSesionTimer = null;
     let camaraIniciada = false;
     let hayPersonasActual = false;
+    let ultimoConteoEnviado = 0;
+
+    function registrarPresenciaContador(conteoEstable) {
+      if (!conteoEstable || conteoEstable <= 0) return;
+      runTransaction(contadorPersonasRef, (estado) => {
+        const actual = (estado && typeof estado === 'object')
+          ? estado
+          : { valor: 0, sesionActiva: false, maxEnSesion: 0 };
+        const valorActual = (typeof actual.valor === 'number' && !isNaN(actual.valor) && actual.valor >= 0)
+          ? Math.floor(actual.valor)
+          : 0;
+        const sesionActiva = !!actual.sesionActiva;
+        const maxPrevio = sesionActiva ? (actual.maxEnSesion || 0) : 0;
+
+        // Si seguimos en la misma visita y no hay más personas simultáneas que el máximo ya contado, no incrementar
+        if (sesionActiva && conteoEstable <= maxPrevio) {
+          return;
+        }
+
+        const nuevasPersonas = conteoEstable - maxPrevio;
+        return {
+          valor: valorActual + nuevasPersonas,
+          sesionActiva: true,
+          maxEnSesion: conteoEstable,
+          ultimaActualizacion: Date.now()
+        };
+      }).catch(() => {});
+    }
+
+    function cerrarSesionContador() {
+      runTransaction(contadorPersonasRef, (estado) => {
+        if (!estado || typeof estado !== 'object' || !estado.sesionActiva) {
+          return;
+        }
+        const valorActual = (typeof estado.valor === 'number' && !isNaN(estado.valor) && estado.valor >= 0)
+          ? Math.floor(estado.valor)
+          : 0;
+        return {
+          valor: valorActual,
+          sesionActiva: false,
+          maxEnSesion: 0,
+          ultimaActualizacion: Date.now()
+        };
+      }).catch(() => {});
+    }
+
+    // Sincronización con el contador acumulado aislado de la Tablet 17
+    onValue(contadorPersonasRef, (snapshot) => {
+      const data = snapshot.val();
+      const nuevoTotal = (data && typeof data.valor === 'number' && !isNaN(data.valor) && data.valor >= 0)
+        ? Math.floor(data.valor)
+        : 0;
+      if (nuevoTotal === 0 && totalHistorico > 0) {
+        tiempoAcumuladoTotal = 0;
+      }
+      totalHistorico = nuevoTotal;
+      if (totalElement) totalElement.innerText = `HISTÓRICO: ${totalHistorico}`;
+    });
 
     frontVideo.addEventListener('ended', () => {
       if (currentFacesCount > 0 && !card.classList.contains('is-flipped')) {
@@ -232,34 +294,83 @@
       const ahora = Date.now();
       currentFacesCount = rostrosActuales;
 
-      /* NORMALIZACIÓN: Publicación en tiempo real al nodo estado_actual */
+      /* Publicación en tiempo real al nodo estado_actual con amortiguación de 600ms al bajar a 0 */
       const personasDetectadas = rostrosActuales > 0;
-      if (personasDetectadas !== hayPersonasActual || rostrosActuales !== pendingFaceCount) {
-          hayPersonasActual = personasDetectadas;
-          set(estadoActualRef, {
-              hayPersonas: hayPersonasActual,
-              conteoActual: rostrosActuales,
-              ultimaActividad: Date.now()
+      if (personasDetectadas) {
+        if (zeroPresenceDebounceTimer) {
+          clearTimeout(zeroPresenceDebounceTimer);
+          zeroPresenceDebounceTimer = null;
+        }
+        if (ausenciaSesionTimer) {
+          clearTimeout(ausenciaSesionTimer);
+          ausenciaSesionTimer = null;
+        }
+        if (!hayPersonasActual || rostrosActuales !== ultimoConteoEnviado) {
+          hayPersonasActual = true;
+          ultimoConteoEnviado = rostrosActuales;
+          update(estadoActualRef, {
+            hayPersonas: true,
+            conteoActual: rostrosActuales,
+            ultimaActividad: Date.now()
           });
+        }
+      } else {
+        if (hayPersonasActual && !zeroPresenceDebounceTimer) {
+          zeroPresenceDebounceTimer = setTimeout(() => {
+            zeroPresenceDebounceTimer = null;
+            if (currentFacesCount === 0) {
+              hayPersonasActual = false;
+              ultimoConteoEnviado = 0;
+              update(estadoActualRef, {
+                hayPersonas: false,
+                conteoActual: 0,
+                ultimaActividad: Date.now()
+              });
+            }
+          }, 600);
+        }
+        if (!ausenciaSesionTimer) {
+          // Solo cerrar la sesión de visita tras 3.5 segundos continuos sin ningún rostro frente a la tablet
+          ausenciaSesionTimer = setTimeout(() => {
+            ausenciaSesionTimer = null;
+            if (currentFacesCount === 0) {
+              cerrarSesionContador();
+              if (lastLoggedFaceCount !== 0) {
+                push(eventosRef, {
+                  timestamp: Date.now(),
+                  fecha: new Date().toISOString(),
+                  conteoAnterior: lastLoggedFaceCount,
+                  conteoActual: 0
+                });
+                set(statusRef, 'ONLINE');
+                lastLoggedFaceCount = 0;
+              }
+            }
+          }, 3500);
+        }
       }
 
-      /* NORMALIZACIÓN: Logs Históricos controlados por tiempo de estabilidad */
+      /* Logs Históricos y Contador Acumulado controlados por tiempo de estabilidad */
       if (rostrosActuales !== pendingFaceCount) {
         pendingFaceCount = rostrosActuales;
         clearTimeout(stabilityTimer); 
-        
-        stabilityTimer = setTimeout(() => {
-          if (pendingFaceCount !== lastLoggedFaceCount) {
-            push(eventosRef, {
-              timestamp: Date.now(),
-              fecha: new Date().toISOString(),
-              conteoAnterior: lastLoggedFaceCount,
-              conteoActual: pendingFaceCount
-            });
-            set(statusRef, 'ONLINE');
-            lastLoggedFaceCount = pendingFaceCount;
-          }
-        }, 1000); 
+        if (pendingFaceCount > 0) {
+          stabilityTimer = setTimeout(() => {
+            if (pendingFaceCount > 0) {
+              registrarPresenciaContador(pendingFaceCount);
+              if (pendingFaceCount !== lastLoggedFaceCount) {
+                push(eventosRef, {
+                  timestamp: Date.now(),
+                  fecha: new Date().toISOString(),
+                  conteoAnterior: lastLoggedFaceCount,
+                  conteoActual: pendingFaceCount
+                });
+                set(statusRef, 'ONLINE');
+                lastLoggedFaceCount = pendingFaceCount;
+              }
+            }
+          }, 800); 
+        }
       }
 
       if (rostrosActuales > 0) {
@@ -276,17 +387,6 @@
         isPlayingVideo = true;
         frontVideo.style.display = 'block';
         frontVideo.play().catch(e => { console.log("Autoplay bloqueado:", e); });
-      }
-
-      if (rostrosActuales > rostrosActivos.length) {
-        const nuevosRostros = rostrosActuales - rostrosActivos.length;
-        for (let i = 0; i < nuevosRostros; i++) { rostrosActivos.push({ startTime: ahora, contado: false }); }
-      } else if (rostrosActuales < rostrosActivos.length) { rostrosActivos.splice(rostrosActuales); }
-
-      for (let i = 0; i < rostrosActivos.length; i++) {
-        if (!rostrosActivos[i].contado && (ahora - rostrosActivos[i].startTime >= 2000)) {
-          totalHistorico++; rostrosActivos[i].contado = true;
-        }
       }
 
       let tiempoTotalParaCalculo = tiempoAcumuladoTotal + tiempoSesionActual;
