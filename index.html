@@ -817,30 +817,6 @@
             right: 15px;
         }
 
-        #btn-simular-tablet { 
-            position: absolute; 
-            top: 15px; 
-            right: 15px; 
-            padding: 8px 16px; 
-            background: rgba(179, 156, 110, 0.9); 
-            color: #fff; 
-            border: none; 
-            border-radius: 6px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            z-index: 1000; 
-            transition: background 0.3s, transform 0.2s; 
-            font-size: 0.9rem;
-            text-decoration: none;
-            display: inline-block;
-            box-sizing: border-box;
-            line-height: normal;
-        }
-        #btn-simular-tablet:hover { 
-            background: rgba(150, 129, 87, 1); 
-            transform: translateY(-1px);
-        }
-
         .flip-container { perspective: 1500px; width: 100%; height: 100%; }
         .flipper { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.8s cubic-bezier(0.68, -0.15, 0.265, 1.15); }
         .flip-container.flipped .flipper { transform: rotateY(180deg); }
@@ -2076,7 +2052,6 @@
                             </button>
                             <button type="button" id="btn-rt-ir-mapa" class="btn-realtime-nav">Volver al Mapa</button>
                         </div>
-                        <a id="btn-simular-tablet" target="_blank" href="#">Simular Tablet</a>
                         <button type="button" id="btn-rt-ir-lista" class="btn-realtime-nav">Ir a la Lista</button>
                         <button type="button" id="btn-rt-ir-calendario" class="btn-realtime-nav">Ir al Calendario</button>
 
@@ -2825,12 +2800,6 @@
 
             const zoneId = config.zone;
             const numFormat = config.tabletId.toString().padStart(2, '0');
-            
-            const simularBtn = document.getElementById('btn-simular-tablet');
-            if (simularBtn) {
-                simularBtn.href = `tablet${numFormat}simulada.html`;
-                simularBtn.style.display = 'inline-block';
-            }
 
             // Iniciar en la cara solicitada (Tiempo Real desde la lista de sucursales, o Calendario desde el mapa / fecha de instalación)
             if (startInRealTime) {
